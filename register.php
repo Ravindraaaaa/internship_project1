@@ -20,18 +20,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = trim($_POST['role'] ?? 'student'); // 'student' or 'alumni'
 
     if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
-        set_flash('error', 'All core credentials fields are required.');
+        $register_error = 'All core credentials fields are required.';
     } elseif ($password !== $confirm_password) {
-        set_flash('error', 'Passwords do not match.');
+        $register_error = 'Passwords do not match.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        set_flash('error', 'Invalid email address format.');
+        $register_error = 'Invalid email address format.';
     } else {
         try {
             // Check email uniqueness
             $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE email = ? UNION SELECT id FROM admins WHERE email = ?");
             $stmtCheck->execute([$email, $email]);
             if ($stmtCheck->fetch()) {
-                set_flash('error', 'This email is already registered.');
+                $register_error = 'This email is already registered.';
             } else {
                 $status = ($role === 'alumni') ? 'pending' : 'approved';
                 $hashed_pass = password_hash($password, PASSWORD_BCRYPT);
@@ -195,6 +195,12 @@ require_once __DIR__ . '/includes/header.php';
             grid-column: span 1;
         }
     }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
 </style>
 
 <div class="signup-wrapper">
@@ -206,6 +212,13 @@ require_once __DIR__ . '/includes/header.php';
             <h1>Create Account</h1>
             <p>Register to search alumni, request mentoring and RSVP to events</p>
         </div>
+
+        <?php if (!empty($register_error)): ?>
+            <div class="card-glass" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.25); color: #f87171; padding: 0.85rem 1rem; margin-bottom: 1.5rem; border-radius: var(--border-radius-sm); font-size: 0.88rem; display: flex; align-items: center; gap: 0.65rem; animation: shake 0.4s ease; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-circle-xmark" style="color: #ef4444; font-size: 1rem;"></i> 
+                <span><?php echo htmlspecialchars($register_error); ?></span>
+            </div>
+        <?php endif; ?>
 
         <form action="register.php" method="POST" enctype="multipart/form-data">
             

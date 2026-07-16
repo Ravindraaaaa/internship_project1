@@ -149,46 +149,54 @@
         });
     </script>
 
+    <?php 
+    $show_chatbot = false;
+    if (is_logged_in() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'student') {
+        $show_chatbot = true;
+    }
+    ?>
     <?php if (is_logged_in()): ?>
         <!-- ==================== ENTERPRISE WIDGETS ==================== -->
         
-        <!-- 1. AI Assistant Floating Widget -->
-        <button class="ai-chat-fab" id="ai-chat-fab" onclick="toggleAIChat()" title="AlumniNet Intelligent Assistant">
-            <i class="fa-solid fa-robot"></i>
-        </button>
+        <?php if ($show_chatbot): ?>
+            <!-- 1. AI Assistant Floating Widget -->
+            <button class="ai-chat-fab" id="ai-chat-fab" onclick="toggleAIChat()" title="AlumniNet Intelligent Assistant">
+                <i class="fa-solid fa-robot"></i>
+            </button>
 
-        <div class="ai-chat-window" id="ai-chat-window">
-            <div class="ai-chat-header">
-                <div style="display:flex; align-items:center; gap:0.5rem; color:#ffffff;">
-                    <i class="fa-solid fa-robot" style="color:var(--theme-accent-blue);"></i>
-                    <div>
-                        <h4 style="font-size:0.9rem; font-weight:700;">AI Chat Assistant</h4>
-                        <span style="font-size:0.7rem; color:var(--theme-text-secondary);">Enterprise Help Desk</span>
+            <div class="ai-chat-window" id="ai-chat-window">
+                <div class="ai-chat-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem; color:#ffffff;">
+                        <i class="fa-solid fa-robot" style="color:var(--theme-accent-blue);"></i>
+                        <div>
+                            <h4 style="font-size:0.9rem; font-weight:700;">AI Chat Assistant</h4>
+                            <span style="font-size:0.7rem; color:var(--theme-text-secondary);">Enterprise Help Desk</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <button onclick="clearAIChat()" style="background:none; border:none; color:var(--theme-text-secondary); cursor:pointer; font-size:0.8rem;" title="Clear History"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="toggleAIChat()" style="background:none; border:none; color:#ffffff; cursor:pointer; font-size:1.15rem; line-height:1;">&times;</button>
                     </div>
                 </div>
-                <div style="display:flex; gap:0.4rem; align-items:center;">
-                    <button onclick="clearAIChat()" style="background:none; border:none; color:var(--theme-text-secondary); cursor:pointer; font-size:0.8rem;" title="Clear History"><i class="fa-solid fa-trash-can"></i></button>
-                    <button onclick="toggleAIChat()" style="background:none; border:none; color:#ffffff; cursor:pointer; font-size:1.15rem; line-height:1;">&times;</button>
+
+                <div class="ai-chat-body" id="ai-chat-body">
+                    <!-- Message bubbles render here -->
+                </div>
+
+                <!-- Suggested chips -->
+                <div class="ai-chat-suggested">
+                    <button class="ai-suggested-btn" onclick="sendSuggestedQuery('Are there any active jobs?')">Jobs board?</button>
+                    <button class="ai-suggested-btn" onclick="sendSuggestedQuery('Tell me about upcoming events.')">Upcoming events?</button>
+                    <button class="ai-suggested-btn" onclick="sendSuggestedQuery('What is my profile score?')">Resume score?</button>
+                    <button class="ai-suggested-btn" onclick="sendSuggestedQuery('How can I contact mentors?')">Mentorship?</button>
+                </div>
+
+                <div class="ai-chat-input-area">
+                    <input type="text" id="ai-chat-input" class="input-glass" style="flex-grow:1; font-size:0.85rem; padding:0.45rem 0.75rem;" placeholder="Ask about events, jobs, resume tips..." onkeydown="if(event.key==='Enter') sendAIChatMessage()">
+                    <button onclick="sendAIChatMessage()" class="btn btn-primary" style="padding:0.45rem 0.8rem; font-size:0.85rem;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
-
-            <div class="ai-chat-body" id="ai-chat-body">
-                <!-- Message bubbles render here -->
-            </div>
-
-            <!-- Suggested chips -->
-            <div class="ai-chat-suggested">
-                <button class="ai-suggested-btn" onclick="sendSuggestedQuery('Are there any active jobs?')">Jobs board?</button>
-                <button class="ai-suggested-btn" onclick="sendSuggestedQuery('Tell me about upcoming events.')">Upcoming events?</button>
-                <button class="ai-suggested-btn" onclick="sendSuggestedQuery('What is my profile score?')">Resume score?</button>
-                <button class="ai-suggested-btn" onclick="sendSuggestedQuery('How can I contact mentors?')">Mentorship?</button>
-            </div>
-
-            <div class="ai-chat-input-area">
-                <input type="text" id="ai-chat-input" class="input-glass" style="flex-grow:1; font-size:0.85rem; padding:0.45rem 0.75rem;" placeholder="Ask about events, jobs, resume tips..." onkeydown="if(event.key==='Enter') sendAIChatMessage()">
-                <button onclick="sendAIChatMessage()" class="btn btn-primary" style="padding:0.45rem 0.8rem; font-size:0.85rem;"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
+        <?php endif; ?>
 
         <!-- 2. Global Search Overlay Modal -->
         <div class="search-modal-overlay" id="search-modal-overlay" onclick="if(event.target===this) toggleSearchModal(false)">
@@ -209,6 +217,7 @@
 
         <!-- 3. Scripts Integration -->
         <script>
+            <?php if ($show_chatbot): ?>
             // --- AI ASSISTANT WIDGET LOGIC ---
             let aiChatLoaded = false;
             
@@ -339,6 +348,7 @@
                 const el = document.getElementById(id);
                 el.scrollTop = el.scrollHeight;
             }
+            <?php endif; ?>
 
             // --- GLOBAL INSTANT SEARCH LOGIC ---
             function toggleSearchModal(show) {

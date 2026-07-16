@@ -16,13 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     if (empty($login_input) || empty($password)) {
-        set_flash('error', 'Please fill in all credentials fields.');
+        $login_error = 'Please fill in all credentials fields.';
     } else {
         // Check account lockout
         $locked_secs = is_account_locked($login_input);
         if ($locked_secs !== false) {
             $mins = ceil($locked_secs / 60);
-            set_flash('error', "This account is temporarily locked due to multiple failed login attempts. Try again in $mins minutes.");
+            $login_error = "This account is temporarily locked due to failed login attempts. Try again in $mins minutes.";
         } else {
             // 1. Try checking admins table
             $stmtAdmin = $pdo->prepare("SELECT * FROM admins WHERE email = ? OR username = ?");
@@ -68,11 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($user['status'] === 'rejected') {
                     register_failed_attempt($login_input);
                     log_login($user['id'], $login_input, 'failed');
-                    set_flash('error', 'Your registration request has been rejected by the administrator.');
+                    $login_error = 'Your registration request has been rejected by the administrator.';
                 } elseif ($user['status'] === 'blocked') {
                     register_failed_attempt($login_input);
                     log_login($user['id'], $login_input, 'failed');
-                    set_flash('error', 'Your account has been blocked by the administrator.');
+                    $login_error = 'Your account has been blocked by the administrator.';
                 } else {
                     reset_failed_attempts($login_input);
                     log_login($user['id'], $login_input, 'success');
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 register_failed_attempt($login_input);
                 log_login(null, $login_input, 'failed');
-                set_flash('error', 'Invalid email/username or password details.');
+                $login_error = 'Invalid email/username or password details.';
             }
         }
     }
@@ -149,6 +149,12 @@ require_once __DIR__ . '/includes/header.php';
     .checkbox-container input {
         cursor: pointer;
     }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
 </style>
 
 <div class="login-wrapper">
@@ -160,6 +166,13 @@ require_once __DIR__ . '/includes/header.php';
             <h1>Welcome Back</h1>
             <p>Access your portal account dashboard</p>
         </div>
+
+        <?php if (!empty($login_error)): ?>
+            <div class="card-glass" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.25); color: #f87171; padding: 0.85rem 1rem; margin-bottom: 1.5rem; border-radius: var(--border-radius-sm); font-size: 0.88rem; display: flex; align-items: center; gap: 0.65rem; animation: shake 0.4s ease; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-circle-xmark" style="color: #ef4444; font-size: 1rem;"></i> 
+                <span><?php echo htmlspecialchars($login_error); ?></span>
+            </div>
+        <?php endif; ?>
 
         <!-- Login Form -->
         <form action="login.php" method="POST">
