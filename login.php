@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth_helper.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/security_helper.php';
 
 $page_title = "Sign In";
 
@@ -17,47 +18,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($login_input) || empty($password)) {
         set_flash('error', 'Please fill in all credentials fields.');
     } else {
-        // 1. Try checking admins table
-        $stmtAdmin = $pdo->prepare("SELECT * FROM admins WHERE email = ? OR username = ?");
-        $stmtAdmin->execute([$login_input, $login_input]);
-        $admin = $stmtAdmin->fetch();
+        // Check account lockout
+        $locked_secs = is_account_locked($login_input);
+        if ($locked_secs !== false) {
+            $mins = ceil($locked_secs / 60);
+            set_flash('error', "This account is temporarily locked due to multiple failed login attempts. Try again in $mins minutes.");
+        } else {
+            // 1. Try checking admins table
+            $stmtAdmin = $pdo->prepare("SELECT * FROM admins WHERE email = ? OR username = ?");
+            $stmtAdmin->execute([$login_input, $login_input]);
+            $admin = $stmtAdmin->fetch();
 
-        if ($admin && password_verify($password, $admin['password'])) {
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_name'] = $admin['name'];
-            $_SESSION['admin_role'] = $admin['role'];
-            
-            set_flash('success', 'Logged in successfully as Super Admin!');
-            header('Location: dashboard.php');
-            exit;
-        }
+            if ($admin && password_verify($password, $admin['password'])) {
+                // Check if user account table is locked or has 2fa
+                $stmtAdminUser = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+                $stmtAdminUser->execute([$admin['user_id']]);
+                $adminUser = $stmtAdminUser->fetch();
 
-        // 2. Try checking regular users table
-        $stmtUser = $pdo->prepare("SELECT * FROM users WHERE email = ? OR username = ?");
-        $stmtUser->execute([$login_input, $login_input]);
-        $user = $stmtUser->fetch();
+                reset_failed_attempts($login_input);
+                log_login($adminUser ? $adminUser['id'] : null, $login_input, 'success');
 
-        if ($user && password_verify($password, $user['password'])) {
-            if ($user['status'] === 'rejected') {
-                set_flash('error', 'Your registration request has been rejected by the administrator.');
-            } elseif ($user['status'] === 'blocked') {
-                set_flash('error', 'Your account has been blocked by the administrator.');
-            } else {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['name'];
-                $_SESSION['user_role'] = $user['role'];
-                $_SESSION['user_status'] = $user['status'];
-
-                if ($user['status'] === 'pending') {
-                    set_flash('info', 'Logged in! Note: Your profile is pending admin approval.');
-                } else {
-                    set_flash('success', 'Welcome back, ' . htmlspecialchars($user['name']) . '!');
+                // If 2FA enabled
+                if ($adminUser && $adminUser['two_factor_secret'] === 'enabled') {
+                    $_SESSION['2fa_pending'] = true;
+                    $_SESSION['2fa_role'] = 'admin';
+                    $_SESSION['2fa_admin_id'] = $admin['id'];
+                    $_SESSION['2fa_admin_name'] = $admin['name'];
+                    $_SESSION['2fa_admin_role'] = $admin['role'];
+                    $_SESSION['2fa_user_id'] = $adminUser['id'];
+                    header('Location: two_factor.php');
+                    exit;
                 }
+
+                $_SESSION['admin_id'] = $admin['id'];
+                $_SESSION['admin_name'] = $admin['name'];
+                $_SESSION['admin_role'] = $admin['role'];
+                
+                set_flash('success', 'Logged in successfully as Super Admin!');
                 header('Location: dashboard.php');
                 exit;
             }
-        } else {
-            set_flash('error', 'Invalid email/username or password details.');
+
+            // 2. Try checking regular users table
+            $stmtUser = $pdo->prepare("SELECT * FROM users WHERE email = ? OR username = ?");
+            $stmtUser->execute([$login_input, $login_input]);
+            $user = $stmtUser->fetch();
+
+            if ($user && password_verify($password, $user['password'])) {
+                if ($user['status'] === 'rejected') {
+                    register_failed_attempt($login_input);
+                    log_login($user['id'], $login_input, 'failed');
+                    set_flash('error', 'Your registration request has been rejected by the administrator.');
+                } elseif ($user['status'] === 'blocked') {
+                    register_failed_attempt($login_input);
+                    log_login($user['id'], $login_input, 'failed');
+                    set_flash('error', 'Your account has been blocked by the administrator.');
+                } else {
+                    reset_failed_attempts($login_input);
+                    log_login($user['id'], $login_input, 'success');
+
+                    // If 2FA enabled
+                    if ($user['two_factor_secret'] === 'enabled') {
+                        $_SESSION['2fa_pending'] = true;
+                        $_SESSION['2fa_role'] = 'user';
+                        $_SESSION['2fa_user_id'] = $user['id'];
+                        $_SESSION['2fa_user_name'] = $user['name'];
+                        $_SESSION['2fa_user_role'] = $user['role'];
+                        $_SESSION['2fa_user_status'] = $user['status'];
+                        header('Location: two_factor.php');
+                        exit;
+                    }
+
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['name'];
+                    $_SESSION['user_role'] = $user['role'];
+                    $_SESSION['user_status'] = $user['status'];
+
+                    if ($user['status'] === 'pending') {
+                        set_flash('info', 'Logged in! Note: Your profile is pending admin approval.');
+                    } else {
+                        set_flash('success', 'Welcome back, ' . htmlspecialchars($user['name']) . '!');
+                    }
+                    header('Location: dashboard.php');
+                    exit;
+                }
+            } else {
+                register_failed_attempt($login_input);
+                log_login(null, $login_input, 'failed');
+                set_flash('error', 'Invalid email/username or password details.');
+            }
         }
     }
 }

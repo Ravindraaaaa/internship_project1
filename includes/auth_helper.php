@@ -154,4 +154,78 @@ if (!function_exists('display_flash')) {
         }
     }
 }
+
+/**
+ * Checks if a user is eligible for a job or event based on mapped requirements.
+ */
+if (!function_exists('check_user_eligibility')) {
+    function check_user_eligibility($user_id, $target_id, $type = 'job') {
+        global $pdo;
+        
+        if (is_admin()) {
+            return ['eligible' => true, 'reason' => ''];
+        }
+        
+        $stmt = $pdo->prepare("SELECT role, department_id FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            return ['eligible' => false, 'reason' => 'User record not found.'];
+        }
+        
+        if ($user['role'] === 'alumni') {
+            return ['eligible' => true, 'reason' => ''];
+        }
+        
+        $cgpa = 0.00;
+        $stmt = $pdo->prepare("SELECT cgpa FROM student_profiles WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $student = $stmt->fetch();
+        if ($student) {
+            $cgpa = floatval($student['cgpa']);
+        }
+        
+        $stmt = $pdo->prepare("SELECT s.name FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = ?");
+        $stmt->execute([$user_id]);
+        $user_skills = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        if ($type === 'job') {
+            $stmt = $pdo->prepare("SELECT r.* FROM job_requirements jr JOIN requirements r ON jr.requirement_id = r.id WHERE jr.job_id = ?");
+        } else {
+            $stmt = $pdo->prepare("SELECT r.* FROM event_requirements er JOIN requirements r ON er.requirement_id = r.id WHERE er.event_id = ?");
+        }
+        $stmt->execute([$target_id]);
+        $requirements = $stmt->fetchAll();
+        
+        foreach ($requirements as $r) {
+            if ($r['min_cgpa'] > 0.0 && $cgpa < floatval($r['min_cgpa'])) {
+                return ['eligible' => false, 'reason' => "Requires min CGPA: " . $r['min_cgpa'] . " (Your CGPA: " . number_format($cgpa, 2) . ")"];
+            }
+            
+            if (!empty($r['allowed_departments'])) {
+                $allowed = explode(',', $r['allowed_departments']);
+                if (!in_array($user['department_id'], $allowed)) {
+                    return ['eligible' => false, 'reason' => "Not open to your department."];
+                }
+            }
+            
+            if (!empty($r['skills_required'])) {
+                $required = array_map('trim', explode(',', $r['skills_required']));
+                foreach ($required as $req_skill) {
+                    if (!in_array(strtolower($req_skill), array_map('strtolower', $user_skills))) {
+                        return ['eligible' => false, 'reason' => "Missing required skill: " . htmlspecialchars($req_skill)];
+                    }
+                }
+            }
+            
+            if ($r['deadline']) {
+                if (strtotime($r['deadline']) < time()) {
+                    return ['eligible' => false, 'reason' => "The application deadline has passed."];
+                }
+            }
+        }
+        
+        return ['eligible' => true, 'reason' => ''];
+    }
+}
 ?>

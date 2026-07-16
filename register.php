@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth_helper.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/security_helper.php';
 
 $page_title = "Register";
 
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $pdo->commit();
+                log_activity($new_user_id, 'registration', 'User registered as ' . $role);
 
                 if ($role === 'alumni') {
                     set_flash('success', 'Registration submitted! Awaiting administrator approval.');
@@ -251,7 +253,13 @@ require_once __DIR__ . '/includes/header.php';
 
                 <div class="form-group">
                     <label for="password" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Password</label>
-                    <input type="password" name="password" id="password" class="input-glass" placeholder="••••••••" required>
+                    <input type="password" name="password" id="password" class="input-glass" placeholder="••••••••" required onkeyup="checkPasswordStrength(this.value)">
+                    <div style="margin-top: 0.5rem; display: flex; gap: 0.25rem; align-items: center;" id="password-strength-container">
+                        <div style="height: 4px; flex-grow: 1; background: rgba(255,255,255,0.06); border-radius: 2px;" class="strength-bar"></div>
+                        <div style="height: 4px; flex-grow: 1; background: rgba(255,255,255,0.06); border-radius: 2px;" class="strength-bar"></div>
+                        <div style="height: 4px; flex-grow: 1; background: rgba(255,255,255,0.06); border-radius: 2px;" class="strength-bar"></div>
+                        <span id="strength-text" style="font-size: 0.7rem; color: var(--theme-text-secondary); margin-left: 0.5rem;">Weak</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -312,6 +320,38 @@ require_once __DIR__ . '/includes/header.php';
             document.getElementById('btn-alumni').classList.add('active');
             document.getElementById('passout-field').style.display = 'block';
             document.getElementById('grad_year').setAttribute('required', 'required');
+        }
+    }
+
+    function checkPasswordStrength(password) {
+        const bars = document.querySelectorAll('.strength-bar');
+        const text = document.getElementById('strength-text');
+        let strength = 0;
+        
+        if (password.length >= 6) strength++;
+        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+        if (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/)) strength++;
+        
+        bars.forEach(bar => bar.style.background = 'rgba(255,255,255,0.06)');
+        
+        if (password.length === 0) {
+            text.textContent = 'Too short';
+            text.style.color = 'var(--theme-text-secondary)';
+        } else if (strength === 1) {
+            bars[0].style.background = '#ef4444';
+            text.textContent = 'Weak';
+            text.style.color = '#ef4444';
+        } else if (strength === 2) {
+            bars[0].style.background = '#eab308';
+            bars[1].style.background = '#eab308';
+            text.textContent = 'Medium';
+            text.style.color = '#eab308';
+        } else if (strength === 3) {
+            bars[0].style.background = '#22c55e';
+            bars[1].style.background = '#22c55e';
+            bars[2].style.background = '#22c55e';
+            text.textContent = 'Strong';
+            text.style.color = '#22c55e';
         }
     }
 </script>

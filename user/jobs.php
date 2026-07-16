@@ -238,11 +238,28 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div style="margin-bottom: 1.5rem; font-size: 0.82rem; color: var(--theme-text-secondary);">
                                     <strong>Requirements:</strong>
                                     <p style="margin-top: 0.25rem; font-style: italic; white-space: pre-line;"><?php echo htmlspecialchars($job['requirements']); ?></p>
+                                    <?php if (isset($eligibility) && !$eligibility['eligible']): ?>
+                                        <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); margin-top:0.6rem;">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> <strong>Eligibility Check Failed:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--theme-border); padding-top: 1rem; margin-top: auto;">
                                     <span style="font-size: 0.78rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-calendar-day"></i> Shared: <?php echo date('M d, Y', strtotime($job['created_at'])); ?></span>
-                                    <a href="<?php echo htmlspecialchars($job['application_link']); ?>" target="_blank" class="btn btn-primary btn-small"><i class="fa-solid fa-paper-plane"></i> Apply Now</a>
+                                    <?php 
+                                    $eligibility = ['eligible' => true, 'reason' => ''];
+                                    if (is_logged_in() && !is_admin()) {
+                                        $eligibility = check_user_eligibility(get_user_id(), $job['id'], 'job');
+                                    }
+                                    ?>
+                                    <?php if (!$eligibility['eligible']): ?>
+                                        <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.5rem; border-radius:4px; border:1px solid rgba(239,68,68,0.15);" title="<?php echo htmlspecialchars($eligibility['reason']); ?>">
+                                            <i class="fa-solid fa-circle-exclamation"></i> Ineligible
+                                        </div>
+                                    <?php elseif ($eligibility['eligible']): ?>
+                                        <a href="<?php echo htmlspecialchars($job['application_link']); ?>" target="_blank" class="btn btn-primary btn-small"><i class="fa-solid fa-paper-plane"></i> Apply Now</a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>

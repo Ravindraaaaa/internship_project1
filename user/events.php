@@ -62,6 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $status = trim($_POST['rsvp_status'] ?? 'going'); // 'going', 'interested', 'not_going'
 
     if ($event_id > 0 && in_array($status, ['going', 'interested', 'not_going'])) {
+        // Enforce eligibility
+        $eligibility = check_user_eligibility($uid, $event_id, 'event');
+        if (!$eligibility['eligible'] && $status !== 'not_going') {
+            set_flash('error', 'RSVP failed: ' . $eligibility['reason']);
+            header('Location: events.php');
+            exit;
+        }
+
         try {
             $stmtCheck = $pdo->prepare("SELECT id FROM event_rsvps WHERE event_id = ? AND user_id = ?");
             $stmtCheck->execute([$event_id, $uid]);
@@ -240,21 +248,28 @@ require_once __DIR__ . '/../includes/header.php';
                                     <!-- RSVP Form -->
                                     <?php if (is_logged_in()): 
                                         $my_status = $my_rsvps[$ev_id] ?? '';
+                                        $eligibility = check_user_eligibility($uid, $ev_id, 'event');
                                     ?>
                                         <div style="border-top:1px solid var(--theme-border); padding-top: 1.25rem; margin-top: auto;">
-                                            <form action="events.php" method="POST" style="display:flex; justify-content:space-between; align-items:center;">
-                                                <input type="hidden" name="action" value="rsvp">
-                                                <input type="hidden" name="event_id" value="<?php echo $ev_id; ?>">
-                                                
-                                                <div style="display:flex; gap: 0.35rem;">
-                                                    <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Going</button>
-                                                    <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Interested</button>
-                                                    <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Decline</button>
+                                            <?php if (!$eligibility['eligible']): ?>
+                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); width:100%;">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible to RSVP:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
                                                 </div>
-                                                <?php if (!empty($my_status)): ?>
-                                                    <span style="font-size: 0.7rem; color: var(--theme-accent-purple); font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
-                                                <?php endif; ?>
-                                            </form>
+                                            <?php else: ?>
+                                                <form action="events.php" method="POST" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                                    <input type="hidden" name="action" value="rsvp">
+                                                    <input type="hidden" name="event_id" value="<?php echo $ev_id; ?>">
+                                                    
+                                                    <div style="display:flex; gap: 0.35rem;">
+                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Going</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Decline</button>
+                                                    </div>
+                                                    <?php if (!empty($my_status)): ?>
+                                                        <span style="font-size: 0.7rem; color: var(--theme-accent-purple); font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
+                                                    <?php endif; ?>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
