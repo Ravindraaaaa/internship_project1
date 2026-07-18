@@ -927,23 +927,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==================== 13. MODALS ====================
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'flex';
-            if (animationsEnabled) {
-                gsap.fromTo(modal.querySelector('.modal-content'), {
-                    scale: 0.9,
-                    opacity: 0
-                }, {
-                    scale: 1,
-                    opacity: 1,
-                    duration: 0.4,
-                    ease: 'back.out(1.7)'
-                });
-            } else {
-                gsap.set(modal.querySelector('.modal-content'), { scale: 1, opacity: 1 });
+            const content = modal.querySelector('.modal-content');
+            if (content) {
+                if (animationsEnabled && typeof gsap !== 'undefined') {
+                    try {
+                        gsap.fromTo(content, {
+                            scale: 0.9,
+                            opacity: 0
+                        }, {
+                            scale: 1,
+                            opacity: 1,
+                            duration: 0.4,
+                            ease: 'back.out(1.7)'
+                        });
+                    } catch (err) {
+                        content.style.scale = '1';
+                        content.style.opacity = '1';
+                    }
+                } else {
+                    content.style.scale = '1';
+                    content.style.opacity = '1';
+                }
             }
             document.body.style.overflow = 'hidden';
         }
@@ -952,16 +960,22 @@ document.addEventListener('DOMContentLoaded', function() {
     window.closeModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            if (animationsEnabled) {
-                gsap.to(modal.querySelector('.modal-content'), {
-                    scale: 0.9,
-                    opacity: 0,
-                    duration: 0.3,
-                    onComplete: () => {
-                        modal.style.display = 'none';
-                        document.body.style.overflow = 'auto';
-                    }
-                });
+            const content = modal.querySelector('.modal-content');
+            if (animationsEnabled && typeof gsap !== 'undefined' && content) {
+                try {
+                    gsap.to(content, {
+                        scale: 0.9,
+                        opacity: 0,
+                        duration: 0.3,
+                        onComplete: () => {
+                            modal.style.display = 'none';
+                            document.body.style.overflow = 'auto';
+                        }
+                    });
+                } catch (err) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
             } else {
                 modal.style.display = 'none';
                 document.body.style.overflow = 'auto';
