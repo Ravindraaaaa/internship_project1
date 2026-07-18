@@ -423,3 +423,76 @@ CREATE TABLE IF NOT EXISTS achievements (
 
 -- 31. Add Remember Me Token column to users
 ALTER TABLE users ADD COLUMN remember_token VARCHAR(255) DEFAULT NULL;
+
+-- 32. Requirements Table
+CREATE TABLE IF NOT EXISTS requirements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    type ENUM('internship', 'placement') NOT NULL,
+    min_cgpa DECIMAL(3,2) DEFAULT 0.00,
+    allowed_departments VARCHAR(255) DEFAULT '',
+    skills_required TEXT DEFAULT NULL,
+    deadline DATETIME DEFAULT NULL,
+    required_documents TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 33. Job Requirements Mapping Table
+CREATE TABLE IF NOT EXISTS job_requirements (
+    job_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    PRIMARY KEY (job_id, requirement_id),
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 34. Event Requirements Mapping Table
+CREATE TABLE IF NOT EXISTS event_requirements (
+    event_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    PRIMARY KEY (event_id, requirement_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 35. User Certificates Table
+CREATE TABLE IF NOT EXISTS user_certificates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issue_date DATE NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 36. AI Chats History Table
+CREATE TABLE IF NOT EXISTS ai_chats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    query TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 37. Bookmarked Jobs Table
+CREATE TABLE IF NOT EXISTS bookmarked_jobs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    job_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 38. Saved Events Table
+CREATE TABLE IF NOT EXISTS saved_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    event_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
