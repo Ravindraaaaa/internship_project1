@@ -328,7 +328,10 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- TAB D: MANAGE JOBS -->
             <?php elseif ($tab === 'jobs'): ?>
                 <div class="card-glass">
-                    <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem;"><i data-lucide="briefcase" style="vertical-align: middle; margin-right: 0.5rem; color: #10b981;"></i> Manage Shared Career Referrals</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <h3 style="font-size: 1.3rem; margin:0;"><i data-lucide="briefcase" style="vertical-align: middle; margin-right: 0.5rem; color: #10b981;"></i> Manage Shared Career Referrals</h3>
+                        <button class="btn btn-primary" onclick="openModal('postJobModal')"><i class="fa-solid fa-plus"></i> Share Job Referral</button>
+                    </div>
                     <div class="table-responsive">
                         <table class="custom-table">
                             <thead>
@@ -586,6 +589,7 @@ require_once __DIR__ . '/../includes/header.php';
         
         <form action="../user/events.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="create_event">
+            <input type="hidden" name="redirect" value="../admin/dashboard.php?tab=events">
             
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Event Title</label>
@@ -624,6 +628,66 @@ require_once __DIR__ . '/../includes/header.php';
             <div style="display: flex; justify-content: flex-end; gap: 1rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('createEventModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Schedule Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== POST REFERRAL JOB MODAL (ADMIN ONLY) ==================== -->
+<div class="modal" id="postJobModal">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close" onclick="closeModal('postJobModal')">&times;</button>
+        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-briefcase" style="color: var(--theme-accent-purple);"></i> Share Job Referral</h2>
+        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Post internal referral opportunities directly to campus members.</p>
+        
+        <form action="../user/jobs.php" method="POST">
+            <input type="hidden" name="action" value="post_job">
+            <input type="hidden" name="redirect" value="../admin/dashboard.php?tab=jobs">
+            
+            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Job Title</label>
+                    <input type="text" name="title" class="input-glass" placeholder="e.g. Frontend Engineer" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Company</label>
+                    <input type="text" name="company" class="input-glass" placeholder="e.g. Stripe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Location</label>
+                    <input type="text" name="location" class="input-glass" placeholder="e.g. Remote (India)" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Job Category</label>
+                    <select name="type" class="input-glass" required>
+                        <option value="full-time">Full-Time</option>
+                        <option value="part-time">Part-Time</option>
+                        <option value="internship">Internship</option>
+                        <option value="contract">Contract</option>
+                        <option value="remote">Remote</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Salary Range (Optional)</label>
+                    <input type="text" name="salary_range" class="input-glass" placeholder="e.g. ₹12L - ₹15L / year">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Application Link / Email</label>
+                    <input type="text" name="application_link" class="input-glass" placeholder="https://careers.stripe.com/apply" required>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Job Summary</label>
+                    <textarea name="description" class="input-glass" rows="3" placeholder="Briefly detail roles and project scope..." required></textarea>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Skills & Requirements</label>
+                    <textarea name="requirements" class="input-glass" rows="2" placeholder="Specify tech stack and years of experience..." required></textarea>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('postJobModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Publish Referral</button>
             </div>
         </form>
     </div>

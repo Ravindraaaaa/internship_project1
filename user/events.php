@@ -38,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
     }
-
+    
+    $redir = $_POST['redirect'] ?? 'events.php';
     if (empty($title) || empty($description) || empty($date) || empty($location)) {
         set_flash('error', 'All event creation fields are required.');
     } else {
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             set_flash('error', 'Failed scheduling event: ' . $e->getMessage());
         }
     }
-    header('Location: events.php');
+    header('Location: ' . $redir);
     exit;
 }
 

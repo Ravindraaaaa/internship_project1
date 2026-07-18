@@ -13,9 +13,10 @@ if (is_logged_in() && !is_admin()) {
 
 // 1. Process Job Post (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'post_job') {
+    $redir = $_POST['redirect'] ?? 'jobs.php';
     if (!is_admin() && (get_user_role() !== 'alumni' || $user_status !== 'approved')) {
         set_flash('error', 'Only approved alumni members or administrators can post jobs.');
-        header('Location: jobs.php');
+        header('Location: ' . $redir);
         exit;
     }
 
@@ -43,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             set_flash('error', 'Failed to publish job: ' . $e->getMessage());
         }
     }
-    header('Location: jobs.php');
+    header('Location: ' . $redir);
     exit;
 }
 
