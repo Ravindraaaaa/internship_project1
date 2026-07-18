@@ -1,5 +1,57 @@
 document.addEventListener('DOMContentLoaded', function() {
     
+    // ==================== 0. SIDEBAR & DROPDOWNS GLOBAL ====================
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            const icon = sidebarToggle.querySelector('i');
+            if (icon) {
+                if (sidebar.classList.contains('collapsed')) {
+                    icon.className = 'fa-solid fa-chevron-right';
+                } else {
+                    icon.className = 'fa-solid fa-chevron-left';
+                }
+            }
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 300);
+        });
+    }
+
+    const mobileSidebarBtn = document.getElementById('mobile-sidebar-toggle');
+    if (mobileSidebarBtn && sidebar) {
+        mobileSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+        });
+    }
+
+    function setupGlobalDropdown(toggleId, menuId) {
+        const toggle = document.getElementById(toggleId);
+        const menu = document.getElementById(menuId);
+        
+        if (toggle && menu) {
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.querySelectorAll('.nav-dropdown-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            });
+        }
+    }
+
+    setupGlobalDropdown('notif-bell-toggle', 'notif-dropdown-menu');
+    setupGlobalDropdown('profile-avatar-toggle', 'profile-dropdown-menu');
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.nav-dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    });
+
     // ==================== 1. PERFORMANCE ANIMATIONS TOGGLE ====================
     let animationsEnabled = localStorage.getItem('animations-enabled') !== 'false';
     const perfToggle = document.getElementById('performance-toggle');
@@ -777,39 +829,56 @@ document.addEventListener('DOMContentLoaded', function() {
         toast.className = `toast toast-${type}`;
         
         let iconClass = 'fa-circle-check';
-        if (type === 'error') iconClass = 'fa-circle-xmark';
-        else if (type === 'warning') iconClass = 'fa-circle-exclamation';
-        else if (type === 'info') iconClass = 'fa-circle-info';
+        let iconColor = 'var(--accent-success)';
+        if (type === 'error') {
+            iconClass = 'fa-circle-xmark';
+            iconColor = 'var(--accent-danger)';
+        } else if (type === 'warning') {
+            iconClass = 'fa-circle-exclamation';
+            iconColor = 'var(--accent-warning)';
+        } else if (type === 'info') {
+            iconClass = 'fa-circle-info';
+            iconColor = 'var(--theme-accent-blue)';
+        }
 
         toast.innerHTML = `
             <div style="display: flex; align-items: center; gap: 0.85rem;">
-                <i class="fa-solid ${iconClass}" style="font-size: 1.25rem;"></i>
-                <span style="font-size: 0.9rem; font-weight: 600;">${message}</span>
+                <i class="fa-solid ${iconClass}" style="font-size: 1.35rem; color: ${iconColor};"></i>
+                <span style="font-size: 0.92rem; font-weight: 600;">${message}</span>
             </div>
-            <button class="toast-close">&times;</button>
+            <button class="toast-close" style="transition: color 0.2s ease;">&times;</button>
         `;
 
         container.appendChild(toast);
 
-        toast.querySelector('.toast-close').addEventListener('click', function() {
+        // Entrance animation: slide and spring bounce
+        gsap.fromTo(toast, 
+            { x: 150, opacity: 0, scale: 0.85 },
+            { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.2)' }
+        );
+
+        const closeToast = () => {
             gsap.to(toast, {
-                x: 100,
+                x: 150,
                 opacity: 0,
-                duration: 0.3,
-                onComplete: () => toast.remove()
+                scale: 0.85,
+                duration: 0.35,
+                ease: 'power2.in',
+                onComplete: () => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }
             });
-        });
+        };
+
+        toast.querySelector('.toast-close').addEventListener('click', closeToast);
 
         setTimeout(() => {
             if (toast.parentElement) {
-                gsap.to(toast, {
-                    x: 100,
-                    opacity: 0,
-                    duration: 0.3,
-                    onComplete: () => toast.remove()
-                });
+                closeToast();
             }
-        }, 4000);
+        }, 4500);
     };
 
     // Button click ripple effect

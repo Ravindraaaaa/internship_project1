@@ -85,48 +85,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="dashboard-wrapper">
     
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="../index.php" class="logo logo-text">
-                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-            </a>
-            <button class="sidebar-toggle-btn" id="sidebar-toggle">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;" class="sidebar-profile-box">
-            <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent-purple);" class="user-sidebar-avatar">
-            <div style="margin-top: 0.75rem;" class="link-text">
-                <h4 style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><?php echo htmlspecialchars($user_name); ?></h4>
-                <p style="font-size: 0.72rem; color: var(--theme-text-secondary); text-transform: uppercase;"><?php echo htmlspecialchars($role); ?> member</p>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="sidebar-item active">
-                <a href="dashboard.php"><i data-lucide="gauge"></i> <span class="link-text">Dashboard</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="profile.php"><i data-lucide="user"></i> <span class="link-text">My Profile</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="mentorship.php"><i data-lucide="handshake"></i> <span class="link-text">Mentorship</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="alumni.php"><i data-lucide="users"></i> <span class="link-text">Alumni Directory</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="jobs.php"><i data-lucide="briefcase"></i> <span class="link-text">Job Board</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="events.php"><i data-lucide="calendar"></i> <span class="link-text">Events Board</span></a>
-            </li>
-            <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
-                <a href="../logout.php" style="color: var(--accent-danger);"><i data-lucide="log-out"></i> <span class="link-text">Sign Out</span></a>
-            </li>
-        </ul>
-    </aside>
+    <?php render_sidebar('dashboard'); ?>
 
     <!-- ==================== WORKSPACE CONTENT ==================== -->
     <div class="dashboard-content-area">
@@ -244,7 +203,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- DUAL WIDGET SPLIT GRIDS -->
             <?php if ($role === 'student'): ?>
-                <div class="dashboard-widget-grid">
+                <div class="dashboard-widget-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
                     
                     <!-- Line Activity Graph -->
                     <div class="card-glass" style="display: flex; flex-direction: column; height: 380px;">
@@ -255,7 +214,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <!-- Active Connections -->
-                    <div class="card-glass" style="display:flex; flex-direction:column; max-height: 380px;">
+                    <div class="card-glass" style="display:flex; flex-direction:column; height: 380px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-handshake-angle" style="color: var(--theme-accent-blue);"></i> Active Mentorships</h3>
                         <div style="display:flex; flex-direction:column; gap: 1rem; overflow-y:auto; flex-grow:1;">
                             <?php if (!empty($student_mentorships)): ?>
@@ -276,6 +235,14 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php else: ?>
                                 <p style="font-size: 0.82rem; color: var(--theme-text-secondary);">No mentorship requests submitted. Browse the directory!</p>
                             <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Online Members -->
+                    <div class="card-glass" style="display:flex; flex-direction:column; height: 380px;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.7rem; vertical-align: middle; margin-right: 0.5rem;"></i> Online Network (<span id="online-users-count">0</span>)</h3>
+                        <div id="online-users-container" style="display:flex; flex-direction:column; gap: 1rem; overflow-y:auto; flex-grow:1;">
+                            <div style="text-align: center; color: var(--theme-text-secondary); font-size: 0.85rem; padding: 1rem;">Loading online members...</div>
                         </div>
                     </div>
 
@@ -355,24 +322,33 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php endif; ?>
                     </div>
 
-                    <!-- Referrals shared -->
-                    <div class="card-glass">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-briefcase" style="color: var(--theme-accent-blue);"></i> Referrals Shared</h3>
-                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <?php if (!empty($alumni_jobs)): ?>
-                                <?php foreach ($alumni_jobs as $job): ?>
-                                    <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <h4 style="font-size: 0.9rem; font-weight: 600;"><?php echo htmlspecialchars($job['title']); ?></h4>
-                                            <p style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($job['company']); ?> | <?php echo htmlspecialchars($job['location']); ?></p>
+                    <!-- Referrals shared & Online Users -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="card-glass">
+                            <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-briefcase" style="color: var(--theme-accent-blue);"></i> Referrals Shared</h3>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <?php if (!empty($alumni_jobs)): ?>
+                                    <?php foreach ($alumni_jobs as $job): ?>
+                                        <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <h4 style="font-size: 0.9rem; font-weight: 600;"><?php echo htmlspecialchars($job['title']); ?></h4>
+                                                <p style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($job['company']); ?> | <?php echo htmlspecialchars($job['location']); ?></p>
+                                            </div>
+                                            <span class="badge badge-student"><?php echo htmlspecialchars($job['status']); ?></span>
                                         </div>
-                                        <span class="badge badge-student"><?php echo htmlspecialchars($job['status']); ?></span>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p style="font-size: 0.85rem; color: var(--theme-text-secondary);">You have not shared any referrals yet.</p>
-                            <?php endif; ?>
-                            <a href="jobs.php" class="btn btn-secondary btn-small" style="margin-top: 1rem; width: 100%; text-align:center;">Post Job Referral</a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <p style="font-size: 0.85rem; color: var(--theme-text-secondary);">You have not shared any referrals yet.</p>
+                                <?php endif; ?>
+                                <a href="jobs.php" class="btn btn-secondary btn-small" style="margin-top: 1rem; width: 100%; text-align:center;">Post Job Referral</a>
+                            </div>
+                        </div>
+
+                        <div class="card-glass">
+                            <h3 style="font-size: 1.15rem; margin-bottom: 1rem;"><i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.7rem; vertical-align: middle; margin-right: 0.5rem;"></i> Online Network (<span id="online-users-count">0</span>)</h3>
+                            <div id="online-users-container" style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+                                <div style="text-align: center; color: var(--theme-text-secondary); font-size: 0.85rem; padding: 1rem;">Loading online network...</div>
+                            </div>
                         </div>
                     </div>
 

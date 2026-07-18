@@ -68,6 +68,12 @@ try {
     } elseif ($tab === 'reports') {
         $alumni_by_stream = $pdo->query("SELECT course, COUNT(*) as qty FROM alumni_profiles GROUP BY course")->fetchAll();
         $student_by_stream = $pdo->query("SELECT course, COUNT(*) as qty FROM student_profiles GROUP BY course")->fetchAll();
+    } elseif ($tab === 'feedback') {
+        $stmt = $pdo->query("SELECT f.*, u.name as user_name, u.email as user_email, u.role as user_role 
+                             FROM feedback f 
+                             JOIN users u ON f.user_id = u.id 
+                             ORDER BY f.created_at DESC");
+        $all_feedback = $stmt->fetchAll();
     }
 } catch (Exception $e) {
     set_flash('error', 'Error loading admin data: ' . $e->getMessage());
@@ -79,51 +85,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="dashboard-wrapper">
     
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="../index.php" class="logo logo-text">
-                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-            </a>
-            <button class="sidebar-toggle-btn" id="sidebar-toggle">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;" class="sidebar-profile-box">
-            <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent-purple);" class="user-sidebar-avatar">
-            <div style="margin-top: 0.75rem;" class="link-text">
-                <h4 style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><?php echo htmlspecialchars($user_name); ?></h4>
-                <p style="font-size: 0.72rem; color: var(--theme-text-secondary); text-transform: uppercase;">Admin Portal</p>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="sidebar-item <?php echo $tab === 'overview' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=overview"><i data-lucide="gauge"></i> <span class="link-text">Dashboard</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'alumni' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=alumni"><i data-lucide="user-check"></i> <span class="link-text">Manage Alumni</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'students' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=students"><i data-lucide="users"></i> <span class="link-text">Manage Students</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'jobs' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=jobs"><i data-lucide="briefcase"></i> <span class="link-text">Manage Jobs</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'events' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=events"><i data-lucide="calendar"></i> <span class="link-text">Manage Events</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'messages' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=messages"><i data-lucide="messages-square"></i> <span class="link-text">System Messages</span></a>
-            </li>
-            <li class="sidebar-item <?php echo $tab === 'reports' ? 'active' : ''; ?>">
-                <a href="dashboard.php?tab=reports"><i data-lucide="line-chart"></i> <span class="link-text">Reports</span></a>
-            </li>
-            <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
-                <a href="../logout.php" style="color: var(--accent-danger);"><i data-lucide="log-out"></i> <span class="link-text">Sign Out</span></a>
-            </li>
-        </ul>
-    </aside>
+    <?php render_sidebar($tab === 'overview' ? 'dashboard' : $tab); ?>
 
     <!-- ==================== WORKSPACE CONTENT ==================== -->
     <div class="dashboard-content-area">
@@ -273,22 +235,19 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
 
-                    <div class="card-glass">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-accent-purple);"></i> System Activity</h3>
-                        <ul class="timeline">
-                            <li class="timeline-item">
-                                <span class="timeline-marker success"></span>
-                                <div class="timeline-time">Just now</div>
-                                <div class="timeline-title">Admin logged in</div>
-                                <div class="timeline-desc">Session authorized</div>
-                            </li>
-                            <li class="timeline-item">
-                                <span class="timeline-marker blue"></span>
-                                <div class="timeline-time">1 hour ago</div>
-                                <div class="timeline-title">Database seeded done</div>
-                                <div class="timeline-desc">Seeding done successfully</div>
-                            </li>
-                        </ul>
+                    <div class="card-glass" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; margin-bottom: 1rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-accent-purple);"></i> System Activity</h3>
+                            <ul class="timeline" id="system-activity-timeline">
+                                <div style="text-align: center; color: var(--theme-text-secondary); font-size: 0.85rem; padding: 1rem;">Loading activity...</div>
+                            </ul>
+                        </div>
+                        <div style="border-top: 1px solid var(--theme-border); padding-top: 1rem;">
+                            <h3 style="font-size: 1.15rem; margin-bottom: 1rem;"><i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.7rem; vertical-align: middle; margin-right: 0.5rem;"></i> Online Users (<span id="online-users-count">0</span>)</h3>
+                            <div id="online-users-container" style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+                                <div style="text-align: center; color: var(--theme-text-secondary); font-size: 0.85rem; padding: 1rem;">Loading online users...</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -515,6 +474,101 @@ require_once __DIR__ . '/../includes/header.php';
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Export Panels conforming to FR-16 Report Generation -->
+                <div class="card-glass" style="padding: 2rem;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-file-export" style="color: var(--theme-accent-purple); margin-right:0.5rem;"></i> Generate & Export Platform Reports</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
+                        <!-- Users report -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem;"><i class="fa-solid fa-users" style="color:var(--theme-accent-purple);"></i> Users Report</h4>
+                            <p style="font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:1rem;">Account records, roles, statuses, and registration timestamps.</p>
+                            <div style="display:flex; gap:0.4rem;">
+                                <a href="reports_generator.php?type=users&format=csv" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">CSV</a>
+                                <a href="reports_generator.php?type=users&format=excel" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Excel</a>
+                                <a href="reports_generator.php?type=users&format=print" target="_blank" class="btn btn-primary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Print</a>
+                            </div>
+                        </div>
+                        <!-- Placements/Jobs report -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem;"><i class="fa-solid fa-briefcase" style="color:var(--theme-accent-blue);"></i> Jobs Report</h4>
+                            <p style="font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:1rem;">Job listings, companies, locations, poster names, and dates.</p>
+                            <div style="display:flex; gap:0.4rem;">
+                                <a href="reports_generator.php?type=placements&format=csv" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">CSV</a>
+                                <a href="reports_generator.php?type=placements&format=excel" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Excel</a>
+                                <a href="reports_generator.php?type=placements&format=print" target="_blank" class="btn btn-primary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Print</a>
+                            </div>
+                        </div>
+                        <!-- Events report -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem;"><i class="fa-solid fa-calendar-days" style="color:#10b981;"></i> Events Report</h4>
+                            <p style="font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:1rem;">Event details, dates, type configurations, and RSVP stats.</p>
+                            <div style="display:flex; gap:0.4rem;">
+                                <a href="reports_generator.php?type=events&format=csv" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">CSV</a>
+                                <a href="reports_generator.php?type=events&format=excel" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Excel</a>
+                                <a href="reports_generator.php?type=events&format=print" target="_blank" class="btn btn-primary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Print</a>
+                            </div>
+                        </div>
+                        <!-- Applications report -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem;"><i class="fa-solid fa-file-lines" style="color:#f59e0b;"></i> Applications Report</h4>
+                            <p style="font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:1rem;">Job applications status log, applied details, and candidates.</p>
+                            <div style="display:flex; gap:0.4rem;">
+                                <a href="reports_generator.php?type=applications&format=csv" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">CSV</a>
+                                <a href="reports_generator.php?type=applications&format=excel" class="btn btn-secondary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Excel</a>
+                                <a href="reports_generator.php?type=applications&format=print" target="_blank" class="btn btn-primary btn-small" style="padding:0.4rem 0.6rem; font-size:0.75rem;">Print</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($tab === 'feedback'): ?>
+                <div class="card-glass">
+                    <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-comments" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-purple);"></i> Manage User Reviews & Feedback</h3>
+                    <div class="table-responsive">
+                        <?php if (!empty($all_feedback)): ?>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rating</th>
+                                        <th>User Details</th>
+                                        <th>Subject</th>
+                                        <th>Message Review</th>
+                                        <th>Submitted On</th>
+                                        <th style="text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($all_feedback as $fb): ?>
+                                        <tr>
+                                            <td>
+                                                <div style="color: #f59e0b; display: flex; gap: 0.15rem; font-size: 0.9rem;">
+                                                    <?php for($i=1; $i<=5; $i++): ?>
+                                                        <i class="fa-<?php echo ($i <= $fb['rating']) ? 'solid' : 'regular'; ?> fa-star"></i>
+                                                    <?php endfor; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($fb['user_name']); ?></strong>
+                                                <div style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['user_email']); ?> | <span style="text-transform:uppercase; font-weight:700;"><?php echo $fb['user_role']; ?></span></div>
+                                            </td>
+                                            <td><strong><?php echo htmlspecialchars($fb['subject']); ?></strong></td>
+                                            <td style="max-width: 300px; font-size: 0.85rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['message']); ?></td>
+                                            <td style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y', strtotime($fb['created_at'])); ?></td>
+                                            <td style="text-align: right;">
+                                                <a href="admin_approvals.php?action=delete_feedback&id=<?php echo $fb['id']; ?>&tab=feedback" class="btn btn-danger" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px;" onclick="return confirm('Delete this feedback entry completely?')"><i class="fa-solid fa-trash-can"></i> Delete</a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 3rem; color: var(--theme-text-secondary);">
+                                <i class="fa-solid fa-inbox" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
+                                <span>No feedback or reviews submitted yet.</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>

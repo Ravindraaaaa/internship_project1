@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('student', 'alumni', 'admin') NOT NULL DEFAULT 'student',
     status ENUM('pending', 'approved', 'rejected', 'blocked') NOT NULL DEFAULT 'pending',
     department_id INT,
+    two_factor_secret VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
     profile_pic VARCHAR(255),
     linkedin VARCHAR(255),
     github VARCHAR(255),
+    cgpa DECIMAL(3,2) DEFAULT 0.00,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -395,3 +397,28 @@ INSERT INTO skills (id, name) VALUES
 (6, 'Embedded Systems'),
 (7, 'Robotics'),
 (8, 'Kubernetes');
+
+-- 29. Feedback Table
+CREATE TABLE IF NOT EXISTS feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    rating INT NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 30. Achievements Table
+CREATE TABLE IF NOT EXISTS achievements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    date_achieved DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 31. Add Remember Me Token column to users
+ALTER TABLE users ADD COLUMN remember_token VARCHAR(255) DEFAULT NULL;

@@ -515,8 +515,8 @@
                                 let icon = 'fa-info-circle';
                                 let iconColor = 'var(--theme-accent-blue)';
                                 if (notif.type === 'success') { icon = 'fa-circle-check'; iconColor = '#22c55e'; }
-                                elseif (notif.type === 'warning') { icon = 'fa-triangle-exclamation'; iconColor = '#eab308'; }
-                                elseif (notif.type === 'error') { icon = 'fa-circle-xmark'; iconColor = '#ef4444'; }
+                                else if (notif.type === 'warning') { icon = 'fa-triangle-exclamation'; iconColor = '#eab308'; }
+                                else if (notif.type === 'error') { icon = 'fa-circle-xmark'; iconColor = '#ef4444'; }
                                 
                                 const item = document.createElement('div');
                                 item.className = 'notif-item';

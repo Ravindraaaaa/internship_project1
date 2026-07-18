@@ -2,12 +2,19 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once __DIR__ . '/security_helper.php';
+if (isset($_SESSION['user_id']) || isset($_SESSION['admin_id'])) {
+    handle_session_timeout();
+}
 
 /**
  * Check if any user (regular or admin) is logged in.
  */
 if (!function_exists('is_logged_in')) {
     function is_logged_in() {
+        if (!isset($_SESSION['user_id']) && !isset($_SESSION['admin_id'])) {
+            check_remember_me_cookie();
+        }
         return isset($_SESSION['user_id']) || isset($_SESSION['admin_id']);
     }
 }
@@ -226,6 +233,231 @@ if (!function_exists('check_user_eligibility')) {
         }
         
         return ['eligible' => true, 'reason' => ''];
+    }
+}
+
+if (!function_exists('render_sidebar')) {
+    function render_sidebar($active_page = '') {
+        global $pdo;
+        $uid = get_user_id();
+        $role = get_user_role();
+        $user_name = get_user_name();
+        
+        $path_prefix = (basename(dirname($_SERVER['PHP_SELF'])) === 'user' || basename(dirname($_SERVER['PHP_SELF'])) === 'admin') ? '../' : '';
+        $sub_prefix = (basename(dirname($_SERVER['PHP_SELF'])) === 'user' || basename(dirname($_SERVER['PHP_SELF'])) === 'admin') ? '' : 'user/';
+        $admin_prefix = (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') ? '' : 'admin/';
+        if (basename(dirname($_SERVER['PHP_SELF'])) === 'user') {
+            $admin_prefix = '../admin/';
+        }
+        
+        // Default Avatar
+        $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        if (is_logged_in()) {
+            if (is_admin()) {
+                $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png';
+            } else {
+                try {
+                    if ($role === 'alumni') {
+                        $stmt = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
+                        $stmt->execute([$uid]);
+                        $prof = $stmt->fetch();
+                        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
+                            $sidebar_avatar = $path_prefix . $prof['profile_pic'];
+                        }
+                    } else if ($role === 'student') {
+                        $stmt = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
+                        $stmt->execute([$uid]);
+                        $prof = $stmt->fetch();
+                        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
+                            $sidebar_avatar = $path_prefix . $prof['profile_pic'];
+                        }
+                    }
+                } catch (Exception $e) {
+                    // silent fail
+                }
+            }
+        }
+        
+        ?>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="<?php echo $path_prefix; ?>index.php" class="logo logo-text">
+                    <i class="fa-solid fa-graduation-cap"></i> AlumniNet
+                </a>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <ul class="sidebar-menu">
+                <?php if (is_logged_in()): ?>
+                    <?php if (is_admin()): ?>
+                        <li class="sidebar-item <?php echo $active_page === 'dashboard' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=overview"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=alumni"><i class="fa-solid fa-user-check"></i> <span class="link-text">Manage Alumni</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'students' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=students"><i class="fa-solid fa-users"></i> <span class="link-text">Manage Students</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'jobs' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=jobs"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Manage Jobs</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'events' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=events"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Manage Events</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'messages' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=messages"><i class="fa-solid fa-envelope"></i> <span class="link-text">System Messages</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'reports' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=reports"><i class="fa-solid fa-chart-line"></i> <span class="link-text">Reports</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=feedback"><i class="fa-solid fa-comments"></i> <span class="link-text">User Feedback</span></a>
+                        </li>
+                    <?php else: ?>
+                        <li class="sidebar-item <?php echo $active_page === 'dashboard' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'profile' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>profile.php"><i class="fa-solid fa-circle-user"></i> <span class="link-text">My Profile</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'mentorship' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>mentorship.php"><i class="fa-solid fa-handshake-angle"></i> <span class="link-text">Mentorship</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'jobs' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'events' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'portfolio' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>portfolio.php"><i class="fa-solid fa-folder-kanban"></i> <span class="link-text">My Portfolio</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'chat' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Messenger</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>feedback.php"><i class="fa-solid fa-comments"></i> <span class="link-text">Feedback</span></a>
+                        </li>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
+                        <a href="<?php echo $sub_prefix; ?>alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
+                    </li>
+                    <li class="sidebar-item <?php echo $active_page === 'jobs' ? 'active' : ''; ?>">
+                        <a href="<?php echo $sub_prefix; ?>jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>
+                    </li>
+                    <li class="sidebar-item <?php echo $active_page === 'events' ? 'active' : ''; ?>">
+                        <a href="<?php echo $sub_prefix; ?>events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </aside>
+        <?php
+    }
+}
+
+if (!function_exists('set_remember_me_cookie')) {
+    function set_remember_me_cookie($user_id) {
+        global $pdo;
+        $token = bin2hex(random_bytes(32));
+        $hashed_token = hash('sha256', $token);
+        
+        if (!isset($pdo)) {
+            require_once __DIR__ . '/../config/db.php';
+        }
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
+            $stmt->execute([$hashed_token, $user_id]);
+            
+            // Cookie format user_id:token, expires in 30 days
+            $cookie_value = $user_id . ':' . $token;
+            setcookie('remember_user', $cookie_value, time() + (86400 * 30), "/", "", false, true);
+        } catch (Exception $e) {
+            // silent fail
+        }
+    }
+}
+
+if (!function_exists('clear_remember_me_cookie')) {
+    function clear_remember_me_cookie() {
+        global $pdo;
+        if (isset($_COOKIE['remember_user'])) {
+            $parts = explode(':', $_COOKIE['remember_user'], 2);
+            if (count($parts) === 2) {
+                $user_id = intval($parts[0]);
+                if (!isset($pdo)) {
+                    require_once __DIR__ . '/../config/db.php';
+                }
+                try {
+                    $stmt = $pdo->prepare("UPDATE users SET remember_token = NULL WHERE id = ?");
+                    $stmt->execute([$user_id]);
+                } catch (Exception $e) {
+                    // silent fail
+                }
+            }
+            setcookie('remember_user', '', time() - 3600, "/", "", false, true);
+        }
+    }
+}
+
+if (!function_exists('check_remember_me_cookie')) {
+    function check_remember_me_cookie() {
+        global $pdo;
+        if (isset($_SESSION['user_id']) || isset($_SESSION['admin_id'])) {
+            return;
+        }
+        
+        if (isset($_COOKIE['remember_user'])) {
+            $parts = explode(':', $_COOKIE['remember_user'], 2);
+            if (count($parts) === 2) {
+                $user_id = intval($parts[0]);
+                $token = $parts[1];
+                $hashed_token = hash('sha256', $token);
+                
+                if (!isset($pdo)) {
+                    require_once __DIR__ . '/../config/db.php';
+                }
+                
+                try {
+                    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+                    $stmt->execute([$user_id]);
+                    $user = $stmt->fetch();
+                    
+                    if ($user && $user['remember_token'] === $hashed_token && $user['status'] !== 'blocked' && $user['status'] !== 'rejected') {
+                        // Log user in
+                        if ($user['role'] === 'admin') {
+                            $stmtAdmin = $pdo->prepare("SELECT * FROM admins WHERE user_id = ?");
+                            $stmtAdmin->execute([$user_id]);
+                            $admin = $stmtAdmin->fetch();
+                            if ($admin) {
+                                $_SESSION['admin_id'] = $admin['id'];
+                                $_SESSION['admin_name'] = $admin['name'];
+                                $_SESSION['admin_role'] = $admin['role'];
+                            }
+                        } else {
+                            $_SESSION['user_id'] = $user['id'];
+                            $_SESSION['user_name'] = $user['name'];
+                            $_SESSION['user_role'] = $user['role'];
+                            $_SESSION['user_status'] = $user['status'];
+                        }
+                        
+                        // Rotate token
+                        set_remember_me_cookie($user_id);
+                    } else {
+                        clear_remember_me_cookie();
+                    }
+                } catch (Exception $e) {
+                    // silent fail
+                }
+            }
+        }
     }
 }
 ?>

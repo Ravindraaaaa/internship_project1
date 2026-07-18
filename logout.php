@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth_helper.php';
 
+clear_remember_me_cookie();
 $_SESSION = [];
 
 if (ini_get("session.use_cookies")) {

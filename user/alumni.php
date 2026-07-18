@@ -254,6 +254,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <a href="<?php echo htmlspecialchars($alumni['website']); ?>" target="_blank" class="social-btn" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
                             <?php endif; ?>
                             <a href="mailto:<?php echo htmlspecialchars($alumni['email']); ?>" class="social-btn" title="Email"><i class="fa-solid fa-envelope"></i></a>
+                            <a href="chat.php?peer_id=<?php echo $alumni['user_id']; ?>" class="social-btn" title="Send Message" style="margin-left:auto; color:var(--theme-accent-blue);"><i class="fa-solid fa-comment-dots"></i></a>
                         </div>
                     </div>
                 <?php endforeach; ?>

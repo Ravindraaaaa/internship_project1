@@ -107,58 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="dashboard-wrapper">
     
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="index.php" class="logo logo-text">
-                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-            </a>
-            <button class="sidebar-toggle-btn" id="sidebar-toggle">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-        </div>
-
-        <?php if (is_logged_in()): ?>
-            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;" class="sidebar-profile-box">
-                <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent-purple);" class="user-sidebar-avatar">
-                <div style="margin-top: 0.75rem;" class="link-text">
-                    <h4 style="font-size: 0.9rem;"><?php echo htmlspecialchars(get_user_name()); ?></h4>
-                    <p style="font-size: 0.72rem; color: var(--theme-text-secondary); text-transform: uppercase;">
-                        <?php echo is_admin() ? 'Admin Portal' : htmlspecialchars(get_user_role()) . ' member'; ?>
-                    </p>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <ul class="sidebar-menu">
-            <?php if (is_logged_in()): ?>
-                <li class="sidebar-item">
-                    <a href="dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>
-                </li>
-                <?php if (!is_admin()): ?>
-                    <li class="sidebar-item">
-                        <a href="profile.php"><i class="fa-solid fa-circle-user"></i> <span class="link-text">My Profile</span></a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="mentorship.php"><i class="fa-solid fa-handshake-angle"></i> <span class="link-text">Mentorship</span></a>
-                    </li>
-                <?php endif; ?>
-            <?php endif; ?>
-            <li class="sidebar-item">
-                <a href="alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
-            </li>
-            <?php if (is_logged_in()): ?>
-                <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
-                    <a href="logout.php" style="color: var(--accent-danger);"><i class="fa-solid fa-right-from-bracket"></i> <span class="link-text">Sign Out</span></a>
-                </li>
-            <?php endif; ?>
-        </ul>
-    </aside>
+    <?php render_sidebar('jobs'); ?>
 
     <div class="dashboard-content-area">
         <nav class="top-nav">
@@ -214,7 +163,12 @@ require_once __DIR__ . '/../includes/header.php';
             <section>
                 <?php if (!empty($active_jobs)): ?>
                     <div class="cards-catalog">
-                        <?php foreach ($active_jobs as $job): ?>
+                        <?php foreach ($active_jobs as $job): 
+                            $eligibility = ['eligible' => true, 'reason' => ''];
+                            if (is_logged_in() && !is_admin()) {
+                                $eligibility = check_user_eligibility(get_user_id(), $job['id'], 'job');
+                            }
+                        ?>
                             <div class="card-glass" style="display: flex; flex-direction: column;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                                     <div>
@@ -230,34 +184,28 @@ require_once __DIR__ . '/../includes/header.php';
                                         <span style="font-size: 0.8rem; color: var(--theme-text-secondary); background: rgba(255,255,255,0.03); border: 1px solid var(--theme-border); padding: 0.2rem 0.6rem; border-radius: 4px;"><i class="fa-solid fa-wallet"></i> <?php echo htmlspecialchars($job['salary_range']); ?></span>
                                     <?php endif; ?>
                                 </div>
-
+ 
                                 <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem;">
                                     <?php echo htmlspecialchars($job['description']); ?>
                                 </p>
-
+ 
                                 <div style="margin-bottom: 1.5rem; font-size: 0.82rem; color: var(--theme-text-secondary);">
                                     <strong>Requirements:</strong>
                                     <p style="margin-top: 0.25rem; font-style: italic; white-space: pre-line;"><?php echo htmlspecialchars($job['requirements']); ?></p>
-                                    <?php if (isset($eligibility) && !$eligibility['eligible']): ?>
+                                    <?php if (!$eligibility['eligible']): ?>
                                         <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); margin-top:0.6rem;">
                                             <i class="fa-solid fa-triangle-exclamation"></i> <strong>Eligibility Check Failed:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
-
+ 
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--theme-border); padding-top: 1rem; margin-top: auto;">
                                     <span style="font-size: 0.78rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-calendar-day"></i> Shared: <?php echo date('M d, Y', strtotime($job['created_at'])); ?></span>
-                                    <?php 
-                                    $eligibility = ['eligible' => true, 'reason' => ''];
-                                    if (is_logged_in() && !is_admin()) {
-                                        $eligibility = check_user_eligibility(get_user_id(), $job['id'], 'job');
-                                    }
-                                    ?>
                                     <?php if (!$eligibility['eligible']): ?>
                                         <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.5rem; border-radius:4px; border:1px solid rgba(239,68,68,0.15);" title="<?php echo htmlspecialchars($eligibility['reason']); ?>">
                                             <i class="fa-solid fa-circle-exclamation"></i> Ineligible
                                         </div>
-                                    <?php elseif ($eligibility['eligible']): ?>
+                                    <?php else: ?>
                                         <a href="<?php echo htmlspecialchars($job['application_link']); ?>" target="_blank" class="btn btn-primary btn-small"><i class="fa-solid fa-paper-plane"></i> Apply Now</a>
                                     <?php endif; ?>
                                 </div>

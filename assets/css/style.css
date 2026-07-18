@@ -460,32 +460,49 @@ body.theme-glass-white .input-glass:focus {
 }
 
 .toast {
-    background: var(--theme-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--theme-border);
-    box-shadow: var(--shadow-soft);
-    padding: 1.2rem 1.75rem;
-    border-radius: var(--border-radius-md);
+    background: rgba(18, 18, 24, 0.78);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.1rem 1.5rem;
+    border-radius: 12px;
     min-width: 320px;
     max-width: 420px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1.25rem;
-    animation: slideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    color: #ffffff;
 }
 
-.toast-success { border-left: 4px solid var(--accent-success); }
-.toast-error { border-left: 4px solid var(--accent-danger); }
-.toast-warning { border-left: 4px solid var(--accent-warning); }
-.toast-info { border-left: 4px solid var(--theme-accent-blue); }
+.toast-success { 
+    border-left: 4px solid var(--accent-success); 
+    box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.25), inset 0 0 12px rgba(16, 185, 129, 0.05);
+}
+.toast-error { 
+    border-left: 4px solid var(--accent-danger); 
+    box-shadow: 0 10px 40px -10px rgba(239, 68, 68, 0.25), inset 0 0 12px rgba(239, 68, 68, 0.05);
+}
+.toast-warning { 
+    border-left: 4px solid var(--accent-warning); 
+    box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.25), inset 0 0 12px rgba(245, 158, 11, 0.05);
+}
+.toast-info { 
+    border-left: 4px solid var(--theme-accent-blue); 
+    box-shadow: 0 10px 40px -10px rgba(37, 99, 235, 0.25), inset 0 0 12px rgba(37, 99, 235, 0.05);
+}
 
 .toast-close {
     background: none;
     border: none;
-    color: var(--theme-text-secondary);
-    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.4rem;
+    line-height: 1;
     cursor: pointer;
+}
+
+.toast-close:hover {
+    color: #ffffff;
 }
 
 /* Back to Top */
@@ -1484,6 +1501,53 @@ input:checked + .switch-slider:before {
     background: rgba(255, 255, 255, 0.02);
     border-color: var(--theme-border);
     transform: translateX(4px);
+}
+
+/* ==================== 16. MODAL DIALOGS OVERLAYS ==================== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(9, 14, 26, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 12000; /* Placed above sidebar (1000) and top-nav (900) to resolve overlap glitches */
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.modal-content {
+    background: var(--theme-card);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--theme-border);
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    position: relative;
+    color: var(--theme-text);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--theme-text-secondary);
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--theme-text);
 }
 
 

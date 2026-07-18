@@ -74,11 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $curr_yr = intval($_POST['current_year'] ?? 1);
             $course = trim($_POST['course'] ?? '');
             $github = trim($_POST['github'] ?? '');
+            $cgpa = floatval($_POST['cgpa'] ?? 0.00);
 
             $stmtUp = $pdo->prepare("UPDATE student_profiles 
-                                     SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ? 
+                                     SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? 
                                      WHERE user_id = ?");
-            $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $uid]);
+            $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $uid]);
         }
 
         // Update name in users table
@@ -171,48 +172,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="dashboard-wrapper">
     
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="index.php" class="logo logo-text">
-                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-            </a>
-            <button class="sidebar-toggle-btn" id="sidebar-toggle">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;" class="sidebar-profile-box">
-            <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent-purple);" class="user-sidebar-avatar">
-            <div style="margin-top: 0.75rem;" class="link-text">
-                <h4 style="font-size: 0.9rem;"><?php echo htmlspecialchars(get_user_name()); ?></h4>
-                <p style="font-size: 0.72rem; color: var(--theme-text-secondary); text-transform: uppercase;"><?php echo htmlspecialchars($role); ?> member</p>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="profile.php"><i class="fa-solid fa-circle-user"></i> <span class="link-text">My Profile</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="mentorship.php"><i class="fa-solid fa-handshake-angle"></i> <span class="link-text">Mentorship</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
-            </li>
-            <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
-                <a href="logout.php" style="color: var(--accent-danger);"><i class="fa-solid fa-right-from-bracket"></i> <span class="link-text">Sign Out</span></a>
-            </li>
-        </ul>
-    </aside>
+    <?php render_sidebar('profile'); ?>
 
     <div class="dashboard-content-area">
         <nav class="top-nav">
@@ -343,6 +303,10 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div class="form-group">
                                     <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Academic Year (1-4)</label>
                                     <input type="number" name="current_year" class="input-glass" min="1" max="4" value="<?php echo htmlspecialchars($profile['current_year'] ?? 1); ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Cumulative CGPA (0.00 - 10.00)</label>
+                                    <input type="number" name="cgpa" step="0.01" min="0" max="10" class="input-glass" placeholder="8.50" value="<?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?>" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">GitHub URL</label>

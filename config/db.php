@@ -31,4 +31,15 @@ if (!function_exists('check_csrf')) {
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
 }
+
+// Update last active timestamp for online tracking
+$current_session_user_id = $_SESSION['user_id'] ?? $_SESSION['admin_id'] ?? null;
+if ($current_session_user_id) {
+    try {
+        $stmtActive = $pdo->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+        $stmtActive->execute([$current_session_user_id]);
+    } catch (Exception $e) {
+        // fail-silent
+    }
+}
 ?>

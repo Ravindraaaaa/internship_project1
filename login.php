@@ -54,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_name'] = $admin['name'];
                 $_SESSION['admin_role'] = $admin['role'];
                 
+                if (!empty($_POST['remember'])) {
+                    set_remember_me_cookie($adminUser['id']);
+                }
+                
                 set_flash('success', 'Logged in successfully as Super Admin!');
                 header('Location: dashboard.php');
                 exit;
@@ -93,6 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_role'] = $user['role'];
                     $_SESSION['user_status'] = $user['status'];
+
+                    if (!empty($_POST['remember'])) {
+                        set_remember_me_cookie($user['id']);
+                    }
 
                     if ($user['status'] === 'pending') {
                         set_flash('info', 'Logged in! Note: Your profile is pending admin approval.');
@@ -196,7 +204,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <label class="checkbox-container">
-                    <input type="checkbox" id="remember">
+                    <input type="checkbox" id="remember" name="remember" value="1">
                     <span>Remember me</span>
                 </label>
                 <a href="forgot_password.php" style="font-size: 0.85rem; color: var(--theme-accent-blue); font-weight: 500;">Forgot Password?</a>

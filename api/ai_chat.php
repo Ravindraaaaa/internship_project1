@@ -120,6 +120,7 @@ try {
             $response .= "3. **Download CV**: Use the automatic [Resume Builder](../api/resume_builder.php) to generate a clean, print-ready document.";
         }
         
+        
         // 5. HELPFUL PLATFORM NAVIGATION
         elseif (strpos($lower_message, 'navigation') !== false || strpos($lower_message, 'help') !== false || strpos($lower_message, 'dashboard') !== false) {
             $response = "Need help navigating AlumniNet? Here is a quick reference map:\n\n";
@@ -131,9 +132,33 @@ try {
             $response .= "* ⚙️ **Visual Customizations:** Press the floating magic wand button to choose themes or canvas backgrounds.";
         }
         
-        // 6. DEFAULT GENERAL CHATBOT FALLBACK
+        // 6. GREETINGS
+        elseif (preg_match('/\b(hi|hello|hey|hola|greetings)\b/', $lower_message)) {
+            $response = "Hello! Hope you are doing well today. How can I assist you with the AlumniNet platform? You can ask me about placements, events, directory connections, or profile scores!";
+        }
+        
+        // 7. ABOUT / CREATOR
+        elseif (strpos($lower_message, 'who created') !== false || strpos($lower_message, 'about') !== false || strpos($lower_message, 'antigravity') !== false) {
+            $response = "I am the AlumniNet Intelligent Assistant, built as part of the advanced ARMS mini-project update. I help students navigate jobs, check event details, and scoring requirements!";
+        }
+        
+        // 8. CHAT / MESSENGER
+        elseif (strpos($lower_message, 'chat') !== false || strpos($lower_message, 'message') !== false || strpos($lower_message, 'messenger') !== false) {
+            $response = "You can chat with alumni by visiting the [Alumni Directory](../user/alumni.php) and clicking the 'Chat' button on their profile card. Or open the [Messenger](../user/chat.php) directly from your sidebar!";
+        }
+        
+        // 9. CERTIFICATES / UPLOADS
+        elseif (strpos($lower_message, 'certificate') !== false || strpos($lower_message, 'upload') !== false || strpos($lower_message, 'achievement') !== false) {
+            $response = "You can manage certificates, build resumes, and showcase honors in your [My Portfolio](../user/portfolio.php) dashboard. Try uploading PDF documents or image credentials!";
+        }
+        
+        // 10. FEEDBACK
+        elseif (strpos($lower_message, 'feedback') !== false || strpos($lower_message, 'review') !== false || strpos($lower_message, 'bug') !== false) {
+            $response = "We value your input! Go to the [Feedback](../user/feedback.php) page in the sidebar to rate our system, report bugs, or share feature requests directly with the administrator.";
+        }
+        
+        // 11. DEFAULT VARIANT FALLBACKS (Resolves repeating answers bug)
         else {
-            // Check if there is an AI prompt override in database
             $stmtPrompt = $pdo->prepare("SELECT value FROM settings WHERE `key` = 'ai_prompt'");
             $stmtPrompt->execute();
             $custom_prompt = $stmtPrompt->fetchColumn();
@@ -143,11 +168,16 @@ try {
                 $greeting = htmlspecialchars($custom_prompt);
             }
             
-            $response = $greeting . "\n\nTry asking me questions like:\n";
-            $response .= "* *\"Are there any jobs available?\"*\n";
-            $response .= "* *\"Tell me about upcoming events.\"*\n";
-            $response .= "* *\"How can I connect with alumni?\"*\n";
-            $response .= "* *\"What is my profile completion score?\"*";
+            $fallbacks = [
+                $greeting . "\n\nTry asking me questions like:\n* *\"Are there any jobs available?\"*\n* *\"Tell me about upcoming events.\"*",
+                "I'm here to help! While I didn't catch the exact keyword, you can query active vacancies, upcoming assemblies, or search the directory. What else can I guide you with?",
+                "Could you please rephrase that? Try asking about 'jobs', 'profile completion', or 'upcoming events'.",
+                "I am indexing AlumniNet records to assist you. If you need help with a specific module, please specify (e.g., 'resume builder', 'chat', or 'alumni search').",
+                "AlumniNet is designed to connect students and graduates. Try asking 'how to chat with alumni' or 'are there any jobs' to get started."
+            ];
+            
+            // Varied answer selection based on message length and content
+            $response = $fallbacks[strlen($message) % count($fallbacks)];
         }
         
         // Record into history

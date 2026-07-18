@@ -32,6 +32,9 @@ try {
         $pdo->prepare("DELETE FROM events WHERE id = ?")->execute([$target_id]);
         $pdo->commit();
         set_flash('success', 'Event deleted successfully!');
+    } elseif ($action === 'delete_feedback') {
+        $pdo->prepare("DELETE FROM feedback WHERE id = ?")->execute([$target_id]);
+        set_flash('success', 'Feedback entry deleted successfully!');
     } else {
         $stmtCheck = $pdo->prepare("SELECT name, role FROM users WHERE id = ?");
         $stmtCheck->execute([$target_id]);

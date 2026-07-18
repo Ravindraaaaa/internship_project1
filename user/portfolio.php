@@ -120,6 +120,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    // 8. Add Achievement
+    elseif ($action === 'add_achievement') {
+        $title = trim($_POST['title'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $date_achieved = trim($_POST['date_achieved'] ?? '');
+        
+        if (empty($title) || empty($description) || empty($date_achieved)) {
+            set_flash('error', 'Please fill in all achievement fields.');
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO achievements (user_id, title, description, date_achieved) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$user_id, $title, $description, $date_achieved]);
+            log_activity($user_id, 'portfolio_add_achievement', "Added achievement: $title");
+            set_flash('success', 'Achievement added successfully!');
+        }
+    }
+    
+    // 9. Delete Achievement
+    elseif ($action === 'delete_achievement') {
+        $ach_id = intval($_POST['achievement_id'] ?? 0);
+        if ($ach_id > 0) {
+            $stmt = $pdo->prepare("DELETE FROM achievements WHERE id = ? AND user_id = ?");
+            $stmt->execute([$ach_id, $user_id]);
+            log_activity($user_id, 'portfolio_delete_achievement', "Deleted achievement ID: $ach_id");
+            set_flash('success', 'Achievement removed.');
+        }
+    }
+    
     header('Location: portfolio.php');
     exit;
 }
@@ -190,6 +217,11 @@ $stmt = $pdo->prepare("SELECT action, details, ip_address, created_at FROM activ
 $stmt->execute([$user_id]);
 $security_logs = $stmt->fetchAll();
 
+// 7. Fetch Achievements
+$stmt = $pdo->prepare("SELECT * FROM achievements WHERE user_id = ? ORDER BY date_achieved DESC");
+$stmt->execute([$user_id]);
+$achievements = $stmt->fetchAll();
+
 $avatar_pic = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
     $avatar_pic = '../' . $prof['profile_pic'];
@@ -200,51 +232,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="dashboard-wrapper">
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="../index.php" class="logo logo-text">
-                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-            </a>
-            <button class="sidebar-toggle-btn" id="sidebar-toggle">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;" class="sidebar-profile-box">
-            <img src="<?php echo htmlspecialchars($avatar_pic); ?>" alt="Avatar" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent-purple);" class="user-sidebar-avatar">
-            <div style="margin-top: 0.75rem;" class="link-text">
-                <h4 style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><?php echo htmlspecialchars($user_name); ?></h4>
-                <p style="font-size: 0.72rem; color: var(--theme-text-secondary); text-transform: uppercase;"><?php echo htmlspecialchars($role); ?> member</p>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="dashboard.php"><i data-lucide="gauge"></i> <span class="link-text">Dashboard</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="profile.php"><i data-lucide="user"></i> <span class="link-text">My Profile</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="mentorship.php"><i data-lucide="handshake"></i> <span class="link-text">Mentorship</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="alumni.php"><i data-lucide="users"></i> <span class="link-text">Alumni Directory</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="jobs.php"><i data-lucide="briefcase"></i> <span class="link-text">Job Board</span></a>
-            </li>
-            <li class="sidebar-item">
-                <a href="events.php"><i data-lucide="calendar"></i> <span class="link-text">Events Board</span></a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="portfolio.php"><i data-lucide="folder-kanban"></i> <span class="link-text">My Portfolio</span></a>
-            </li>
-            <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
-                <a href="../logout.php" style="color: var(--accent-danger);"><i data-lucide="log-out"></i> <span class="link-text">Sign Out</span></a>
-            </li>
-        </ul>
-    </aside>
+    <?php render_sidebar('portfolio'); ?>
 
     <!-- ==================== MAIN WORKSPACE ==================== -->
     <div class="dashboard-content-area">
@@ -429,6 +417,56 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     <?php else: ?>
                         <p style="font-size:0.88rem; color: var(--theme-text-secondary); font-style: italic;">No credential records uploaded yet.</p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- 5. Achievements Showcase -->
+                <div class="card-glass" style="padding: 2rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border); margin-top: 2rem;">
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-trophy" style="color:#fbbf24;"></i> Honors & Achievements</h3>
+                    
+                    <!-- Add Achievement Form -->
+                    <form action="portfolio.php" method="POST" style="margin-bottom: 2rem; padding: 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--theme-border); border-radius: var(--border-radius-sm);">
+                        <input type="hidden" name="action" value="add_achievement">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label style="display:block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--theme-text-secondary);">Honor / Award Title</label>
+                                <input type="text" name="title" class="input-glass" style="width:100%;" placeholder="e.g. Best Graduation Capstone Project" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--theme-text-secondary);">Date Achieved</label>
+                                <input type="date" name="date_achieved" class="input-glass" style="width:100%;" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label style="display:block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--theme-text-secondary);">Description / Details</label>
+                            <textarea name="description" class="input-glass" rows="2" style="width:100%;" placeholder="Provide some background details..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Save Achievement</button>
+                    </form>
+
+                    <!-- Listed Achievements -->
+                    <?php if ($achievements): ?>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <?php foreach ($achievements as $ach): ?>
+                                <div class="card-glass" style="background:rgba(255,255,255,0.02); border-color:var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm); display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex-grow:1; padding-right:1rem;">
+                                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                                            <i class="fa-solid fa-award" style="color:#fbbf24;"></i>
+                                            <h4 style="font-size:0.95rem; font-weight:700; color:#ffffff; margin:0;"><?php echo htmlspecialchars($ach['title']); ?></h4>
+                                        </div>
+                                        <p style="font-size:0.82rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;"><?php echo htmlspecialchars($ach['description']); ?></p>
+                                        <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-calendar-days"></i> <?php echo date('M d, Y', strtotime($ach['date_achieved'])); ?></p>
+                                    </div>
+                                    <form action="portfolio.php" method="POST">
+                                        <input type="hidden" name="action" value="delete_achievement">
+                                        <input type="hidden" name="achievement_id" value="<?php echo $ach['id']; ?>">
+                                        <button type="submit" class="btn btn-danger btn-small" style="padding:0.4rem;" onclick="return confirm('Delete this achievement entry?')" title="Delete Achievement"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p style="font-size:0.88rem; color: var(--theme-text-secondary); font-style: italic;">No awards or honors cataloged yet.</p>
                     <?php endif; ?>
                 </div>
 
