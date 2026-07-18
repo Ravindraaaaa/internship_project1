@@ -241,13 +241,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function applyAccentColor(hexColor) {
+        document.body.style.setProperty('--theme-accent-blue', hexColor);
+        document.body.style.setProperty('--theme-accent-purple', hexColor);
         document.documentElement.style.setProperty('--theme-accent-blue', hexColor);
         document.documentElement.style.setProperty('--theme-accent-purple', hexColor);
         
         const gradient = `linear-gradient(135deg, ${hexColor} 0%, #8b5cf6 100%)`;
+        document.body.style.setProperty('--theme-accent-gradient', gradient);
         document.documentElement.style.setProperty('--theme-accent-gradient', gradient);
         
         const glow = hexColor.startsWith('#') ? hexColor + '40' : hexColor;
+        document.body.style.setProperty('--theme-accent-glow', glow);
         document.documentElement.style.setProperty('--theme-accent-glow', glow);
         
         accentCircles.forEach(circle => {
@@ -348,6 +352,8 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('bg-custom-image');
         }
 
+        document.body.style.setProperty('--bg-blur', `${blurVal}px`);
+        document.body.style.setProperty('--bg-opacity', opacityVal / 100);
         document.documentElement.style.setProperty('--bg-blur', `${blurVal}px`);
         document.documentElement.style.setProperty('--bg-opacity', opacityVal / 100);
 
