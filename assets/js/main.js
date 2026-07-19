@@ -6,14 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.getElementById('sidebar-toggle');
     
     if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            const icon = sidebarToggle.querySelector('i');
-            if (icon) {
-                if (sidebar.classList.contains('collapsed')) {
-                    icon.className = 'fa-solid fa-chevron-right';
-                } else {
-                    icon.className = 'fa-solid fa-chevron-left';
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('show');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                const icon = sidebarToggle.querySelector('i');
+                if (icon) {
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.className = 'fa-solid fa-chevron-right';
+                    } else {
+                        icon.className = 'fa-solid fa-chevron-left';
+                    }
                 }
             }
             setTimeout(() => {
@@ -24,8 +29,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const mobileSidebarBtn = document.getElementById('mobile-sidebar-toggle');
     if (mobileSidebarBtn && sidebar) {
-        mobileSidebarBtn.addEventListener('click', function() {
+        mobileSidebarBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
             sidebar.classList.toggle('show');
+        });
+    }
+
+    if (sidebar) {
+        sidebar.addEventListener('click', function(e) {
+            // Prevent closing when clicking inside the sidebar
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', function(e) {
+            // Close mobile sidebar when clicking anywhere outside of it
+            if (window.innerWidth <= 768 && sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
         });
     }
 
