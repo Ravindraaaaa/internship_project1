@@ -36,6 +36,116 @@ try {
             exit;
         }
         
+        $role = $_SESSION['user_role'] ?? 'student';
+        
+        // Fetch User details for context
+        $stmtUser = $pdo->prepare("SELECT u.name, u.email, d.name as department_name FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.id = ?");
+        $stmtUser->execute([$user_id]);
+        $userData = $stmtUser->fetch();
+        
+        $user_name = $userData['name'] ?? 'User';
+        $user_email = $userData['email'] ?? '';
+        $user_dept = $userData['department_name'] ?? ($role === 'alumni' ? 'Alumni' : 'Student');
+        
+        // Fetch Profile Details
+        $user_bio = '';
+        $user_linkedin = '';
+        $user_github = '';
+        $user_website = '';
+        
+        if ($role === 'alumni') {
+            $stmtProf = $pdo->prepare("SELECT bio, linkedin, website FROM alumni_profiles WHERE user_id = ?");
+            $stmtProf->execute([$user_id]);
+            $profData = $stmtProf->fetch();
+            $user_bio = $profData['bio'] ?? '';
+            $user_linkedin = $profData['linkedin'] ?? '';
+            $user_website = $profData['website'] ?? '';
+        } else {
+            $stmtProf = $pdo->prepare("SELECT bio, linkedin, github FROM student_profiles WHERE user_id = ?");
+            $stmtProf->execute([$user_id]);
+            $profData = $stmtProf->fetch();
+            $user_bio = $profData['bio'] ?? '';
+            $user_linkedin = $profData['linkedin'] ?? '';
+            $user_github = $profData['github'] ?? '';
+        }
+        
+        // Fetch Education
+        $stmtEdu = $pdo->prepare("SELECT school, degree, field_of_study, start_year, end_year FROM education WHERE user_id = ? ORDER BY start_year DESC");
+        $stmtEdu->execute([$user_id]);
+        $eduData = $stmtEdu->fetchAll();
+        
+        // Fetch Experience
+        $stmtExp = $pdo->prepare("SELECT position, company, location, start_date, end_date, description FROM experience WHERE user_id = ? ORDER BY start_date DESC");
+        $stmtExp->execute([$user_id]);
+        $expData = $stmtExp->fetchAll();
+        
+        // Fetch Skills
+        $stmtSkills = $pdo->prepare("SELECT s.name, us.progress FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = ?");
+        $stmtSkills->execute([$user_id]);
+        $skillsData = $stmtSkills->fetchAll();
+
+        // 1. Build profile details text block for context
+        $profile_context = "CANDIDATE PROFILE DETAILS:\n" .
+                           "- Name: " . $user_name . "\n" .
+                           "- Email: " . $user_email . "\n" .
+                           "- Department/Major: " . $user_dept . "\n";
+        if ($user_bio) $profile_context .= "- Summary/Bio: " . $user_bio . "\n";
+        if ($user_linkedin) $profile_context .= "- LinkedIn: " . $user_linkedin . "\n";
+        if ($user_github) $profile_context .= "- GitHub: " . $user_github . "\n";
+        if ($user_website) $profile_context .= "- Website: " . $user_website . "\n";
+        
+        if ($eduData) {
+            $profile_context .= "- Education:\n";
+            foreach ($eduData as $edu) {
+                $profile_context .= "  * " . $edu['degree'] . " in " . $edu['field_of_study'] . " at " . $edu['school'] . " (" . $edu['start_year'] . " - " . ($edu['end_year'] ?: 'Present') . ")\n";
+            }
+        }
+        if ($expData) {
+            $profile_context .= "- Experience:\n";
+            foreach ($expData as $exp) {
+                $profile_context .= "  * " . $exp['position'] . " at " . $exp['company'] . " (" . $exp['start_date'] . " - " . ($exp['end_date'] ?: 'Present') . ")\n";
+                if ($exp['description']) $profile_context .= "    Description: " . $exp['description'] . "\n";
+            }
+        }
+        if ($skillsData) {
+            $profile_context .= "- Skills:\n";
+            foreach ($skillsData as $sk) {
+                $profile_context .= "  * " . $sk['name'] . " (" . $sk['progress'] . "% progress)\n";
+            }
+        }
+
+        // 2. Build custom prompt copy-pasteable text
+        $resume_prompt_text = "Act as an expert resume builder and executive resume writer. Write a professional, recruiter-ready resume in clean Markdown format using the following candidate profile details:\n\n" .
+                              "**Candidate Information:**\n" .
+                              "- **Name:** " . $user_name . "\n" .
+                              "- **Email:** " . $user_email . "\n" .
+                              "- **Department/Major:** " . $user_dept . "\n";
+        if ($user_bio) $resume_prompt_text .= "- **Professional Summary:** " . $user_bio . "\n";
+        if ($user_linkedin) $resume_prompt_text .= "- **LinkedIn:** " . $user_linkedin . "\n";
+        if ($user_github) $resume_prompt_text .= "- **GitHub:** " . $user_github . "\n";
+        if ($user_website) $resume_prompt_text .= "- **Website:** " . $user_website . "\n";
+        
+        if ($eduData) {
+            $resume_prompt_text .= "\n**Education History:**\n";
+            foreach ($eduData as $edu) {
+                $resume_prompt_text .= "* **" . $edu['degree'] . "** in " . $edu['field_of_study'] . " at *" . $edu['school'] . "* (" . $edu['start_year'] . " - " . ($edu['end_year'] ?: 'Present') . ")\n";
+            }
+        }
+        if ($expData) {
+            $resume_prompt_text .= "\n**Professional Experience:**\n";
+            foreach ($expData as $exp) {
+                $resume_prompt_text .= "* **" . $exp['position'] . "** at *" . $exp['company'] . "* (" . $exp['start_date'] . " - " . ($exp['end_date'] ?: 'Present') . ")\n";
+                if ($exp['description']) $resume_prompt_text .= "  *Description:* " . $exp['description'] . "\n";
+            }
+        }
+        if ($skillsData) {
+            $resume_prompt_text .= "\n**Skills & Expertise:**\n";
+            foreach ($skillsData as $sk) {
+                $resume_prompt_text .= "* " . $sk['name'] . " (Expertise: " . $sk['progress'] . "%)\n";
+            }
+        }
+        $resume_prompt_text .= "\nFormatting Guidelines:\n1. Organize with clean headings.\n2. Use bullet points and action-oriented verbs.\n3. Make it highlight business impact and technical depth.";
+
         $response = "";
         $gemini_success = false;
 
@@ -55,7 +165,10 @@ try {
             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . urlencode($apiKey);
             
             // Build specialized system-prompt context
-            $promptText = "System Context: You are the AlumniNet Advanced AI Chatbot. You are a highly intelligent career companion and technical advisor. You can assist students and alumni with placement details, career guidance, resume tips, interview prep, programming questions, code debugging, cover letters, and general academic or professional knowledge. Always provide beautifully structured, detailed markdown responses.\n\nUser Question: " . $message;
+            $current_time = date('F j, Y, g:i A');
+            $promptText = "System Context: Your name is AlumniNet Assistant. You are a supportive human helper representing AlumniNet. Never state that you are an AI assistant, an AI, or a large language model. Reply dynamically in a warm, encouraging, human tone. The current date/time is: " . $current_time . ". You can help users build a proper resume with a prompt. If the user asks for a prompt to create their resume, or to generate a prompt based on their information/profile details, generate a copy-pasteable prompt template containing their details. Always respond in markdown.\n\n" .
+                          $profile_context . "\n\n" .
+                          "User Question: " . $message;
             
             $postData = [
                 'contents' => [
@@ -96,8 +209,18 @@ try {
         if (!$gemini_success) {
             $lower_message = strtolower($message);
             
+            // 0.0 RESUME PROMPT GENERATION
+            if (preg_match('/\b(prompt)\b/i', $lower_message) && preg_match('/\b(resume|cv)\b/i', $lower_message)) {
+                $response = "### 📝 Custom Resume Writing Prompt\n\n" .
+                            "Here is a custom prompt containing your verified profile information. You can copy and paste this into ChatGPT or Gemini to write a professional, recruiter-ready resume:\n\n" .
+                            "```text\n" .
+                            $resume_prompt_text . "\n" .
+                            "```\n\n" .
+                            "💡 *Tip:* You can also launch the **[AlumniNet Resume Builder](../api/resume_builder.php)** to instantly generate a print-ready PDF resume directly on our platform.";
+            }
+
             // 0.1 PROGRAMMING & CODING TOPICS
-            if (preg_match('/\b(python|java|javascript|js|php|c\+\+|cpp|c#|html|css|sql|ruby|swift|rust|go|code|coding|program|programming|loop|function|array|database|quicksort|binary search)\b/i', $lower_message)) {
+            elseif (preg_match('/\b(python|java|javascript|js|php|c\+\+|cpp|c#|html|css|sql|ruby|swift|rust|go|code|coding|program|programming|loop|function|array|database|quicksort|binary search)\b/i', $lower_message)) {
                 $response = "### 💻 Technical & Programming Guide\n\nI detected a coding/technical query! While I am currently running on a rule-based engine, here is a structured path and code advice for students:\n\n" .
                             "#### 🚀 Essential Developer Roadmap:\n" .
                             "1. **Fundamentals first:** Master concepts like variables, loops, arrays, and standard control structures.\n" .
@@ -246,12 +369,12 @@ try {
             
             // 6. GREETINGS
             elseif (preg_match('/\b(hi|hello|hey|hola|greetings)\b/', $lower_message)) {
-                $response = "Hello! Hope you are doing well today. How can I assist you with the AlumniNet platform? You can ask me about placements, events, directory connections, resume building, coding roadmaps, or profile scores!";
+                $response = "Hello! Hope you are doing well today. It is currently " . date('g:i A') . ". I am the AlumniNet Assistant. How can I help you today? You can ask me about placements, events, directory connections, or even ask me to generate a custom resume prompt based on your profile details!";
             }
             
             // 7. ABOUT / CREATOR
             elseif (strpos($lower_message, 'who created') !== false || strpos($lower_message, 'about') !== false || strpos($lower_message, 'antigravity') !== false) {
-                $response = "I am the AlumniNet Intelligent Assistant, built as part of the advanced ARMS mini-project update. I help students navigate jobs, check event details, and scoring requirements!";
+                $response = "I am the AlumniNet Assistant, built as part of the advanced ARMS mini-project update. I help students navigate jobs, check event details, and scoring requirements!";
             }
             
             // 8. CHAT / MESSENGER
@@ -287,6 +410,7 @@ try {
                             "Currently, the AI Assistant is running on the **local rule-based engine**. To enable **Advanced General AI Answers** (capable of solving coding bugs, writing customized content, and answering any query):\n\n" .
                             "1. **Get an API Key:** Register a free API Key on [Google AI Studio](https://aistudio.google.com/).\n" .
                             "2. **Configure Settings:** Log in as an Administrator, go to **Admin Dashboard -> Enterprise Control**, and save your Gemini API Key in the settings.\n\n" .
+                            "💡 *Resume Prompt Tip:* Did you know you can build a proper resume with a prompt? Ask me to *\"give me a prompt to build my resume\"* and I will compile your details into a custom prompt for ChatGPT/Gemini!\n\n" .
                             "**In local mode, here are things you can ask me about:**\n" .
                             "* 💼 *\"Are there any jobs available?\"* - Show active internship postings.\n" .
                             "* 📅 *\"Tell me about upcoming events.\"* - View the next campus reunions/meetups.\n" .
