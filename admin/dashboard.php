@@ -101,6 +101,13 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
 
             <div class="top-nav-actions">
+                <button class="btn btn-primary btn-small" onclick="openModal('postJobModal')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 6px; font-weight: 600;">
+                    <i class="fa-solid fa-briefcase"></i> Share Job
+                </button>
+                <button class="btn btn-primary btn-small" onclick="openModal('createEventModal')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 6px; font-weight: 600;">
+                    <i class="fa-solid fa-calendar-plus"></i> Schedule Event
+                </button>
+
                 <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
                     <i data-lucide="palette" style="width: 20px; height: 20px;"></i>
                 </button>
@@ -151,28 +158,28 @@ require_once __DIR__ . '/../includes/header.php';
                 
                 <!-- Metrics row -->
                 <div class="stats-cards-grid">
-                    <div class="stat-card-view card-glass">
+                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=students'">
                         <div>
                             <span class="stat-card-lbl">Total Users</span>
                             <div class="stat-card-val"><?php echo $admin_stats['users']; ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: var(--theme-accent-purple);"><i class="fa-solid fa-users"></i></div>
                     </div>
-                    <div class="stat-card-view card-glass">
+                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=alumni'">
                         <div>
                             <span class="stat-card-lbl">Pending Approvals</span>
                             <div class="stat-card-val" style="<?php echo $admin_stats['pending'] > 0 ? 'color: var(--accent-warning);' : ''; ?>"><?php echo $admin_stats['pending']; ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: var(--accent-warning);"><i class="fa-solid fa-user-clock"></i></div>
                     </div>
-                    <div class="stat-card-view card-glass">
+                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=jobs'">
                         <div>
                             <span class="stat-card-lbl">Active Referrals</span>
                             <div class="stat-card-val"><?php echo $admin_stats['jobs']; ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: var(--theme-accent-blue);"><i class="fa-solid fa-briefcase"></i></div>
                     </div>
-                    <div class="stat-card-view card-glass">
+                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=events'">
                         <div>
                             <span class="stat-card-lbl">Scheduled Events</span>
                             <div class="stat-card-val"><?php echo $admin_stats['events']; ?></div>
@@ -694,7 +701,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="../assets/js/dashboard.js"></script>
+<script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 768) {

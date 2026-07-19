@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['admin_id'] = $_SESSION['2fa_admin_id'];
             $_SESSION['admin_name'] = $_SESSION['2fa_admin_name'];
             $_SESSION['admin_role'] = $_SESSION['2fa_admin_role'];
+            $_SESSION['user_id'] = $_SESSION['2fa_user_id'];
             log_activity($_SESSION['2fa_user_id'], 'login_2fa_success', 'Super Admin logged in with 2FA.');
             set_flash('success', 'Logged in successfully as Super Admin!');
         } else {
@@ -33,6 +34,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_name'] = $_SESSION['2fa_user_name'];
             $_SESSION['user_role'] = $_SESSION['2fa_user_role'];
             $_SESSION['user_status'] = $_SESSION['2fa_user_status'];
+
+            if ($_SESSION['2fa_user_role'] === 'admin') {
+                // Ensure they have a record in the admins table
+                $stmtCheckAdmin = $pdo->prepare("SELECT id, role FROM admins WHERE user_id = ?");
+                $stmtCheckAdmin->execute([$_SESSION['2fa_user_id']]);
+                $adminRow = $stmtCheckAdmin->fetch();
+                if (!$adminRow) {
+                    $stmtUser = $pdo->prepare("SELECT username, email, password FROM users WHERE id = ?");
+                    $stmtUser->execute([$_SESSION['2fa_user_id']]);
+                    $udata = $stmtUser->fetch();
+
+                    $stmtInsAdmin = $pdo->prepare("INSERT INTO admins (user_id, username, name, email, password, role) VALUES (?, ?, ?, ?, ?, 'superadmin')");
+                    $stmtInsAdmin->execute([$_SESSION['2fa_user_id'], $udata['username'], $_SESSION['2fa_user_name'], $udata['email'], $udata['password']]);
+                    $adminId = $pdo->lastInsertId();
+                    $adminRole = 'superadmin';
+                } else {
+                    $adminId = $adminRow['id'];
+                    $adminRole = $adminRow['role'];
+                }
+                $_SESSION['admin_id'] = $adminId;
+                $_SESSION['admin_name'] = $_SESSION['2fa_user_name'];
+                $_SESSION['admin_role'] = $adminRole;
+            }
+
             log_activity($_SESSION['2fa_user_id'], 'login_2fa_success', 'User logged in with 2FA.');
             
             if ($_SESSION['2fa_user_status'] === 'pending') {

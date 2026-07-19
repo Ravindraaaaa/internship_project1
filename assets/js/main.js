@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    var canvasAnimationId = null;
     
     // ==================== 0. SIDEBAR & DROPDOWNS GLOBAL ====================
     const sidebar = document.getElementById('sidebar');
@@ -372,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==================== 8. 14-MODE CANVAS VISUALIZER ENGINE ====================
-    let canvasAnimationId = null;
+    // canvasAnimationId is declared at the top of DOMContentLoaded
     
     function initCanvasBackground(mode, customImageSrc) {
         const canvas = document.getElementById('custom-bg-canvas');
@@ -945,11 +946,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             ease: 'back.out(1.7)'
                         });
                     } catch (err) {
-                        content.style.scale = '1';
+                        content.style.transform = 'scale(1)';
                         content.style.opacity = '1';
                     }
                 } else {
-                    content.style.scale = '1';
+                    content.style.transform = 'scale(1)';
                     content.style.opacity = '1';
                 }
             }

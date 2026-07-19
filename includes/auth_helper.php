@@ -45,8 +45,24 @@ if (!function_exists('get_user_role')) {
  */
 if (!function_exists('get_user_id')) {
     function get_user_id() {
+        global $pdo;
         if (is_admin()) {
-            return $_SESSION['admin_id'];
+            if (!isset($_SESSION['user_id']) && isset($_SESSION['admin_id'])) {
+                if (!isset($pdo)) {
+                    require_once __DIR__ . '/db.php';
+                }
+                try {
+                    $stmt = $pdo->prepare("SELECT user_id FROM admins WHERE id = ?");
+                    $stmt->execute([$_SESSION['admin_id']]);
+                    $uid = $stmt->fetchColumn();
+                    if ($uid) {
+                        $_SESSION['user_id'] = $uid;
+                    }
+                } catch (Exception $e) {
+                    // ignore
+                }
+            }
+            return $_SESSION['user_id'] ?? $_SESSION['admin_id'];
         }
         return $_SESSION['user_id'] ?? null;
     }
@@ -436,11 +452,19 @@ if (!function_exists('check_remember_me_cookie')) {
                             $stmtAdmin = $pdo->prepare("SELECT * FROM admins WHERE user_id = ?");
                             $stmtAdmin->execute([$user_id]);
                             $admin = $stmtAdmin->fetch();
-                            if ($admin) {
-                                $_SESSION['admin_id'] = $admin['id'];
-                                $_SESSION['admin_name'] = $admin['name'];
-                                $_SESSION['admin_role'] = $admin['role'];
+                            if (!$admin) {
+                                $stmtInsAdmin = $pdo->prepare("INSERT INTO admins (user_id, username, name, email, password, role) VALUES (?, ?, ?, ?, ?, 'superadmin')");
+                                $stmtInsAdmin->execute([$user_id, $user['username'], $user['name'], $user['email'], $user['password']]);
+                                $adminId = $pdo->lastInsertId();
+                                $adminRole = 'superadmin';
+                            } else {
+                                $adminId = $admin['id'];
+                                $adminRole = $admin['role'];
                             }
+                            $_SESSION['admin_id'] = $adminId;
+                            $_SESSION['admin_name'] = $user['name'];
+                            $_SESSION['admin_role'] = $adminRole;
+                            $_SESSION['user_id'] = $user_id;
                         } else {
                             $_SESSION['user_id'] = $user['id'];
                             $_SESSION['user_name'] = $user['name'];

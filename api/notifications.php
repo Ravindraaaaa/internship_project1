@@ -71,6 +71,19 @@ try {
         exit;
     } 
     
+    elseif ($action === 'delete') {
+        $id = intval($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $pdo->prepare("DELETE FROM notifications WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, $user_id]);
+        } else {
+            $stmt = $pdo->prepare("DELETE FROM notifications WHERE user_id = ?");
+            $stmt->execute([$user_id]);
+        }
+        echo json_encode(['status' => 'success']);
+        exit;
+    } 
+    
     elseif ($action === 'broadcast') {
         if (!is_admin()) {
             echo json_encode(['error' => 'Forbidden: Admins only.']);

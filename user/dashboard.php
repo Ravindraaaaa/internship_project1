@@ -360,7 +360,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="../assets/js/dashboard.js"></script>
+<script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 768) {

@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Polling function
     function pollLiveUpdates() {
-        const pathPrefix = document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href')?.replace('assets/css/style.css', '') || '';
+        const pathPrefix = (document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href') || '').split('assets/css/style.css')[0] || '';
         fetch(`${pathPrefix}api/live_updates.php`)
             .then(res => res.json())
             .then(data => {
@@ -247,6 +247,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const item = document.createElement('div');
                     item.className = 'notif-item';
                     item.style.cursor = 'pointer';
+                    item.style.position = 'relative';
+                    item.style.paddingRight = '2rem';
                     
                     let iconColor = 'var(--theme-accent-blue)';
                     if (notif.type === 'error') iconColor = 'var(--accent-danger)';
@@ -265,8 +267,40 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${formatDate(notif.created_at)}
                         </div>
                     `;
+
+                    // Delete Button
+                    const delBtn = document.createElement('span');
+                    delBtn.className = 'notif-delete-btn';
+                    delBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                    delBtn.style.position = 'absolute';
+                    delBtn.style.right = '12px';
+                    delBtn.style.top = '12px';
+                    delBtn.style.color = 'var(--accent-danger, #ef4444)';
+                    delBtn.style.fontSize = '0.72rem';
+                    delBtn.style.opacity = '0.4';
+                    delBtn.style.transition = 'opacity 0.2s';
+                    delBtn.style.cursor = 'pointer';
+                    delBtn.title = 'Delete Notification';
+                    
+                    delBtn.addEventListener('mouseenter', () => delBtn.style.opacity = '1');
+                    delBtn.addEventListener('mouseleave', () => delBtn.style.opacity = '0.4');
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // prevent mark_read click
+                        if (confirm('Delete this notification?')) {
+                            const pathPrefix = (document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href') || '').split('assets/css/style.css')[0] || '';
+                            const formData = new FormData();
+                            formData.append('action', 'delete');
+                            formData.append('id', notif.id);
+                            fetch(`${pathPrefix}api/notifications.php`, {
+                                method: 'POST',
+                                body: formData
+                            }).then(() => pollLiveUpdates());
+                        }
+                    });
+                    item.appendChild(delBtn);
+
                     item.addEventListener('click', () => {
-                        const pathPrefix = document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href')?.replace('assets/css/style.css', '') || '';
+                        const pathPrefix = (document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href') || '').split('assets/css/style.css')[0] || '';
                         const formData = new FormData();
                         formData.append('action', 'mark_read');
                         formData.append('id', notif.id);
@@ -432,7 +466,311 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Initial skeleton loaders for sidebar components
+    const timeline = document.getElementById('system-activity-timeline');
+    if (timeline) {
+        timeline.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:0.8rem; width:100%; padding:0.5rem;">
+                <div class="skeleton-box" style="height:12px; width:45%;"></div>
+                <div class="skeleton-box" style="height:16px; width:85%;"></div>
+                <div class="skeleton-box" style="height:12px; width:65%;"></div>
+            </div>
+        `;
+    }
+    const onlineUsers = document.getElementById('online-users-container');
+    if (onlineUsers) {
+        onlineUsers.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:0.8rem; width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="skeleton-box" style="height:14px; width:50%;"></div>
+                    <div class="skeleton-box" style="height:14px; width:20%;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="skeleton-box" style="height:14px; width:60%;"></div>
+                    <div class="skeleton-box" style="height:14px; width:15%;"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Animated Counters for metric values
+    function animateCounters() {
+        document.querySelectorAll('.stat-card-val').forEach(el => {
+            const target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
+            if (target === 0) return;
+            let current = 0;
+            const duration = 1000; // ms
+            const stepTime = 15;
+            const steps = duration / stepTime;
+            const increment = Math.ceil(target / steps);
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    el.innerText = target;
+                    clearInterval(timer);
+                } else {
+                    el.innerText = current;
+                }
+            }, stepTime);
+        });
+    }
+
+    // Premium Client-side Table Enhancer (Search, Filters, Excel/PDF Exports, Pagination)
+    function enhanceTable(tableEl, options = {}) {
+        if (!tableEl) return;
+        const tbody = tableEl.querySelector('tbody');
+        if (!tbody) return;
+        const allRows = Array.from(tbody.querySelectorAll('tr'));
+        if (allRows.length === 0) return;
+
+        let currentPage = 1;
+        let pageSize = options.pageSize || 7;
+        let filteredRows = [...allRows];
+        let searchQuery = '';
+
+        // Toolbar Container
+        const toolbar = document.createElement('div');
+        toolbar.className = 'table-toolbar card-glass';
+        toolbar.style.display = 'flex';
+        toolbar.style.justifyContent = 'space-between';
+        toolbar.style.alignItems = 'center';
+        toolbar.style.flexWrap = 'wrap';
+        toolbar.style.gap = '1rem';
+        toolbar.style.padding = '0.75rem 1rem';
+        toolbar.style.marginBottom = '0.75rem';
+        toolbar.style.borderRadius = '8px';
+        toolbar.style.border = '1px solid var(--theme-border)';
+
+        // Search Input
+        const searchContainer = document.createElement('div');
+        searchContainer.style.display = 'flex';
+        searchContainer.style.alignItems = 'center';
+        searchContainer.style.position = 'relative';
+        searchContainer.style.flexGrow = '1';
+        searchContainer.style.maxWidth = '280px';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'input-glass';
+        searchInput.placeholder = 'Filter results...';
+        searchInput.style.padding = '0.45rem 1rem 0.45rem 2.2rem';
+        searchInput.style.fontSize = '0.82rem';
+
+        const searchIcon = document.createElement('i');
+        searchIcon.className = 'fa-solid fa-magnifying-glass';
+        searchIcon.style.position = 'absolute';
+        searchIcon.style.left = '0.8rem';
+        searchIcon.style.color = 'var(--theme-text-secondary)';
+        searchIcon.style.fontSize = '0.82rem';
+
+        searchContainer.appendChild(searchIcon);
+        searchContainer.appendChild(searchInput);
+
+        // Exports Buttons
+        const exportContainer = document.createElement('div');
+        exportContainer.style.display = 'flex';
+        exportContainer.style.gap = '0.5rem';
+
+        const excelBtn = document.createElement('button');
+        excelBtn.className = 'btn btn-secondary';
+        excelBtn.style.padding = '0.45rem 0.75rem';
+        excelBtn.style.fontSize = '0.78rem';
+        excelBtn.style.borderRadius = '6px';
+        excelBtn.innerHTML = '<i class="fa-solid fa-file-excel" style="color: #10b981; margin-right: 0.25rem;"></i> Excel';
+
+        const pdfBtn = document.createElement('button');
+        pdfBtn.className = 'btn btn-secondary';
+        pdfBtn.style.padding = '0.45rem 0.75rem';
+        pdfBtn.style.fontSize = '0.78rem';
+        pdfBtn.style.borderRadius = '6px';
+        pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf" style="color: #ef4444; margin-right: 0.25rem;"></i> PDF';
+
+        exportContainer.appendChild(excelBtn);
+        exportContainer.appendChild(pdfBtn);
+
+        toolbar.appendChild(searchContainer);
+        toolbar.appendChild(exportContainer);
+
+        // Insert toolbar before the table
+        tableEl.parentNode.insertBefore(toolbar, tableEl);
+
+        // Pagination controls container
+        const pagContainer = document.createElement('div');
+        pagContainer.className = 'table-pagination';
+        pagContainer.style.display = 'flex';
+        pagContainer.style.justifyContent = 'space-between';
+        pagContainer.style.alignItems = 'center';
+        pagContainer.style.padding = '0.75rem 0';
+        pagContainer.style.flexWrap = 'wrap';
+        pagContainer.style.gap = '1rem';
+
+        const pagInfo = document.createElement('span');
+        pagInfo.style.fontSize = '0.8rem';
+        pagInfo.style.color = 'var(--theme-text-secondary)';
+
+        const pagControls = document.createElement('div');
+        pagControls.style.display = 'flex';
+        pagControls.style.gap = '0.25rem';
+
+        pagContainer.appendChild(pagInfo);
+        pagContainer.appendChild(pagControls);
+
+        // Insert pagination after the table
+        tableEl.parentNode.insertBefore(pagContainer, tableEl.nextSibling);
+
+        // Search Input listener
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            currentPage = 1;
+            applyFilterAndRender();
+        });
+
+        // Excel Export
+        excelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const headers = Array.from(tableEl.querySelectorAll('thead th'))
+                .map(th => `"${th.innerText.replace(/"/g, '""')}"`)
+                .join(",");
+            csvContent += headers + "\r\n";
+
+            filteredRows.forEach(row => {
+                const rowData = Array.from(row.querySelectorAll('td'))
+                    .map(td => `"${td.innerText.trim().replace(/"/g, '""')}"`)
+                    .join(",");
+                csvContent += rowData + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `AlumniNet_Export_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // PDF Export
+        pdfBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const printWindow = window.open('', '_blank');
+            const themeStyles = document.querySelector('link[href*="assets/css/style.css"]')?.outerHTML || '';
+            
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Table Export</title>
+                        ${themeStyles}
+                        <style>
+                            body { background: #ffffff !important; color: #111827 !important; padding: 2rem; font-family: system-ui, sans-serif; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+                            th, td { border: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; font-size: 0.85rem; }
+                            th { background: #f3f4f6; font-weight: bold; }
+                            .btn, form, input, select { display: none !important; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>AlumniNet Exported Records</h2>
+                        <p style="color: #6b7280; font-size: 0.85rem;">Generated on: ${new Date().toLocaleString()}</p>
+                        <table>
+                            <thead>
+                                ${tableEl.querySelector('thead').innerHTML}
+                            </thead>
+                            <tbody>
+                                ${filteredRows.map(r => r.outerHTML).join('')}
+                            </tbody>
+                        </table>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 800);
+        });
+
+        function applyFilterAndRender() {
+            filteredRows = allRows.filter(row => {
+                const text = row.innerText.toLowerCase();
+                return text.includes(searchQuery);
+            });
+
+            const totalRows = filteredRows.length;
+            const totalPages = Math.ceil(totalRows / pageSize);
+
+            if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+
+            allRows.forEach(r => r.style.display = 'none');
+
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, totalRows);
+
+            for (let i = start; i < end; i++) {
+                filteredRows[i].style.display = '';
+            }
+
+            pagInfo.innerText = totalRows > 0 
+                ? `Showing ${start + 1} to ${end} of ${totalRows} entries` 
+                : 'No matching entries found';
+
+            pagControls.innerHTML = '';
+            if (totalPages > 1) {
+                const prev = document.createElement('button');
+                prev.className = `btn btn-secondary ${currentPage === 1 ? 'disabled' : ''}`;
+                prev.innerText = 'Prev';
+                prev.disabled = currentPage === 1;
+                prev.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                        currentPage--;
+                        applyFilterAndRender();
+                    }
+                });
+                pagControls.appendChild(prev);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = `btn ${currentPage === i ? 'btn-primary' : 'btn-secondary'}`;
+                    btn.innerText = i;
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        currentPage = i;
+                        applyFilterAndRender();
+                    });
+                    pagControls.appendChild(btn);
+                }
+
+                const next = document.createElement('button');
+                next.className = `btn btn-secondary ${currentPage === totalPages ? 'disabled' : ''}`;
+                next.innerText = 'Next';
+                next.disabled = currentPage === totalPages;
+                next.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        applyFilterAndRender();
+                    }
+                });
+                pagControls.appendChild(next);
+            }
+        }
+
+        applyFilterAndRender();
+    }
+
+    // Auto-enhance active page tables
+    document.querySelectorAll('.custom-table').forEach(table => {
+        enhanceTable(table);
+    });
+
+    // Run animations
+    animateCounters();
+
     // Start Live Update Polling
     pollLiveUpdates();
     setInterval(pollLiveUpdates, 10000); // refresh every 10 seconds
 });
+

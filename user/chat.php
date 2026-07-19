@@ -140,10 +140,17 @@ require_once __DIR__ . '/../includes/header.php';
                 
                 <!-- Chat Window Header -->
                 <div id="chat-thread-header" style="padding: 1rem; border-bottom: 1px solid var(--theme-border); background: rgba(255,255,255,0.01); display: none; align-items: center; gap: 0.75rem;">
+                    <button class="theme-toggle-btn" id="chat-back-mobile-btn" onclick="backToConversationsList()" style="display: none; margin-right: 0.25rem; padding: 0.4rem 0.6rem;"><i class="fa-solid fa-chevron-left"></i></button>
                     <img id="active-peer-avatar" src="" alt="Avatar" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
                     <div>
                         <h4 id="active-peer-name" style="font-size: 0.95rem; font-weight: 700;">Active User</h4>
                         <span id="active-peer-role" style="font-size: 0.7rem; color: var(--theme-accent-blue); text-transform: uppercase; font-weight: 600;">ALUMNI</span>
+                    </div>
+                    
+                    <!-- Search Messages inside thread -->
+                    <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem; position: relative;">
+                        <input type="text" id="thread-msg-search" class="input-glass" style="font-size: 0.75rem; padding: 0.35rem 0.5rem 0.35rem 1.5rem; width: 120px;" placeholder="Search chat..." oninput="filterThreadMessages()">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.72rem; color: var(--theme-text-secondary); position: absolute; left: 8px; pointer-events: none;"></i>
                     </div>
                 </div>
 
@@ -156,11 +163,33 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
 
+                <!-- Typing indicator -->
+                <div id="typing-indicator" style="display:none; align-self:flex-start; margin-left:1.5rem; margin-bottom:0.5rem; background:rgba(255,255,255,0.03); border:1px solid var(--theme-border); padding:0.4rem 0.8rem; border-radius:12px; font-size:0.75rem; color:var(--theme-text-secondary);">
+                    <span id="typing-name">Someone</span> is typing<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
+                </div>
+
                 <!-- Chat Input Tray -->
-                <div id="chat-input-container" style="padding: 1rem; border-top: 1px solid var(--theme-border); background: rgba(255,255,255,0.01); display: none;">
-                    <div style="display: flex; gap: 0.75rem;">
-                        <input type="text" id="chat-msg-input" class="input-glass" style="flex-grow: 1; font-size: 0.88rem; padding: 0.6rem 1rem;" placeholder="Type your professional message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                        <button onclick="sendChatMessage()" class="btn btn-primary" style="padding: 0.6rem 1.25rem;"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                <div id="chat-input-container" style="padding: 1rem; border-top: 1px solid var(--theme-border); background: rgba(255,255,255,0.01); display: none; position: relative;">
+                    <!-- Emoji Picker Grid Box -->
+                    <div id="emoji-picker-box" class="card-glass" style="display: none; position: absolute; bottom: 65px; left: 1rem; width: 230px; padding: 0.5rem; grid-template-columns: repeat(6, 1fr); gap: 0.35rem; z-index: 1000; border: 1px solid var(--theme-border); border-radius: 8px;"></div>
+                    
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <!-- Emoji Toggle Button -->
+                        <button class="btn btn-secondary" onclick="toggleEmojiPicker()" style="padding: 0.6rem 0.75rem;" title="Insert Emoji"><i class="fa-regular fa-face-smile"></i></button>
+                        
+                        <!-- Upload File/Image Input & Button -->
+                        <input type="file" id="chat-file-input" style="display:none;" onchange="handleChatFileSelect(this)" accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                        <button class="btn btn-secondary" id="chat-file-btn" onclick="document.getElementById('chat-file-input').click()" style="padding: 0.6rem 0.75rem;" title="Attach File"><i class="fa-solid fa-paperclip"></i></button>
+                        
+                        <input type="text" id="chat-msg-input" class="input-glass" style="flex-grow: 1; font-size: 0.88rem; padding: 0.6rem 1rem;" placeholder="Type your professional message..." onkeydown="if(event.key==='Enter') sendChatMessage()" oninput="handleTypingState()">
+                        
+                        <button id="send-chat-btn" onclick="sendChatMessage()" class="btn btn-primary" style="padding: 0.6rem 1.25rem;"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                    </div>
+                    
+                    <!-- Selected File Indicator Preview -->
+                    <div id="selected-file-preview" style="display:none; align-items:center; gap:0.5rem; margin-top:0.5rem; font-size:0.75rem; color:var(--theme-text-secondary); background:rgba(255,255,255,0.02); padding:0.3rem 0.75rem; border-radius:6px;">
+                        <i class="fa-solid fa-file-invoice"></i> <span id="selected-file-name" style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">file.pdf</span>
+                        <button onclick="clearSelectedFile()" style="background:none; border:none; color:var(--accent-danger); cursor:pointer; font-size:0.88rem; margin-left:auto;"><i class="fa-solid fa-circle-xmark"></i></button>
                     </div>
                 </div>
 
@@ -215,6 +244,56 @@ require_once __DIR__ . '/../includes/header.php';
         color: var(--theme-text-primary);
         border-bottom-left-radius: 2px;
     }
+    .typing-dots span {
+        animation: typingPulse 1.4s infinite;
+        display: inline-block;
+        font-weight: bold;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingPulse {
+        0% { opacity: 0.2; }
+        50% { opacity: 1; }
+        100% { opacity: 0.2; }
+    }
+    .attachment-preview-img {
+        max-width: 180px;
+        border-radius: 8px;
+        border: 1px solid var(--theme-border);
+        margin-top: 0.4rem;
+        display: block;
+    }
+    .attachment-file-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--theme-border);
+        border-radius: 8px;
+        margin-top: 0.4rem;
+        color: var(--theme-text);
+        text-decoration: none;
+        font-size: 0.78rem;
+    }
+    .attachment-file-card:hover {
+        background: rgba(255,255,255,0.06);
+    }
+    @media (max-width: 768px) {
+        .conversations-pane {
+            width: 100% !important;
+        }
+        .thread-pane {
+            display: none !important;
+            width: 100% !important;
+        }
+        .chat-active-mobile .conversations-pane {
+            display: none !important;
+        }
+        .chat-active-mobile .thread-pane {
+            display: flex !important;
+        }
+    }
 </style>
 
 <script>
@@ -222,6 +301,10 @@ require_once __DIR__ . '/../includes/header.php';
     let activePeerId = <?php echo $peer_id_preselect; ?>;
     let currentUserId = <?php echo $uid; ?>;
     let chatInterval = null;
+    let selectedChatFile = null;
+    let lastTypingTime = 0;
+
+    const emojiList = ['😀', '😂', '😍', '👍', '🎉', '🔥', '👏', '🙌', '🌟', '💡', '🚀', '💯', '❤️', '💼', '🎓', '🤝', '📅', '📝'];
 
     document.addEventListener('DOMContentLoaded', () => {
         // Toggle start new chat menu
@@ -237,6 +320,9 @@ require_once __DIR__ . '/../includes/header.php';
                 newChatMenu.classList.remove('show');
             });
         }
+
+        // Initialize Emoji Picker
+        initEmojiPicker();
 
         // Handle selecting peer from "New Message" dropdown
         const selectPeerItems = document.querySelectorAll('.select-peer-item');
@@ -275,6 +361,93 @@ require_once __DIR__ . '/../includes/header.php';
         }
     });
 
+    function initEmojiPicker() {
+        const box = document.getElementById('emoji-picker-box');
+        if (box) {
+            box.innerHTML = '';
+            emojiList.forEach(emoji => {
+                const btn = document.createElement('span');
+                btn.innerText = emoji;
+                btn.style.fontSize = '1.25rem';
+                btn.style.cursor = 'pointer';
+                btn.style.textAlign = 'center';
+                btn.style.padding = '0.2rem';
+                btn.style.borderRadius = '4px';
+                btn.style.transition = 'background 0.2s';
+                btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(255,255,255,0.08)');
+                btn.addEventListener('mouseleave', () => btn.style.background = '');
+                btn.addEventListener('click', () => {
+                    const input = document.getElementById('chat-msg-input');
+                    input.value += emoji;
+                    box.style.display = 'none';
+                    input.focus();
+                });
+                box.appendChild(btn);
+            });
+        }
+    }
+
+    function toggleEmojiPicker() {
+        const box = document.getElementById('emoji-picker-box');
+        if (box) {
+            box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'grid' : 'none';
+        }
+    }
+
+    function handleChatFileSelect(input) {
+        if (input.files && input.files[0]) {
+            selectedChatFile = input.files[0];
+            document.getElementById('selected-file-name').innerText = selectedChatFile.name;
+            document.getElementById('selected-file-preview').style.display = 'flex';
+        }
+    }
+
+    function clearSelectedFile() {
+        selectedChatFile = null;
+        document.getElementById('chat-file-input').value = '';
+        document.getElementById('selected-file-preview').style.display = 'none';
+    }
+
+    function handleTypingState() {
+        const now = Date.now();
+        if (now - lastTypingTime > 4000) {
+            lastTypingTime = now;
+            const pathPrefix = (document.querySelector('link[href*="assets/css/style.css"]')?.getAttribute('href') || '').split('assets/css/style.css')[0] || '';
+            const formData = new FormData();
+            formData.append('action', 'typing');
+            formData.append('conversation_id', activeConversationId);
+            fetch(`${pathPrefix}api/chat.php`, {
+                method: 'POST',
+                body: formData
+            });
+        }
+    }
+
+    function filterThreadMessages() {
+        const query = document.getElementById('thread-msg-search').value.toLowerCase();
+        document.querySelectorAll('#chat-messages-stream .chat-bubble').forEach(bubble => {
+            const content = bubble.querySelector('.bubble-text-content')?.innerText.toLowerCase() || '';
+            if (content.includes(query)) {
+                bubble.style.display = '';
+            } else {
+                bubble.style.display = 'none';
+            }
+        });
+    }
+
+    function backToConversationsList() {
+        const grid = document.querySelector('.messenger-grid');
+        if (grid) {
+            grid.classList.remove('chat-active-mobile');
+        }
+        if (chatInterval) {
+            clearInterval(chatInterval);
+            chatInterval = null;
+        }
+        activeConversationId = 0;
+        activePeerId = 0;
+    }
+
     function startConversationWithPeer(peerId, peerName) {
         activePeerId = peerId;
         activeConversationId = 0; // fetch/create via API send or thread
@@ -287,6 +460,9 @@ require_once __DIR__ . '/../includes/header.php';
         document.getElementById('active-peer-name').innerText = peerName;
         document.getElementById('active-peer-role').innerText = 'CONTACT';
         document.getElementById('active-peer-avatar').src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+        const grid = document.querySelector('.messenger-grid');
+        if (grid) grid.classList.add('chat-active-mobile');
 
         loadThreadMessages();
 
@@ -311,6 +487,9 @@ require_once __DIR__ . '/../includes/header.php';
         document.querySelectorAll('.convo-item').forEach(item => item.classList.remove('active'));
         const activeItem = document.querySelector(`.convo-item[data-convo-id="${convoId}"]`);
         if (activeItem) activeItem.classList.add('active');
+
+        const grid = document.querySelector('.messenger-grid');
+        if (grid) grid.classList.add('chat-active-mobile');
 
         loadThreadMessages();
 
@@ -394,14 +573,50 @@ require_once __DIR__ . '/../includes/header.php';
                             const senderClass = (msg.sender_id === currentUserId) ? 'sent' : 'received';
                             const bubble = document.createElement('div');
                             bubble.className = `chat-bubble ${senderClass}`;
+                            
+                            let attachmentHtml = '';
+                            if (msg.attachment_path) {
+                                if (msg.attachment_type === 'image') {
+                                    attachmentHtml = `<a href="../${escapeHTML(msg.attachment_path)}" target="_blank"><img src="../${escapeHTML(msg.attachment_path)}" class="attachment-preview-img"></a>`;
+                                } else {
+                                    const filename = msg.attachment_path.split('/').pop().replace(/^chat_[0-9a-f]+_/, '');
+                                    attachmentHtml = `<a href="../${escapeHTML(msg.attachment_path)}" download class="attachment-file-card"><i class="fa-solid fa-file-arrow-down"></i> ${escapeHTML(filename)}</a>`;
+                                }
+                            }
+
+                            // Seen status visual check
+                            let seenStatusHtml = '';
+                            if (senderClass === 'sent') {
+                                if (msg.is_read == 1) {
+                                    seenStatusHtml = '<span style="color:#60a5fa;margin-left:0.25rem;" title="Seen"><i class="fa-solid fa-check-double"></i></span>';
+                                } else {
+                                    seenStatusHtml = '<span style="opacity:0.5;margin-left:0.25rem;" title="Delivered"><i class="fa-solid fa-check"></i></span>';
+                                }
+                            }
+
                             bubble.innerHTML = `
-                                <div>${escapeHTML(msg.message)}</div>
-                                <span style="display:block;font-size:0.6rem;opacity:0.6;margin-top:0.25rem;text-align:right;">${formatMsgTime(msg.created_at)}</span>
+                                <div class="bubble-text-content">${escapeHTML(msg.message)}</div>
+                                ${attachmentHtml}
+                                <div style="display:flex; justify-content:flex-end; align-items:center; font-size:0.6rem; opacity:0.6; margin-top:0.25rem;">
+                                    <span>${formatMsgTime(msg.created_at)}</span>
+                                    ${seenStatusHtml}
+                                </div>
                             `;
                             messagesContainer.appendChild(bubble);
                         });
                     } else {
                         messagesContainer.innerHTML = '<div style="text-align:center;color:var(--theme-text-secondary);font-size:0.8rem;padding:2rem;">Send a message to open this connection!</div>';
+                    }
+
+                    // Check typing status
+                    const typingIndicator = document.getElementById('typing-indicator');
+                    if (typingIndicator) {
+                        if (data.peer_typing) {
+                            document.getElementById('typing-name').innerText = document.getElementById('active-peer-name').innerText;
+                            typingIndicator.style.display = 'block';
+                        } else {
+                            typingIndicator.style.display = 'none';
+                        }
                     }
 
                     if (isScrolledToBottom || activeConversationId === 0) {
@@ -415,7 +630,7 @@ require_once __DIR__ . '/../includes/header.php';
     function sendChatMessage() {
         const input = document.getElementById('chat-msg-input');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text && !selectedChatFile) return;
 
         input.value = '';
 
@@ -424,6 +639,17 @@ require_once __DIR__ . '/../includes/header.php';
         formData.append('conversation_id', activeConversationId);
         formData.append('peer_id', activePeerId);
         formData.append('message', text);
+        if (selectedChatFile) {
+            formData.append('file', selectedChatFile);
+        }
+
+        clearSelectedFile();
+
+        // Change button state to visual loading
+        const sendBtn = document.getElementById('send-chat-btn');
+        const originalContent = sendBtn.innerHTML;
+        sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        sendBtn.disabled = true;
 
         fetch('../api/chat.php', {
             method: 'POST',
@@ -431,6 +657,8 @@ require_once __DIR__ . '/../includes/header.php';
         })
         .then(res => res.json())
         .then(data => {
+            sendBtn.innerHTML = originalContent;
+            sendBtn.disabled = false;
             if (data.status === 'success') {
                 if (activeConversationId === 0 && data.conversation_id > 0) {
                     activeConversationId = data.conversation_id;
@@ -441,7 +669,11 @@ require_once __DIR__ . '/../includes/header.php';
                 window.showToast ? window.showToast(data.message, 'error') : alert(data.message);
             }
         })
-        .catch(err => console.error("Error sending message:", err));
+        .catch(err => {
+            sendBtn.innerHTML = originalContent;
+            sendBtn.disabled = false;
+            console.error("Error sending message:", err);
+        });
     }
 
     function formatMsgTime(dateStr) {

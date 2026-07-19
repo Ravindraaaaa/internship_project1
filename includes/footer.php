@@ -112,7 +112,7 @@
     </div>
 
     <!-- Main JavaScript Core Asset -->
-    <script src="<?php echo $path_prefix; ?>assets/js/main.js"></script>
+    <script src="<?php echo $path_prefix; ?>assets/js/main.js?v=<?php echo time(); ?>"></script>
     
     <!-- Fade in page load GSAP utility -->
     <script>

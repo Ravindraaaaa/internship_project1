@@ -255,6 +255,6 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Scripts loading sidebars collapse -->
-<script src="../assets/js/dashboard.js"></script>
+<script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

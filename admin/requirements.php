@@ -379,7 +379,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php foreach ($event_mappings as $em): ?>
                                 <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.01); border:1px solid var(--theme-border); padding:0.6rem; border-radius:var(--border-radius-sm); font-size:0.78rem;">
                                     <div>
-                                        <span style="font-weight:600; color:#ffffff;"><?php echo htmlspecialchars($jm['event_title'] ?? $em['event_title']); ?></span>
+                                        <span style="font-weight:600; color:#ffffff;"><?php echo htmlspecialchars($em['event_title']); ?></span>
                                         <p style="font-size:0.7rem; color:var(--theme-accent-purple);">Rule: <?php echo htmlspecialchars($em['req_title']); ?></p>
                                     </div>
                                     <form action="requirements.php" method="POST">

@@ -14,6 +14,29 @@ $user_id = get_user_id();
 $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 
 try {
+    // Database Auto-Migrations for Professional Chat
+    try {
+        $pdo->query("SELECT sender_typing_until FROM conversations LIMIT 1");
+    } catch (Exception $e) {
+        try {
+            $pdo->exec("ALTER TABLE conversations ADD COLUMN sender_typing_until TIMESTAMP NULL DEFAULT NULL");
+            $pdo->exec("ALTER TABLE conversations ADD COLUMN receiver_typing_until TIMESTAMP NULL DEFAULT NULL");
+        } catch (Exception $ex) {
+            // ignore
+        }
+    }
+
+    try {
+        $pdo->query("SELECT attachment_path FROM messages LIMIT 1");
+    } catch (Exception $e) {
+        try {
+            $pdo->exec("ALTER TABLE messages ADD COLUMN attachment_path VARCHAR(255) DEFAULT NULL");
+            $pdo->exec("ALTER TABLE messages ADD COLUMN attachment_type VARCHAR(100) DEFAULT NULL");
+        } catch (Exception $ex) {
+            // ignore
+        }
+    }
+
     // 1. LIST CONVERSATIONS
     if ($action === 'list') {
         $stmt = $pdo->prepare("
@@ -61,12 +84,12 @@ try {
         }
 
         if ($conversation_id <= 0) {
-            echo json_encode(['status' => 'success', 'messages' => [], 'conversation_id' => 0]);
+            echo json_encode(['status' => 'success', 'messages' => [], 'conversation_id' => 0, 'peer_typing' => false]);
             exit;
         }
 
         // Verify user is part of conversation
-        $stmt = $pdo->prepare("SELECT sender_id, receiver_id FROM conversations WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT sender_id, receiver_id, sender_typing_until, receiver_typing_until FROM conversations WHERE id = ?");
         $stmt->execute([$conversation_id]);
         $convo = $stmt->fetch();
         if (!$convo || ($convo['sender_id'] != $user_id && $convo['receiver_id'] != $user_id)) {
@@ -74,19 +97,32 @@ try {
             exit;
         }
 
+        // Check if other peer is typing
+        $peer_typing = false;
+        if ($convo['sender_id'] == $user_id) {
+            if (!empty($convo['receiver_typing_until']) && strtotime($convo['receiver_typing_until']) > time()) {
+                $peer_typing = true;
+            }
+        } else {
+            if (!empty($convo['sender_typing_until']) && strtotime($convo['sender_typing_until']) > time()) {
+                $peer_typing = true;
+            }
+        }
+
         // Mark messages as read
         $stmtRead = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?");
         $stmtRead->execute([$conversation_id, $user_id]);
 
         // Retrieve messages
-        $stmtMsg = $pdo->prepare("SELECT id, sender_id, message, is_read, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC");
+        $stmtMsg = $pdo->prepare("SELECT id, sender_id, message, is_read, attachment_path, attachment_type, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC");
         $stmtMsg->execute([$conversation_id]);
         $messages = $stmtMsg->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode([
             'status' => 'success',
             'conversation_id' => $conversation_id,
-            'messages' => $messages
+            'messages' => $messages,
+            'peer_typing' => $peer_typing
         ]);
         exit;
     }
@@ -96,11 +132,6 @@ try {
         $conversation_id = intval($_POST['conversation_id'] ?? 0);
         $peer_id = intval($_POST['peer_id'] ?? 0);
         $message = trim($_POST['message'] ?? '');
-
-        if (empty($message)) {
-            echo json_encode(['status' => 'error', 'message' => 'Empty message.']);
-            exit;
-        }
 
         if ($conversation_id <= 0 && $peer_id > 0) {
             // Find or create conversation
@@ -137,20 +168,85 @@ try {
             exit;
         }
 
+        // Handle attachment file uploads
+        $attachment_path = null;
+        $attachment_type = null;
+
+        if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['file'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            
+            $allowed_exts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'zip', 'rar'];
+            if (in_array($ext, $allowed_exts)) {
+                $upload_dir = __DIR__ . '/../uploads/chat/';
+                if (!file_exists($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                $filename = uniqid('chat_') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file['name']);
+                $dest = $upload_dir . $filename;
+                
+                if (move_uploaded_file($file['tmp_name'], $dest)) {
+                    $attachment_path = 'uploads/chat/' . $filename;
+                    
+                    if (in_array($ext, ['png', 'jpg', 'jpeg', 'gif'])) {
+                        $attachment_type = 'image';
+                    } else {
+                        $attachment_type = 'file';
+                    }
+                }
+            }
+        }
+
+        if (empty($message) && empty($attachment_path)) {
+            echo json_encode(['status' => 'error', 'message' => 'Empty message content.']);
+            exit;
+        }
+
         // Insert message
-        $stmtInsertMsg = $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, message, is_read) VALUES (?, ?, ?, 0)");
-        $stmtInsertMsg->execute([$conversation_id, $user_id, $message]);
+        $stmtInsertMsg = $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, message, attachment_path, attachment_type, is_read) VALUES (?, ?, ?, ?, ?, 0)");
+        $stmtInsertMsg->execute([$conversation_id, $user_id, $message, $attachment_path, $attachment_type]);
 
         // Send a notification to the peer
         $target_peer = ($convo['sender_id'] == $user_id) ? $convo['receiver_id'] : $convo['sender_id'];
+        
+        // Reset typing status on send
+        if ($convo['sender_id'] == $user_id) {
+            $pdo->prepare("UPDATE conversations SET sender_typing_until = NULL WHERE id = ?")->execute([$conversation_id]);
+        } else {
+            $pdo->prepare("UPDATE conversations SET receiver_typing_until = NULL WHERE id = ?")->execute([$conversation_id]);
+        }
+
         $stmtNotify = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority) VALUES (?, ?, ?, 'info', 'medium')");
         $stmtNotify->execute([
             $target_peer,
             'New message received',
-            substr(get_user_name() . ': ' . $message, 0, 100),
+            substr(get_user_name() . ': ' . ($message ?: 'Attachment File'), 0, 100),
         ]);
 
         echo json_encode(['status' => 'success', 'conversation_id' => $conversation_id]);
+        exit;
+    }
+
+    // 4. TYPING UPDATE ACTION
+    elseif ($action === 'typing') {
+        $conversation_id = intval($_POST['conversation_id'] ?? 0);
+        if ($conversation_id > 0) {
+            $stmt = $pdo->prepare("SELECT sender_id, receiver_id FROM conversations WHERE id = ?");
+            $stmt->execute([$conversation_id]);
+            $convo = $stmt->fetch();
+            if ($convo) {
+                $typing_until = date('Y-m-d H:i:s', time() + 6);
+                if ($convo['sender_id'] == $user_id) {
+                    $stmtUpdate = $pdo->prepare("UPDATE conversations SET sender_typing_until = ? WHERE id = ?");
+                    $stmtUpdate->execute([$typing_until, $conversation_id]);
+                } elseif ($convo['receiver_id'] == $user_id) {
+                    $stmtUpdate = $pdo->prepare("UPDATE conversations SET receiver_typing_until = ? WHERE id = ?");
+                    $stmtUpdate->execute([$typing_until, $conversation_id]);
+                }
+            }
+        }
+        echo json_encode(['status' => 'success']);
         exit;
     }
 

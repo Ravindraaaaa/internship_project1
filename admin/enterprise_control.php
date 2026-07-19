@@ -170,10 +170,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 5. Update settings
     elseif ($action === 'update_settings') {
         $ai_prompt = trim($_POST['ai_prompt'] ?? '');
+        $gemini_api_key = trim($_POST['gemini_api_key'] ?? '');
+        
         $stmt = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES ('ai_prompt', ?) ON DUPLICATE KEY UPDATE `value` = ?");
         $stmt->execute([$ai_prompt, $ai_prompt]);
         
-        log_activity($admin_id, 'update_ai_settings', 'Updated custom prompt configurations.');
+        $stmtKey = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES ('gemini_api_key', ?) ON DUPLICATE KEY UPDATE `value` = ?");
+        $stmtKey->execute([$gemini_api_key, $gemini_api_key]);
+        
+        log_activity($admin_id, 'update_ai_settings', 'Updated custom prompt and Gemini API configurations.');
         set_flash('success', 'AI settings updated successfully!');
         header("Location: enterprise_control.php?tab=settings");
         exit;
@@ -286,6 +291,10 @@ $users_list = $stmt->fetchAll();
 $stmtPrompt = $pdo->prepare("SELECT value FROM settings WHERE `key` = 'ai_prompt'");
 $stmtPrompt->execute();
 $ai_prompt = $stmtPrompt->fetchColumn() ?: "Hello! I am the AlumniNet Intelligent Assistant. Ask me anything about placement events, active jobs or profile score!";
+
+$stmtKey = $pdo->prepare("SELECT value FROM settings WHERE `key` = 'gemini_api_key'");
+$stmtKey->execute();
+$gemini_api_key = $stmtKey->fetchColumn() ?: "";
 
 // Charts stats
 $stats_month = $pdo->query("SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as qty FROM users GROUP BY month ORDER BY created_at ASC LIMIT 6")->fetchAll();
@@ -612,6 +621,12 @@ require_once __DIR__ . '/../includes/header.php';
                     <form action="enterprise_control.php" method="POST">
                         <input type="hidden" name="action" value="update_settings">
                         
+                        <div class="form-group" style="margin-bottom:1.5rem;">
+                            <label style="display:block; font-size: 0.88rem; margin-bottom: 0.5rem; color: var(--theme-text-secondary);">Gemini API Key</label>
+                            <input type="password" name="gemini_api_key" value="<?php echo htmlspecialchars($gemini_api_key); ?>" class="input-glass" style="width:100%; padding:0.6rem 0.75rem; font-size:0.9rem;" placeholder="AIzaSy...">
+                            <span style="font-size:0.75rem; color:var(--theme-text-secondary); margin-top:0.4rem; display:block;">Configure a valid Gemini API key to activate natural language chat capabilities. Leave empty to use local rule-based intelligence.</span>
+                        </div>
+
                         <div class="form-group" style="margin-bottom:1.5rem;">
                             <label style="display:block; font-size: 0.88rem; margin-bottom: 0.5rem; color: var(--theme-text-secondary);">Intelligent Greeting / Context Prompt</label>
                             <textarea name="ai_prompt" class="input-glass" style="width:100%; height:120px; padding:0.75rem; font-size:0.9rem; line-height:1.5;" required><?php echo htmlspecialchars($ai_prompt); ?></textarea>

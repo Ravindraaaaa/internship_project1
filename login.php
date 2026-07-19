@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_id'] = $admin['id'];
                 $_SESSION['admin_name'] = $admin['name'];
                 $_SESSION['admin_role'] = $admin['role'];
+                $_SESSION['user_id'] = $admin['user_id'];
                 
                 if (!empty($_POST['remember'])) {
                     set_remember_me_cookie($adminUser['id']);
@@ -97,6 +98,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_role'] = $user['role'];
                     $_SESSION['user_status'] = $user['status'];
+
+                    if ($user['role'] === 'admin') {
+                        // Ensure they have a record in the admins table
+                        $stmtCheckAdmin = $pdo->prepare("SELECT id, role FROM admins WHERE user_id = ?");
+                        $stmtCheckAdmin->execute([$user['id']]);
+                        $adminRow = $stmtCheckAdmin->fetch();
+                        if (!$adminRow) {
+                            $stmtInsAdmin = $pdo->prepare("INSERT INTO admins (user_id, username, name, email, password, role) VALUES (?, ?, ?, ?, ?, 'superadmin')");
+                            $stmtInsAdmin->execute([$user['id'], $user['username'], $user['name'], $user['email'], $user['password']]);
+                            $adminId = $pdo->lastInsertId();
+                            $adminRole = 'superadmin';
+                        } else {
+                            $adminId = $adminRow['id'];
+                            $adminRole = $adminRow['role'];
+                        }
+                        $_SESSION['admin_id'] = $adminId;
+                        $_SESSION['admin_name'] = $user['name'];
+                        $_SESSION['admin_role'] = $adminRole;
+                    }
 
                     if (!empty($_POST['remember'])) {
                         set_remember_me_cookie($user['id']);

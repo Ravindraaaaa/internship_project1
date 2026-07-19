@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_id'] = $admin['id'];
                 $_SESSION['admin_name'] = $admin['name'];
                 $_SESSION['admin_role'] = $admin['role'];
+                $_SESSION['user_id'] = $admin['user_id'];
                 
                 set_flash('success', 'Administrator Session Authorized!');
                 header('Location: dashboard.php');

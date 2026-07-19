@@ -393,36 +393,38 @@ require_once __DIR__ . '/includes/header.php';
 <!-- GSAP ScrollReveal hook scripts -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Count up numbers in hero
-        const statCounters = document.querySelectorAll('.stat-counter-lbl');
-        statCounters.forEach(cnt => {
-            const val = parseInt(cnt.textContent, 10);
-            if (!isNaN(val) && val > 0) {
-                cnt.textContent = '0';
-                gsap.to(cnt, {
-                    innerText: val,
-                    duration: 1.8,
-                    snap: { innerText: 1 },
-                    ease: "power2.out"
+        if (typeof gsap !== 'undefined') {
+            // Count up numbers in hero
+            const statCounters = document.querySelectorAll('.stat-counter-lbl');
+            statCounters.forEach(cnt => {
+                const val = parseInt(cnt.textContent, 10);
+                if (!isNaN(val) && val > 0) {
+                    cnt.textContent = '0';
+                    gsap.to(cnt, {
+                        innerText: val,
+                        duration: 1.8,
+                        snap: { innerText: 1 },
+                        ease: "power2.out"
+                    });
+                }
+            });
+
+            // GSAP ScrollTrigger reveals
+            if (typeof ScrollTrigger !== 'undefined') {
+                gsap.utils.toArray('.gsap-reveal').forEach(el => {
+                    gsap.from(el, {
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 85%",
+                            toggleActions: "play none none none"
+                        },
+                        y: 40,
+                        opacity: 0,
+                        duration: 0.8,
+                        ease: "power2.out"
+                    });
                 });
             }
-        });
-
-        // GSAP ScrollTrigger reveals
-        if (typeof ScrollTrigger !== 'undefined') {
-            gsap.utils.toArray('.gsap-reveal').forEach(el => {
-                gsap.from(el, {
-                    scrollTrigger: {
-                        trigger: el,
-                        start: "top 85%",
-                        toggleActions: "play none none none"
-                    },
-                    y: 40,
-                    opacity: 0,
-                    duration: 0.8,
-                    ease: "power2.out"
-                });
-            });
         }
     });
 </script>

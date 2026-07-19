@@ -42,7 +42,7 @@ if (is_logged_in()) {
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Custom Style System CSS -->
-    <link rel="stylesheet" href="<?php echo $path_prefix; ?>assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo $path_prefix; ?>assets/css/style.css?v=<?php echo time(); ?>">
     <!-- GSAP CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
