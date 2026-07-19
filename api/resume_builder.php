@@ -80,6 +80,12 @@ $experience = $stmtExp->fetchAll();
 $stmtSkills = $pdo->prepare("SELECT s.name, us.progress FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = ?");
 $stmtSkills->execute([$user_id]);
 $skills = $stmtSkills->fetchAll();
+
+// Resolve avatar path
+$avatar_pic = '';
+if (!empty($profile['profile_pic']) && file_exists(__DIR__ . '/../' . $profile['profile_pic'])) {
+    $avatar_pic = '../' . $profile['profile_pic'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -105,6 +111,8 @@ $skills = $stmtSkills->fetchAll();
             --text-light: #64748b;
             --border: #e2e8f0;
             --font-family: 'Inter', sans-serif;
+            --page-margin: 25mm;
+            --section-spacing: 1.75rem;
         }
 
         * {
@@ -364,7 +372,7 @@ $skills = $stmtSkills->fetchAll();
             color: var(--text-main);
             font-family: var(--font-family);
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
-            padding: 3rem;
+            padding: var(--page-margin);
             position: relative;
             box-sizing: border-box;
             transition: all 0.2s ease;
@@ -425,7 +433,7 @@ $skills = $stmtSkills->fetchAll();
         }
 
         .resume-section {
-            margin-bottom: 1.75rem;
+            margin-bottom: var(--section-spacing);
         }
 
         .section-title {
@@ -843,7 +851,13 @@ $skills = $stmtSkills->fetchAll();
                 </div>
 
                 <div class="form-group">
-                    <label>Accent Color</label>
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Accent Color</span>
+                        <div style="display:flex; align-items:center; gap:0.25rem;">
+                            <span style="font-size:0.75rem; color:#9ca3af;">Custom:</span>
+                            <input type="color" id="custom-color-picker" value="#2563eb" style="border:none; background:none; width:22px; height:22px; cursor:pointer;" onchange="updateCustomColor(this.value)" oninput="updateCustomColor(this.value)">
+                        </div>
+                    </label>
                     <div class="color-selector">
                         <span class="color-dot dot-blue active" title="Sapphire Blue" onclick="setAccent('#2563eb', '#eff6ff', '#1e3a8a', '#e0e7ff', this)"></span>
                         <span class="color-dot dot-green" title="Emerald Green" onclick="setAccent('#10b981', '#ecfdf5', '#064e3b', '#e6f4ea', this)"></span>
@@ -883,6 +897,62 @@ $skills = $stmtSkills->fetchAll();
                     <label class="checkbox-label">
                         <input type="checkbox" id="chk-verification" checked onchange="toggleSection('verification', this.checked)"> Verification
                     </label>
+                    <?php if ($avatar_pic): ?>
+                        <label class="checkbox-label" style="grid-column: span 2; margin-top: 0.25rem;">
+                            <input type="checkbox" id="chk-avatar" onchange="toggleAvatar(this.checked)"> Show Profile Photo
+                        </label>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <!-- Section 2B: Layout & Spacing -->
+            <section class="sidebar-section">
+                <h3 class="sidebar-section-title"><i class="fa-solid fa-arrows-left-right-to-line"></i> Layout & Spacing</h3>
+                
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between; margin-bottom: 0.3rem;">
+                        <span>Page Margin (mm)</span>
+                        <span id="lbl-margin">25</span>
+                    </label>
+                    <input type="range" class="custom-range" min="15" max="35" value="25" oninput="setPageMargin(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between; margin-bottom: 0.3rem;">
+                        <span>Section Spacing (rem)</span>
+                        <span id="lbl-spacing">1.75</span>
+                    </label>
+                    <input type="range" class="custom-range" min="0.8" max="2.5" step="0.05" value="1.75" oninput="setSectionSpacing(this.value)">
+                </div>
+            </section>
+
+            <!-- Section 2C: Customize Titles -->
+            <section class="sidebar-section">
+                <h3 class="sidebar-section-title"><i class="fa-solid fa-heading"></i> Customize Titles</h3>
+                
+                <div class="form-group">
+                    <label>Summary Section Title</label>
+                    <input type="text" class="form-input" value="Professional Summary" oninput="updateSectionTitle('summary', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Experience Section Title</label>
+                    <input type="text" class="form-input" value="Experience" oninput="updateSectionTitle('experience', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Education Section Title</label>
+                    <input type="text" class="form-input" value="Education" oninput="updateSectionTitle('education', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Skills Section Title</label>
+                    <input type="text" class="form-input" value="Skills" oninput="updateSectionTitle('skills', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Verification Section Title</label>
+                    <input type="text" class="form-input" value="Verification" oninput="updateSectionTitle('verification', this.value)">
                 </div>
             </section>
 
@@ -937,6 +1007,11 @@ $skills = $stmtSkills->fetchAll();
                 
                 <!-- 1. CREATIVE SIDEBAR INTRO LINK GROUP (Only active in template-creative) -->
                 <div id="creative-header-meta" style="display:none;">
+                    <?php if ($avatar_pic): ?>
+                        <div style="text-align: center; margin-bottom: 1.25rem;" id="creative-avatar-container">
+                            <img src="<?php echo htmlspecialchars($avatar_pic); ?>" id="creative-resume-avatar" class="resume-avatar-img" style="display: none; width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #ffffff; box-shadow: 0 6px 15px rgba(0,0,0,0.1); margin: 0 auto;">
+                        </div>
+                    <?php endif; ?>
                     <div class="creative-top-header">
                         <h2 id="creative-name"><?php echo htmlspecialchars($user['name']); ?></h2>
                         <p id="creative-dept"><?php echo htmlspecialchars($user['department_name'] ?? $role); ?></p>
@@ -957,9 +1032,14 @@ $skills = $stmtSkills->fetchAll();
 
                 <!-- 2. STANDARD RUNTIME HEADER (Classic / Modern / Minimalist) -->
                 <header class="resume-header" id="standard-header">
-                    <div class="header-left">
-                        <h2 id="val-name"><?php echo htmlspecialchars($user['name']); ?></h2>
-                        <p id="val-dept"><?php echo htmlspecialchars($user['department_name'] ?? $role); ?></p>
+                    <div style="display: flex; align-items: center; gap: 1.25rem;">
+                        <?php if ($avatar_pic): ?>
+                            <img src="<?php echo htmlspecialchars($avatar_pic); ?>" id="resume-avatar" class="resume-avatar-img" style="display: none; width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3.5px solid var(--accent-light); box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
+                        <?php endif; ?>
+                        <div class="header-left">
+                            <h2 id="val-name"><?php echo htmlspecialchars($user['name']); ?></h2>
+                            <p id="val-dept"><?php echo htmlspecialchars($user['department_name'] ?? $role); ?></p>
+                        </div>
                     </div>
                     <div class="header-right" id="standard-contacts">
                         <div><i class="fa-solid fa-envelope"></i> <span id="val-email"><?php echo htmlspecialchars($user['email']); ?></span></div>
@@ -992,13 +1072,13 @@ $skills = $stmtSkills->fetchAll();
                         
                         <!-- Summary Section -->
                         <section class="resume-section" id="section-summary" style="<?php echo empty($profile['bio']) ? 'display:none;' : ''; ?>">
-                            <h3 class="section-title"><i class="fa-solid fa-user"></i> Professional Summary</h3>
+                            <h3 class="section-title" id="head-summary"><i class="fa-solid fa-user"></i> <span class="sec-title-text">Professional Summary</span></h3>
                             <p class="summary-text" id="val-bio"><?php echo nl2br(htmlspecialchars($profile['bio'] ?? '')); ?></p>
                         </section>
 
                         <!-- Experience Section -->
                         <section class="resume-section" id="section-experience">
-                            <h3 class="section-title"><i class="fa-solid fa-briefcase"></i> Experience</h3>
+                            <h3 class="section-title" id="head-experience"><i class="fa-solid fa-briefcase"></i> <span class="sec-title-text">Experience</span></h3>
                             <div id="experience-list-container">
                                 <?php if ($experience): ?>
                                     <?php foreach ($experience as $exp): ?>
@@ -1029,7 +1109,7 @@ $skills = $stmtSkills->fetchAll();
 
                         <!-- Education Section -->
                         <section class="resume-section" id="section-education">
-                            <h3 class="section-title"><i class="fa-solid fa-graduation-cap"></i> Education</h3>
+                            <h3 class="section-title" id="head-education"><i class="fa-solid fa-graduation-cap"></i> <span class="sec-title-text">Education</span></h3>
                             <div id="education-list-container">
                                 <?php if ($education): ?>
                                     <?php foreach ($education as $edu): ?>
@@ -1056,7 +1136,7 @@ $skills = $stmtSkills->fetchAll();
                         
                         <!-- Skills Section -->
                         <section class="resume-section" id="section-skills">
-                            <h3 class="section-title"><i class="fa-solid fa-code"></i> Skills</h3>
+                            <h3 class="section-title" id="head-skills"><i class="fa-solid fa-code"></i> <span class="sec-title-text">Skills</span></h3>
                             <div id="skills-list-container">
                                 <?php if ($skills): ?>
                                     <ul class="skills-list">
@@ -1080,7 +1160,7 @@ $skills = $stmtSkills->fetchAll();
 
                         <!-- Verification Certificate section -->
                         <section class="resume-section" id="section-verification">
-                            <h3 class="section-title"><i class="fa-solid fa-award"></i> Verification</h3>
+                            <h3 class="section-title" id="head-verification"><i class="fa-solid fa-award"></i> <span class="sec-title-text">Verification</span></h3>
                             <div class="verification-badge">
                                 <i class="fa-solid fa-shield-halved" style="color:var(--accent); font-size:1.1rem; float:left; margin-right:0.5rem; margin-top:0.1rem;"></i>
                                 Verified by <strong>AlumniNet Academic Portal</strong>. Generated directly from registered campus database records.
@@ -1112,7 +1192,58 @@ $skills = $stmtSkills->fetchAll();
             
             // Toggle active highlight dots
             document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            if (element) element.classList.add('active');
+
+            // Sync color picker value
+            const picker = document.getElementById('custom-color-picker');
+            if (picker) picker.value = primaryHex;
+        }
+
+        // Custom Color Picker dynamic shades calculations
+        function updateCustomColor(hex) {
+            document.documentElement.style.setProperty('--accent', hex);
+            
+            // Compute lighter and darker tints programmatically
+            const r = parseInt(hex.slice(1,3), 16);
+            const g = parseInt(hex.slice(3,5), 16);
+            const b = parseInt(hex.slice(5,7), 16);
+            
+            document.documentElement.style.setProperty('--accent-light', `rgba(${r}, ${g}, ${b}, 0.08)`);
+            document.documentElement.style.setProperty('--accent-dark', `rgb(${Math.max(0, r-40)}, ${Math.max(0, g-40)}, ${Math.max(0, b-40)})`);
+            document.documentElement.style.setProperty('--accent-tint', `rgba(${r}, ${g}, ${b}, 0.04)`);
+            
+            // Deactivate default dots
+            document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('active'));
+            
+            const picker = document.getElementById('custom-color-picker');
+            if (picker) picker.value = hex;
+        }
+
+        // Spacing Customizers
+        function setPageMargin(val) {
+            document.documentElement.style.setProperty('--page-margin', val + 'mm');
+            document.getElementById('lbl-margin').textContent = val;
+        }
+
+        function setSectionSpacing(val) {
+            document.documentElement.style.setProperty('--section-spacing', val + 'rem');
+            document.getElementById('lbl-spacing').textContent = val;
+        }
+
+        // Header Title custom text updates
+        function updateSectionTitle(sectionId, newTitle) {
+            const header = document.getElementById('head-' + sectionId);
+            if (header) {
+                const textSpan = header.querySelector('.sec-title-text');
+                if (textSpan) textSpan.textContent = newTitle;
+            }
+        }
+
+        // Profile headshot toggle
+        function toggleAvatar(show) {
+            document.querySelectorAll('.resume-avatar-img').forEach(img => {
+                img.style.display = show ? 'block' : 'none';
+            });
         }
 
         // Set layout templates

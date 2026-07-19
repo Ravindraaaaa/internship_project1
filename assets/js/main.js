@@ -781,7 +781,8 @@ document.addEventListener('DOMContentLoaded', function() {
         drawLoop();
     }
 
-    // ==================== 9. CARD TILT EFFECT (3D HOVER) ====================
+    // ==================== 9. CARD TILT EFFECT (3D HOVER) - DISABLED FOR USABILITY ====================
+    /*
     const cards = document.querySelectorAll('.card-glass');
     cards.forEach(card => {
         card.addEventListener('mousemove', function(e) {
@@ -814,8 +815,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    */
 
-    // ==================== 10. MAGNETIC BUTTONS ====================
+    // ==================== 10. MAGNETIC BUTTONS - DISABLED FOR USABILITY ====================
+    /*
     const magneticBtns = document.querySelectorAll('.btn-primary, .btn-secondary');
     magneticBtns.forEach(btn => {
         btn.addEventListener('mousemove', function(e) {
@@ -841,6 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    */
 
     // ==================== 11. TOAST NOTIFICATIONS FACTORY ====================
     window.showToast = function(message, type = 'success') {
