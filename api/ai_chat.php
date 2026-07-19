@@ -55,7 +55,7 @@ try {
             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . urlencode($apiKey);
             
             // Build specialized system-prompt context
-            $promptText = "System Context: You are the AlumniNet Intelligent Career Assistant. Help students/alumni with Placement Questions, Career Guidance, Resume Tips, Interview Questions, and Roadmaps. Always provide formatted markdown responses.\n\nUser Question: " . $message;
+            $promptText = "System Context: You are the AlumniNet Advanced AI Chatbot. You are a highly intelligent career companion and technical advisor. You can assist students and alumni with placement details, career guidance, resume tips, interview prep, programming questions, code debugging, cover letters, and general academic or professional knowledge. Always provide beautifully structured, detailed markdown responses.\n\nUser Question: " . $message;
             
             $postData = [
                 'contents' => [
@@ -96,8 +96,64 @@ try {
         if (!$gemini_success) {
             $lower_message = strtolower($message);
             
+            // 0.1 PROGRAMMING & CODING TOPICS
+            if (preg_match('/\b(python|java|javascript|js|php|c\+\+|cpp|c#|html|css|sql|ruby|swift|rust|go|code|coding|program|programming|loop|function|array|database|quicksort|binary search)\b/i', $lower_message)) {
+                $response = "### 💻 Technical & Programming Guide\n\nI detected a coding/technical query! While I am currently running on a rule-based engine, here is a structured path and code advice for students:\n\n" .
+                            "#### 🚀 Essential Developer Roadmap:\n" .
+                            "1. **Fundamentals first:** Master concepts like variables, loops, arrays, and standard control structures.\n" .
+                            "2. **Version Control:** Learn `git` immediately. Every repository project requires committing and pushing changes.\n" .
+                            "3. **Data Structures & Algorithms:** Key for cracking tech placements (practicing Quicksort, BFS/DFS, Binary Search).\n\n" .
+                            "#### 📦 Quick Code Example (Python - Binary Search):\n" .
+                            "```python\n" .
+                            "def binary_search(arr, target):\n" .
+                            "    low, high = 0, len(arr) - 1\n" .
+                            "    while low <= high:\n" .
+                            "        mid = (low + high) // 2\n" .
+                            "        if arr[mid] == target:\n" .
+                            "            return mid\n" .
+                            "        elif arr[mid] < target:\n" .
+                            "            low = mid + 1\n" .
+                            "        else:\n" .
+                            "            high = mid - 1\n" .
+                            "    return -1\n" .
+                            "```\n\n" .
+                            "💡 *Tip:* Check out registered alumni at the **[Alumni Directory](../user/alumni.php)** who work at tech firms to ask them for a code review or mentorship session!";
+            }
+            
+            // 0.2 COVER LETTERS & RESUME FORMATTING
+            elseif (preg_match('/\b(cover letter|letter template|resume template|cv format|resume format|write resume|how to write cv|cv template)\b/i', $lower_message)) {
+                $response = "### 📄 Professional Cover Letter & Resume Structure\n\nHere is a modern, high-conversion cover letter template you can adapt for your job applications:\n\n" .
+                            "```markdown\n" .
+                            "[Your Name]\n" .
+                            "[Your Email] | [Your Phone] | [LinkedIn Link]\n\n" .
+                            "Date: [Current Date]\n\n" .
+                            "To:\n" .
+                            "Hiring Team\n" .
+                            "[Company Name]\n\n" .
+                            "Dear Hiring Committee,\n\n" .
+                            "I am writing to express my strong interest in the [Position Name] role at [Company Name]. As a student majoring in [Your Major] at AlumniNet, I have built practical experience in [Key Skill 1] and [Key Skill 2].\n\n" .
+                            "In my portfolio, I completed [Project Name] which involved [brief impact/results]. I am excited to apply my dedication and problem-solving skills to help [Company Name] achieve its goals.\n\n" .
+                            "Thank you for your time. I look forward to discussing how my background aligns with your requirements.\n\n" .
+                            "Sincerely,\n" .
+                            "[Your Name]\n" .
+                            "```\n\n" .
+                            "🌟 **Resume Builder Link:** You don't need to write one from scratch! Launch the **[AlumniNet Resume Builder](../api/resume_builder.php)** to instantly generate a professional, A4 printable resume containing your verified credentials.";
+            }
+            
+            // 0.3 INTERVIEW QUESTIONS & MOCK PRACTICE
+            elseif (preg_match('/\b(interview|mock|prep|questions|interview tips|interview prep|cracking)\b/i', $lower_message)) {
+                $response = "### 🤝 Interview Preparation Guide\n\nHere are the top 3 behavioral questions you will encounter and how to tackle them:\n\n" .
+                            "1. **\"Tell me about yourself.\"**\n" .
+                            "   * *Strategy:* Use the **Present-Past-Future** framework. Summarize your current studies, past key projects/skills, and why you are excited about this specific job.\n" .
+                            "2. **\"Describe a challenging technical problem you solved.\"**\n" .
+                            "   * *Strategy:* Use the **STAR** method (Situation, Task, Action, Result). Quantify results whenever possible (e.g. \"improved database speed by 35%\").\n" .
+                            "3. **\"Why do you want to work here?\"**\n" .
+                            "   * *Strategy:* Research the company's product line and mention how it inspires you.\n\n" .
+                            "💡 *Tip:* You can request mock interviews directly from verified alumni! Head to the **[Alumni Directory](../user/alumni.php)**, connect with an approved alum working in your target industry, and send them a mentorship request.";
+            }
+
             // 1. PLACEMENT & INTERNSHIP QUERIES
-            if (strpos($lower_message, 'job') !== false || strpos($lower_message, 'internship') !== false || strpos($lower_message, 'placement') !== false || strpos($lower_message, 'vacancy') !== false) {
+            elseif (strpos($lower_message, 'job') !== false || strpos($lower_message, 'internship') !== false || strpos($lower_message, 'placement') !== false || strpos($lower_message, 'vacancy') !== false) {
                 $stmt = $pdo->query("SELECT title, company, location, type FROM jobs WHERE status = 'active' ORDER BY created_at DESC LIMIT 3");
                 $jobs = $stmt->fetchAll();
                 if ($jobs) {
@@ -190,7 +246,7 @@ try {
             
             // 6. GREETINGS
             elseif (preg_match('/\b(hi|hello|hey|hola|greetings)\b/', $lower_message)) {
-                $response = "Hello! Hope you are doing well today. How can I assist you with the AlumniNet platform? You can ask me about placements, events, directory connections, or profile scores!";
+                $response = "Hello! Hope you are doing well today. How can I assist you with the AlumniNet platform? You can ask me about placements, events, directory connections, resume building, coding roadmaps, or profile scores!";
             }
             
             // 7. ABOUT / CREATOR
@@ -224,16 +280,18 @@ try {
                     $greeting = htmlspecialchars($custom_prompt);
                 }
                 
-                $fallbacks = [
-                    $greeting . "\n\nTry asking me questions like:\n* *\"Are there any jobs available?\"*\n* *\"Tell me about upcoming events.\"*",
-                    "I'm here to help! While I didn't catch the exact keyword, you can query active vacancies, upcoming assemblies, or search the directory. What else can I guide you with?",
-                    "Could you please rephrase that? Try asking about 'jobs', 'profile completion', or 'upcoming events'.",
-                    "I am indexing AlumniNet records to assist you. If you need help with a specific module, please specify (e.g., 'resume builder', 'chat', or 'alumni search').",
-                    "AlumniNet is designed to connect students and graduates. Try asking 'how to chat with alumni' or 'are there any jobs' to get started."
-                ];
+                $querySnippet = htmlspecialchars(strlen($message) > 40 ? substr($message, 0, 40) . '...' : $message);
                 
-                // Varied answer selection based on message length and content
-                $response = $fallbacks[strlen($message) % count($fallbacks)];
+                $response = "### ℹ️ AlumniNet Assistant (Local Mode)\n\n" .
+                            "You asked: *\"" . $querySnippet . "\"*\n\n" .
+                            "Currently, the AI Assistant is running on the **local rule-based engine**. To enable **Advanced General AI Answers** (capable of solving coding bugs, writing customized content, and answering any query):\n\n" .
+                            "1. **Get an API Key:** Register a free API Key on [Google AI Studio](https://aistudio.google.com/).\n" .
+                            "2. **Configure Settings:** Log in as an Administrator, go to **Admin Dashboard -> Enterprise Control**, and save your Gemini API Key in the settings.\n\n" .
+                            "**In local mode, here are things you can ask me about:**\n" .
+                            "* 💼 *\"Are there any jobs available?\"* - Show active internship postings.\n" .
+                            "* 📅 *\"Tell me about upcoming events.\"* - View the next campus reunions/meetups.\n" .
+                            "* 📂 *\"How do I download my CV?\"* - Open the [Resume Builder](../api/resume_builder.php).\n" .
+                            "* 💻 *\"Help me with Python coding / interview prep.\"* - Open interactive guides.";
             }
         }
         
