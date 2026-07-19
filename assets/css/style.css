@@ -393,8 +393,13 @@ body.theme-glass-white .custom-cursor-glow {
 }
 
 .input-glass option {
-    background: var(--theme-sidebar, #111827);
-    color: var(--theme-text, #ffffff);
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+body.theme-glass-white .input-glass option {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
 }
 
 .input-glass:focus {
@@ -690,13 +695,16 @@ body.theme-glass-white .input-glass:focus {
 .sidebar-item .link-text {
     font-size: 0.95rem;
     white-space: nowrap;
-    transition: opacity var(--transition-speed);
+    display: inline-block;
+    vertical-align: middle;
+    transition: opacity var(--transition-speed) var(--transition-bezier), width var(--transition-speed) var(--transition-bezier), visibility var(--transition-speed);
 }
 
 .sidebar.collapsed .sidebar-item .link-text {
     opacity: 0;
     width: 0;
     overflow: hidden;
+    visibility: hidden;
 }
 
 .sidebar-item a i {
