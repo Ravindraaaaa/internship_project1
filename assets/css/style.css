@@ -1395,7 +1395,8 @@ input:checked + .switch-slider:before {
 }
 
 .ai-chat-fab:hover {
-    transform: scale(1.08) rotate(5deg);
+    transform: translateY(-4px) scale(1.04);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--theme-accent-glow);
 }
 
 .ai-chat-window {
