@@ -181,24 +181,25 @@ require_once __DIR__ . '/../includes/header.php';
             delay: 0.1
         });
 
-        // 2. Password visibility switch
-        const toggleBtn = document.getElementById('toggle-admin-pass');
-        const passInput = document.getElementById('password');
-        
-        if (toggleBtn && passInput) {
-            toggleBtn.addEventListener('click', function() {
-                if (passInput.type === 'password') {
-                    passInput.type = 'text';
-                    this.setAttribute('data-lucide', 'eye');
-                } else {
-                    passInput.type = 'password';
-                    this.setAttribute('data-lucide', 'eye-off');
+        // 2. Password visibility switch (using event delegation to handle Lucide icon replacement)
+        document.addEventListener('click', function(e) {
+            const toggleBtn = e.target.closest('#toggle-admin-pass');
+            if (toggleBtn) {
+                const passInput = document.getElementById('password');
+                if (passInput) {
+                    if (passInput.type === 'password') {
+                        passInput.type = 'text';
+                        toggleBtn.setAttribute('data-lucide', 'eye');
+                    } else {
+                        passInput.type = 'password';
+                        toggleBtn.setAttribute('data-lucide', 'eye-off');
+                    }
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
                 }
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            });
-        }
+            }
+        });
 
         // 3. Button loading state mock visual
         const form = document.getElementById('admin-form');
