@@ -144,7 +144,7 @@ if ($role === 'alumni') {
 
 $completion_percent = round(($filled_fields / $total_fields) * 100);
 
-$sidebar_avatar = $profile['profile_pic'] ? htmlspecialchars($profile['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+$sidebar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
 
 $is_subfolder = true;
 require_once __DIR__ . '/../includes/header.php';

@@ -122,16 +122,12 @@ if (!is_admin()) {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/' . $prof['profile_pic'])) {
-            $sidebar_avatar = $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     } else if ($role === 'student') {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/' . $prof['profile_pic'])) {
-            $sidebar_avatar = $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     }
 }
 
@@ -167,9 +163,9 @@ require_once __DIR__ . '/../includes/header.php';
                     
                     <?php if (!empty($received_requests)): ?>
                         <div style="display:flex; flex-direction:column; gap: 1.5rem;">
-                            <?php foreach ($received_requests as $req): 
-                                $student_pic = $req['profile_pic'] ? htmlspecialchars($req['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-                            ?>
+                             <?php foreach ($received_requests as $req): 
+                                 $student_pic = get_avatar_url($req['profile_pic'] ?? '');
+                             ?>
                                 <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                                         <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -213,9 +209,9 @@ require_once __DIR__ . '/../includes/header.php';
                     
                     <?php if (!empty($sent_requests)): ?>
                         <div style="display:flex; flex-direction:column; gap:1.5rem;">
-                            <?php foreach ($sent_requests as $req): 
-                                $alumni_pic = $req['profile_pic'] ? htmlspecialchars($req['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-                            ?>
+                             <?php foreach ($sent_requests as $req): 
+                                 $alumni_pic = get_avatar_url($req['profile_pic'] ?? '');
+                             ?>
                                 <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                                         <div style="display:flex; align-items:center; gap:0.75rem;">

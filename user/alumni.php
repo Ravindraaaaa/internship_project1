@@ -205,7 +205,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php if (!empty($alumni_list)): ?>
             <div class="cards-catalog">
                 <?php foreach ($alumni_list as $alumni): 
-                    $avatar = $alumni['profile_pic'] ? htmlspecialchars($alumni['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    $avatar = get_avatar_url($alumni['profile_pic'] ?? '');
                 ?>
                     <div class="card-glass gsap-reveal" style="display: flex; flex-direction: column;">
                         <div class="alumni-card-header">

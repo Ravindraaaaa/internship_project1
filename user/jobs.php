@@ -86,16 +86,12 @@ if (is_logged_in() && !is_admin()) {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/' . $prof['profile_pic'])) {
-            $sidebar_avatar = $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     } else if ($role === 'student') {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/' . $prof['profile_pic'])) {
-            $sidebar_avatar = $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     }
 } elseif (is_admin()) {
     $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png';

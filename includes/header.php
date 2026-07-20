@@ -17,16 +17,12 @@ if (is_logged_in()) {
         $stmt = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
         $profile = $stmt->fetch();
-        if ($profile && !empty($profile['profile_pic']) && file_exists(__DIR__ . '/../' . $profile['profile_pic'])) {
-            $navbar_avatar = $profile['profile_pic'];
-        }
+        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
     } else if ($role === 'student') {
         $stmt = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
         $profile = $stmt->fetch();
-        if ($profile && !empty($profile['profile_pic']) && file_exists(__DIR__ . '/../' . $profile['profile_pic'])) {
-            $navbar_avatar = $profile['profile_pic'];
-        }
+        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
     }
 }
 ?>

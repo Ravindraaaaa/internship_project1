@@ -83,8 +83,12 @@ $skills = $stmtSkills->fetchAll();
 
 // Resolve avatar path
 $avatar_pic = '';
-if (!empty($profile['profile_pic']) && file_exists(__DIR__ . '/../' . $profile['profile_pic'])) {
-    $avatar_pic = '../' . $profile['profile_pic'];
+if (!empty($profile['profile_pic'])) {
+    if (strpos($profile['profile_pic'], 'http') === 0) {
+        $avatar_pic = $profile['profile_pic'];
+    } elseif (file_exists(__DIR__ . '/../' . $profile['profile_pic'])) {
+        $avatar_pic = '../' . $profile['profile_pic'];
+    }
 }
 ?>
 <!DOCTYPE html>

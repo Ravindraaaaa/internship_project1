@@ -222,10 +222,7 @@ $stmt = $pdo->prepare("SELECT * FROM achievements WHERE user_id = ? ORDER BY dat
 $stmt->execute([$user_id]);
 $achievements = $stmt->fetchAll();
 
-$avatar_pic = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
-    $avatar_pic = '../' . $prof['profile_pic'];
-}
+$avatar_pic = get_avatar_url($prof['profile_pic'] ?? '');
 
 require_once __DIR__ . '/../includes/header.php';
 ?>

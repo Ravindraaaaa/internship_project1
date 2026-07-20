@@ -1,6 +1,7 @@
 <?php
 $is_subfolder = true;
 
+require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../middleware/user.php';
 check_user();
@@ -23,16 +24,12 @@ try {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
-            $sidebar_avatar = '../' . $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     } else if ($role === 'student') {
         $stmtP = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
         $prof = $stmtP->fetch();
-        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
-            $sidebar_avatar = '../' . $prof['profile_pic'];
-        }
+        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
     }
 } catch (Exception $e) {
     // Fail silently or set default
@@ -123,7 +120,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- User profile dropdown -->
                 <div style="position: relative;">
-                    <img src="<?php echo htmlspecialchars(str_replace('../', '', $sidebar_avatar)); ?>" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
+                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
                     <div class="nav-dropdown-menu" id="profile-dropdown-menu">
                         <div class="dropdown-header-info">
                             <h4><?php echo htmlspecialchars($user_name); ?></h4>
@@ -219,7 +216,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div style="display:flex; flex-direction:column; gap: 1rem; overflow-y:auto; flex-grow:1;">
                             <?php if (!empty($student_mentorships)): ?>
                                 <?php foreach ($student_mentorships as $conn): 
-                                    $mentor_avatar = $conn['profile_pic'] ? htmlspecialchars($conn['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                                    $mentor_avatar = get_avatar_url($conn['profile_pic'] ?? '');
                                 ?>
                                     <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--theme-border); padding-bottom: 0.75rem;">
                                         <div style="display:flex; align-items:center; gap: 0.75rem;">
@@ -288,7 +285,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($alumni_mentorships)): ?>
                             <div style="display:flex; flex-direction:column; gap:1.25rem;">
                                 <?php foreach ($alumni_mentorships as $req): 
-                                    $student_pic = $req['profile_pic'] ? htmlspecialchars($req['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                                    $student_pic = get_avatar_url($req['profile_pic'] ?? '');
                                 ?>
                                     <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-md);">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">

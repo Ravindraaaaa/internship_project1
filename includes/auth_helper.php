@@ -251,6 +251,22 @@ if (!function_exists('check_user_eligibility')) {
         return ['eligible' => true, 'reason' => ''];
     }
 }
+if (!function_exists('get_avatar_url')) {
+    function get_avatar_url($profile_pic) {
+        if (empty($profile_pic)) {
+            return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        }
+        if (strpos($profile_pic, 'http://') === 0 || strpos($profile_pic, 'https://') === 0) {
+            return $profile_pic;
+        }
+        $path_prefix = (basename(dirname($_SERVER['PHP_SELF'])) === 'user' || basename(dirname($_SERVER['PHP_SELF'])) === 'admin') ? '../' : '';
+        $local_path = __DIR__ . '/../' . $profile_pic;
+        if (file_exists($local_path)) {
+            return $path_prefix . $profile_pic;
+        }
+        return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    }
+}
 
 if (!function_exists('render_sidebar')) {
     function render_sidebar($active_page = '') {
@@ -277,16 +293,12 @@ if (!function_exists('render_sidebar')) {
                         $stmt = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
                         $stmt->execute([$uid]);
                         $prof = $stmt->fetch();
-                        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
-                            $sidebar_avatar = $path_prefix . $prof['profile_pic'];
-                        }
+                        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
                     } else if ($role === 'student') {
                         $stmt = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
                         $stmt->execute([$uid]);
                         $prof = $stmt->fetch();
-                        if ($prof && !empty($prof['profile_pic']) && file_exists(__DIR__ . '/../' . $prof['profile_pic'])) {
-                            $sidebar_avatar = $path_prefix . $prof['profile_pic'];
-                        }
+                        $sidebar_avatar = get_avatar_url($prof['profile_pic'] ?? '');
                     }
                 } catch (Exception $e) {
                     // silent fail
