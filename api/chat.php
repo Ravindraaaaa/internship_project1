@@ -228,25 +228,41 @@ try {
         exit;
     }
 
-    // 4. TYPING UPDATE ACTION
-    elseif ($action === 'typing') {
-        $conversation_id = intval($_POST['conversation_id'] ?? 0);
-        if ($conversation_id > 0) {
-            $stmt = $pdo->prepare("SELECT sender_id, receiver_id FROM conversations WHERE id = ?");
-            $stmt->execute([$conversation_id]);
-            $convo = $stmt->fetch();
-            if ($convo) {
-                $typing_until = date('Y-m-d H:i:s', time() + 6);
-                if ($convo['sender_id'] == $user_id) {
-                    $stmtUpdate = $pdo->prepare("UPDATE conversations SET sender_typing_until = ? WHERE id = ?");
-                    $stmtUpdate->execute([$typing_until, $conversation_id]);
-                } elseif ($convo['receiver_id'] == $user_id) {
-                    $stmtUpdate = $pdo->prepare("UPDATE conversations SET receiver_typing_until = ? WHERE id = ?");
-                    $stmtUpdate->execute([$typing_until, $conversation_id]);
+    // 5. DELETE CONVERSATION ACTION
+    elseif ($action === 'delete') {
+        $conversation_id = intval($_POST['conversation_id'] ?? $_GET['conversation_id'] ?? 0);
+        if ($conversation_id <= 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid conversation ID.']);
+            exit;
+        }
+
+        // Verify membership
+        $stmt = $pdo->prepare("SELECT sender_id, receiver_id FROM conversations WHERE id = ?");
+        $stmt->execute([$conversation_id]);
+        $convo = $stmt->fetch();
+        if (!$convo || ($convo['sender_id'] != $user_id && $convo['receiver_id'] != $user_id)) {
+            echo json_encode(['status' => 'error', 'message' => 'Access denied.']);
+            exit;
+        }
+
+        // Delete associated attachment files from disk
+        $stmtMsg = $pdo->prepare("SELECT attachment_path FROM messages WHERE conversation_id = ? AND attachment_path IS NOT NULL");
+        $stmtMsg->execute([$conversation_id]);
+        $attachments = $stmtMsg->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($attachments as $path) {
+            if ($path) {
+                $fullPath = __DIR__ . '/../' . $path;
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
                 }
             }
         }
-        echo json_encode(['status' => 'success']);
+
+        // Delete conversation (triggers cascade delete of messages)
+        $stmtDelete = $pdo->prepare("DELETE FROM conversations WHERE id = ?");
+        $stmtDelete->execute([$conversation_id]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Conversation deleted successfully.']);
         exit;
     }
 

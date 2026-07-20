@@ -152,6 +152,11 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="text" id="thread-msg-search" class="input-glass" style="font-size: 0.75rem; padding: 0.35rem 0.5rem 0.35rem 1.5rem; width: 120px;" placeholder="Search chat..." oninput="filterThreadMessages()">
                         <i class="fa-solid fa-magnifying-glass" style="font-size: 0.72rem; color: var(--theme-text-secondary); position: absolute; left: 8px; pointer-events: none;"></i>
                     </div>
+
+                    <!-- Delete Conversation Button -->
+                    <button class="theme-toggle-btn" id="delete-chat-btn" onclick="deleteActiveChat()" title="Delete Conversation" style="padding: 0.45rem 0.65rem; color: var(--accent-danger, #ef4444); border-color: rgba(239, 68, 68, 0.2);">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
 
                 <!-- Chat Messages Stream -->
@@ -687,6 +692,54 @@ require_once __DIR__ . '/../includes/header.php';
         return str.replace(/[&<>'"]/g, 
             tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
         );
+    }
+
+    function deleteActiveChat() {
+        if (activeConversationId <= 0) return;
+        if (!confirm("Are you sure you want to delete this conversation? This will permanently delete all messages and attachments for both participants.")) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'delete');
+        formData.append('conversation_id', activeConversationId);
+
+        // Visual loading state
+        const deleteBtn = document.getElementById('delete-chat-btn');
+        const originalContent = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        deleteBtn.disabled = true;
+
+        fetch('../api/chat.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            deleteBtn.innerHTML = originalContent;
+            deleteBtn.disabled = false;
+            if (data.status === 'success') {
+                window.showToast ? window.showToast(data.message, 'success') : alert(data.message);
+                
+                // Hide header and inputs, and reset stream
+                document.getElementById('chat-thread-header').style.display = 'none';
+                document.getElementById('chat-input-container').style.display = 'none';
+                document.getElementById('chat-stream-placeholder').style.display = 'flex';
+                document.getElementById('chat-messages-stream').innerHTML = '';
+                
+                // Reset active chat variables and return to list
+                backToConversationsList();
+                loadConversationsList();
+            } else {
+                window.showToast ? window.showToast(data.message, 'error') : alert(data.message);
+            }
+        })
+        .catch(err => {
+            deleteBtn.innerHTML = originalContent;
+            deleteBtn.disabled = false;
+            console.error("Error deleting chat:", err);
+            alert("An error occurred while deleting the chat.");
+        });
     }
 </script>
 
