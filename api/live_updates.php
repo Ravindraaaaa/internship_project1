@@ -49,6 +49,22 @@ try {
         $stmtLogs = $pdo->query("SELECT a.action, a.details, a.created_at, u.name as user_name FROM activity_logs a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.created_at DESC LIMIT 5");
         $response['activity_timeline'] = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch logs for messages tab
+        $stmtMentRequests = $pdo->query("SELECT mr.message, mr.status, mr.created_at, u_std.name as student_name, u_alm.name as alumni_name 
+                                         FROM mentorship_requests mr 
+                                         JOIN users u_std ON mr.student_id = u_std.id 
+                                         JOIN users u_alm ON mr.alumni_id = u_alm.id 
+                                         ORDER BY mr.created_at DESC LIMIT 50");
+        $response['mentorship_requests_logs'] = $stmtMentRequests->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtChatMessages = $pdo->query("SELECT m.id, m.message, m.is_read, m.created_at, u_snd.name as sender_name, u_rcv.name as receiver_name 
+                                         FROM messages m 
+                                         JOIN conversations c ON m.conversation_id = c.id 
+                                         JOIN users u_snd ON m.sender_id = u_snd.id 
+                                         JOIN users u_rcv ON (CASE WHEN m.sender_id = c.sender_id THEN c.receiver_id ELSE c.sender_id END) = u_rcv.id 
+                                         ORDER BY m.created_at DESC LIMIT 50");
+        $response['chat_messages_logs'] = $stmtChatMessages->fetchAll(PDO::FETCH_ASSOC);
+
         // Chart Data: Monthly Registrations (Last 6 Months)
         $regData = [];
         for ($i = 5; $i >= 0; $i--) {

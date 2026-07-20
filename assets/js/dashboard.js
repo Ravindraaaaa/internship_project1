@@ -218,10 +218,93 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // 5. Update Activity logs timeline (Admin only)
                     updateTimelineUI(data);
+
+                    // 6. Update Messages Logs tab (Admin only)
+                    updateMessagesUI(data);
                 }
             })
             .catch(err => console.error("Error polling live updates:", err));
     }
+
+    function updateMessagesUI(data) {
+        const mentorshipTbody = document.getElementById('mentorship-logs-tbody');
+        if (mentorshipTbody && data.mentorship_requests_logs) {
+            let mentorshipHtml = '';
+            data.mentorship_requests_logs.forEach(msg => {
+                const statusClass = msg.status === 'accepted' ? 'approved' : (msg.status === 'pending' ? 'pending' : 'rejected');
+                mentorshipHtml += `
+                    <tr>
+                        <td><strong>${escapeHTML(msg.student_name)}</strong></td>
+                        <td><strong>${escapeHTML(msg.alumni_name)}</strong></td>
+                        <td><span style="font-style: italic; font-size:0.85rem;">"${escapeHTML(msg.message)}"</span></td>
+                        <td><span class="badge badge-${statusClass}">${escapeHTML(msg.status)}</span></td>
+                        <td>${formatDate(msg.created_at)}</td>
+                    </tr>
+                `;
+            });
+            
+            if (mentorshipTbody.getAttribute('data-raw') !== JSON.stringify(data.mentorship_requests_logs)) {
+                mentorshipTbody.innerHTML = mentorshipHtml || '<tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">No mentorship requests logged.</td></tr>';
+                mentorshipTbody.setAttribute('data-raw', JSON.stringify(data.mentorship_requests_logs));
+                const table = document.getElementById('mentorship-logs-table');
+                if (table) enhanceTable(table);
+            }
+        }
+
+        const chatTbody = document.getElementById('chat-logs-tbody');
+        if (chatTbody && data.chat_messages_logs) {
+            let chatHtml = '';
+            data.chat_messages_logs.forEach(msg => {
+                chatHtml += `
+                    <tr>
+                        <td><strong>${escapeHTML(msg.sender_name)}</strong></td>
+                        <td><strong>${escapeHTML(msg.receiver_name)}</strong></td>
+                        <td><span style="font-size:0.85rem;">${escapeHTML(msg.message)}</span></td>
+                        <td><span class="badge badge-${msg.is_read == 1 ? 'approved' : 'pending'}">${msg.is_read == 1 ? 'read' : 'unread'}</span></td>
+                        <td>${formatDate(msg.created_at)}</td>
+                    </tr>
+                `;
+            });
+
+            if (chatTbody.getAttribute('data-raw') !== JSON.stringify(data.chat_messages_logs)) {
+                chatTbody.innerHTML = chatHtml || '<tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">No direct chat messages logged.</td></tr>';
+                chatTbody.setAttribute('data-raw', JSON.stringify(data.chat_messages_logs));
+                const table = document.getElementById('chat-logs-table');
+                if (table) enhanceTable(table);
+            }
+        }
+    }
+
+    window.switchMessageLogTab = function(tabType) {
+        const mentorshipBtn = document.getElementById('btn-show-mentorship');
+        const chatsBtn = document.getElementById('btn-show-chats');
+        const mentorshipLogs = document.getElementById('mentorship-logs-container');
+        const chatsLogs = document.getElementById('chats-logs-container');
+
+        if (tabType === 'mentorship') {
+            if (mentorshipBtn) {
+                mentorshipBtn.style.background = 'var(--theme-accent-purple)';
+                mentorshipBtn.style.color = '#ffffff';
+            }
+            if (chatsBtn) {
+                chatsBtn.style.background = 'transparent';
+                chatsBtn.style.color = 'var(--theme-text-secondary)';
+            }
+            if (mentorshipLogs) mentorshipLogs.style.display = 'block';
+            if (chatsLogs) chatsLogs.style.display = 'none';
+        } else {
+            if (mentorshipBtn) {
+                mentorshipBtn.style.background = 'transparent';
+                mentorshipBtn.style.color = 'var(--theme-text-secondary)';
+            }
+            if (chatsBtn) {
+                chatsBtn.style.background = 'var(--theme-accent-purple)';
+                chatsBtn.style.color = '#ffffff';
+            }
+            if (mentorshipLogs) mentorshipLogs.style.display = 'none';
+            if (chatsLogs) chatsLogs.style.display = 'block';
+        }
+    };
 
     // UI Updates
     function updateNotificationsUI(data) {
@@ -519,6 +602,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Premium Client-side Table Enhancer (Search, Filters, Excel/PDF Exports, Pagination)
     function enhanceTable(tableEl, options = {}) {
         if (!tableEl) return;
+        
+        const existingToolbar = tableEl.previousElementSibling;
+        if (existingToolbar && existingToolbar.classList.contains('table-toolbar')) {
+            existingToolbar.remove();
+        }
+        const existingPagination = tableEl.nextElementSibling;
+        if (existingPagination && existingPagination.classList.contains('table-pagination')) {
+            existingPagination.remove();
+        }
+        
         const tbody = tableEl.querySelector('tbody');
         if (!tbody) return;
         const allRows = Array.from(tbody.querySelectorAll('tr'));

@@ -409,9 +409,20 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- TAB F: MESSAGES -->
             <?php elseif ($tab === 'messages'): ?>
                 <div class="card-glass">
-                    <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem;"><i data-lucide="messages-square" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-purple);"></i> System Connection Requests Log</h3>
-                    <div class="table-responsive">
-                        <table class="custom-table">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                        <h3 style="font-size: 1.3rem; display:flex; align-items:center; gap:0.5rem; margin:0;">
+                            <i data-lucide="messages-square" style="color: var(--theme-accent-purple);"></i> 
+                            System Message Logs
+                        </h3>
+                        <div class="sub-tab-buttons" style="display:flex; gap:0.5rem; background:rgba(255,255,255,0.03); border:1px solid var(--theme-border); padding:0.25rem; border-radius:8px;">
+                            <button class="btn btn-secondary btn-small" id="btn-show-mentorship" onclick="switchMessageLogTab('mentorship')" style="border:none; padding:0.4rem 0.85rem; background: var(--theme-accent-purple); color: #ffffff;">Mentorship Connections</button>
+                            <button class="btn btn-secondary btn-small" id="btn-show-chats" onclick="switchMessageLogTab('chats')" style="border:none; padding:0.4rem 0.85rem; background: transparent; color: var(--theme-text-secondary);">Direct Chats</button>
+                        </div>
+                    </div>
+
+                    <!-- MENTORSHIP MESSAGES CONTAINER -->
+                    <div id="mentorship-logs-container" class="table-responsive">
+                        <table class="custom-table" id="mentorship-logs-table">
                             <thead>
                                 <tr>
                                     <th>From (Student)</th>
@@ -421,7 +432,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <th>Timestamp</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="mentorship-logs-tbody">
                                 <?php foreach ($all_messages as $msg): ?>
                                     <tr>
                                         <td><strong><?php echo htmlspecialchars($msg['student_name']); ?></strong></td>
@@ -431,6 +442,24 @@ require_once __DIR__ . '/../includes/header.php';
                                         <td><?php echo date('M d, Y - h:i A', strtotime($msg['created_at'])); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- DIRECT CHAT MESSAGES CONTAINER -->
+                    <div id="chats-logs-container" class="table-responsive" style="display:none;">
+                        <table class="custom-table" id="chat-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Sender</th>
+                                    <th>Receiver</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chat-logs-tbody">
+                                <tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">Loading chat messages...</td></tr>
                             </tbody>
                         </table>
                     </div>
