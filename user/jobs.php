@@ -113,8 +113,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <h2>Job Opportunities Board</h2>
             </div>
             <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i class="fa-solid fa-palette"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 <?php if (is_admin() || (is_logged_in() && get_user_role() === 'alumni' && $user_status === 'approved')): ?>
                     <button class="btn btn-primary" onclick="openModal('postJobModal')"><i class="fa-solid fa-plus"></i> Share Job Referral</button>

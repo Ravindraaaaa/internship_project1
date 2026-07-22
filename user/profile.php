@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../includes/db.php';
 
@@ -54,8 +55,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $dest_path = $uploadFileDir . $newFileName;
                 if (move_uploaded_file($fileTmpPath, $dest_path)) {
                     $profile_pic_path = 'uploads/profiles/' . $newFileName;
+                } else {
+                    throw new Exception("Failed to save uploaded profile picture.");
                 }
+            } else {
+                throw new Exception("Invalid profile picture extension. Only JPG, JPEG, and PNG are allowed.");
             }
+        } elseif (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] !== UPLOAD_ERR_NO_FILE) {
+            throw new Exception("Profile picture upload failed with error code: " . $_FILES['profile_pic']['error']);
+        }
+
+        if ($profile_pic_path === false) {
+            $profile_pic_path = null;
         }
 
         if ($role === 'alumni') {
@@ -66,20 +77,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $industry = trim($_POST['industry'] ?? '');
             $website = trim($_POST['website'] ?? '');
 
-            $stmtUp = $pdo->prepare("UPDATE alumni_profiles 
-                                     SET graduation_year = ?, course = ?, company = ?, position = ?, industry = ?, linkedin = ?, website = ?, bio = ?, profile_pic = ? 
-                                     WHERE user_id = ?");
-            $stmtUp->execute([$grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path, $uid]);
+            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM alumni_profiles WHERE user_id = ?");
+            $stmtCheck->execute([$uid]);
+            if ($stmtCheck->fetchColumn() > 0) {
+                $stmtUp = $pdo->prepare("UPDATE alumni_profiles 
+                                         SET graduation_year = ?, course = ?, company = ?, position = ?, industry = ?, linkedin = ?, website = ?, bio = ?, profile_pic = ? 
+                                         WHERE user_id = ?");
+                $stmtUp->execute([$grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path, $uid]);
+            } else {
+                $stmtUp = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, linkedin, website, bio, profile_pic) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmtUp->execute([$uid, $grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path]);
+            }
         } else {
             $curr_yr = intval($_POST['current_year'] ?? 1);
             $course = trim($_POST['course'] ?? '');
             $github = trim($_POST['github'] ?? '');
             $cgpa = floatval($_POST['cgpa'] ?? 0.00);
 
-            $stmtUp = $pdo->prepare("UPDATE student_profiles 
-                                     SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? 
-                                     WHERE user_id = ?");
-            $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $uid]);
+            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM student_profiles WHERE user_id = ?");
+            $stmtCheck->execute([$uid]);
+            if ($stmtCheck->fetchColumn() > 0) {
+                $stmtUp = $pdo->prepare("UPDATE student_profiles 
+                                         SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? 
+                                         WHERE user_id = ?");
+                $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $uid]);
+            } else {
+                $stmtUp = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmtUp->execute([$uid, $curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa]);
+            }
         }
 
         // Update name in users table
@@ -112,11 +139,11 @@ try {
     if ($role === 'alumni') {
         $stmtP = $pdo->prepare("SELECT * FROM alumni_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
-        $profile = $stmtP->fetch();
+        $profile = $stmtP->fetch() ?: [];
     } else {
         $stmtP = $pdo->prepare("SELECT * FROM student_profiles WHERE user_id = ?");
         $stmtP->execute([$uid]);
-        $profile = $stmtP->fetch();
+        $profile = $stmtP->fetch() ?: [];
     }
 } catch (Exception $e) {
     set_flash('error', 'Failed loading profile details.');
@@ -181,8 +208,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <h2>Edit Member Profile</h2>
             </div>
             <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i class="fa-solid fa-palette"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 <a href="dashboard.php" class="btn btn-secondary btn-small"><i class="fa-solid fa-gauge"></i> Dashboard</a>
             </div>
@@ -247,94 +274,192 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
 
-                <!-- Right edit form card -->
-                <div class="card-glass">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-user-pen" style="color: var(--theme-accent-blue);"></i> Edit Profile Details</h3>
+                <!-- Right side: View profile details or edit form -->
+                <div class="profile-main-content" style="flex-grow: 1;">
                     
-                    <form action="profile.php" method="POST" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="update_profile">
+                    <!-- View Profile Card -->
+                    <div class="card-glass" id="profile-view-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem;">
+                            <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-id-card" style="color: var(--theme-accent-blue); margin-right: 0.5rem;"></i> Saved Profile Information</h3>
+                            <button type="button" class="btn btn-primary btn-small" onclick="toggleProfileEdit(true)" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
+                        </div>
                         
-                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Full Name</h4>
+                                <p style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($user_name); ?></p>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Email Address</h4>
+                                <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($user_core['email']); ?></p>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Department / Stream</h4>
+                                <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['course'] ?? 'Not set'); ?></p>
+                            </div>
                             
-                            <div class="form-group">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Full Name</label>
-                                <input type="text" name="name" class="input-glass" value="<?php echo htmlspecialchars($user_name); ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Email Address (Read-only)</label>
-                                <input type="email" class="input-glass" value="<?php echo htmlspecialchars($user_core['email']); ?>" readonly style="opacity: 0.6; cursor: not-allowed;">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Department / Stream</label>
-                                <select name="course" class="input-glass" required>
-                                    <option value="Computer Science Engineering" <?php echo ($profile['course'] ?? '') == 'Computer Science Engineering' ? 'selected' : ''; ?>>Computer Science Engineering</option>
-                                    <option value="Information Technology" <?php echo ($profile['course'] ?? '') == 'Information Technology' ? 'selected' : ''; ?>>Information Technology</option>
-                                    <option value="Electronics & Communication" <?php echo ($profile['course'] ?? '') == 'Electronics & Communication' ? 'selected' : ''; ?>>Electronics & Communication</option>
-                                    <option value="Mechanical Engineering" <?php echo ($profile['course'] ?? '') == 'Mechanical Engineering' ? 'selected' : ''; ?>>Mechanical Engineering</option>
-                                    <option value="Civil Engineering" <?php echo ($profile['course'] ?? '') == 'Civil Engineering' ? 'selected' : ''; ?>>Civil Engineering</option>
-                                </select>
-                            </div>
-
-                            <!-- Role specific fields -->
                             <?php if ($role === 'alumni'): ?>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Graduation Year</label>
-                                    <input type="number" name="graduation_year" class="input-glass" min="1950" max="2035" value="<?php echo htmlspecialchars($profile['graduation_year'] ?? date('Y')); ?>" required>
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Graduation Year</h4>
+                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'N/A'); ?></p>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Company</label>
-                                    <input type="text" name="company" class="input-glass" placeholder="e.g. Google" value="<?php echo htmlspecialchars($profile['company'] ?? ''); ?>">
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Current Employment</h4>
+                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">
+                                        <?php if (!empty($profile['position']) || !empty($profile['company'])): ?>
+                                            <?php echo htmlspecialchars($profile['position'] ?? ''); ?> at <?php echo htmlspecialchars($profile['company'] ?? ''); ?>
+                                        <?php else: ?>
+                                            Not specified
+                                        <?php endif; ?>
+                                    </p>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Position</label>
-                                    <input type="text" name="position" class="input-glass" placeholder="e.g. Senior Software Engineer" value="<?php echo htmlspecialchars($profile['position'] ?? ''); ?>">
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Industry Sector</h4>
+                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['industry'] ?? 'N/A'); ?></p>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Industry Sector</label>
-                                    <input type="text" name="industry" class="input-glass" placeholder="e.g. Technology" value="<?php echo htmlspecialchars($profile['industry'] ?? ''); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Website Portfolio URL</label>
-                                    <input type="url" name="website" class="input-glass" placeholder="https://myportfolio.io" value="<?php echo htmlspecialchars($profile['website'] ?? ''); ?>">
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Website / Portfolio URL</h4>
+                                    <p style="font-size: 0.95rem; margin: 0;">
+                                        <?php if (!empty($profile['website'])): ?>
+                                            <a href="<?php echo htmlspecialchars($profile['website']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Visit Website</a>
+                                        <?php else: ?>
+                                            None
+                                        <?php endif; ?>
+                                    </p>
                                 </div>
                             <?php else: ?>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Academic Year (1-4)</label>
-                                    <input type="number" name="current_year" class="input-glass" min="1" max="4" value="<?php echo htmlspecialchars($profile['current_year'] ?? 1); ?>" required>
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Academic Year</h4>
+                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">Year <?php echo htmlspecialchars($profile['current_year'] ?? '1'); ?></p>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Cumulative CGPA (0.00 - 10.00)</label>
-                                    <input type="number" name="cgpa" step="0.01" min="0" max="10" class="input-glass" placeholder="8.50" value="<?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?>" required>
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Cumulative CGPA</h4>
+                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?> / 10.00</p>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">GitHub URL</label>
-                                    <input type="url" name="github" class="input-glass" placeholder="https://github.com/myname" value="<?php echo htmlspecialchars($profile['github'] ?? ''); ?>">
+                                <div>
+                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">GitHub Portfolio</h4>
+                                    <p style="font-size: 0.95rem; margin: 0;">
+                                        <?php if (!empty($profile['github'])): ?>
+                                            <a href="<?php echo htmlspecialchars($profile['github']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-github"></i> Visit GitHub</a>
+                                        <?php else: ?>
+                                            None
+                                        <?php endif; ?>
+                                    </p>
                                 </div>
                             <?php endif; ?>
 
-                            <div class="form-group">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">LinkedIn URL</label>
-                                <input type="url" name="linkedin" class="input-glass" placeholder="https://linkedin.com/in/myname" value="<?php echo htmlspecialchars($profile['linkedin'] ?? ''); ?>">
+                            <div>
+                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">LinkedIn Profile</h4>
+                                <p style="font-size: 0.95rem; margin: 0;">
+                                    <?php if (!empty($profile['linkedin'])): ?>
+                                        <a href="<?php echo htmlspecialchars($profile['linkedin']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-linkedin"></i> Visit LinkedIn</a>
+                                    <?php else: ?>
+                                        None
+                                    <?php endif; ?>
+                                </p>
                             </div>
-
-                            <div class="form-group" style="grid-column: span 2;">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Upload Avatar Picture</label>
-                                <input type="file" name="profile_pic" accept="image/*" class="input-glass">
-                            </div>
-
-                            <div class="form-group" style="grid-column: span 2;">
-                                <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Short Biography</label>
-                                <textarea name="bio" class="input-glass" rows="4" required><?php echo htmlspecialchars($profile['bio'] ?? ''); ?></textarea>
-                            </div>
-
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:1rem;">
-                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
+                        <div style="border-top: 1px solid var(--theme-border); padding-top: 1.25rem;">
+                            <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.5rem;">Short Biography</h4>
+                            <p style="font-size: 0.9rem; color: var(--theme-text); line-height: 1.6; margin: 0; white-space: pre-line;">
+                                <?php echo htmlspecialchars($profile['bio'] ?? 'No bio has been written yet. Introduce yourself to the network!'); ?>
+                            </p>
                         </div>
-                    </form>
+                    </div>
+
+                    <!-- Edit Form Card -->
+                    <div class="card-glass" id="profile-edit-card" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem;">
+                            <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-user-pen" style="color: var(--theme-accent-blue);"></i> Edit Profile Details</h3>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="toggleProfileEdit(false)" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Cancel</button>
+                        </div>
+                        
+                        <form action="profile.php" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="update_profile">
+                            
+                            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Full Name</label>
+                                    <input type="text" name="name" class="input-glass" value="<?php echo htmlspecialchars($user_name); ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Email Address (Read-only)</label>
+                                    <input type="email" class="input-glass" value="<?php echo htmlspecialchars($user_core['email']); ?>" readonly style="opacity: 0.6; cursor: not-allowed;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Department / Stream</label>
+                                    <select name="course" class="input-glass" required>
+                                        <option value="Computer Science Engineering" <?php echo ($profile['course'] ?? '') == 'Computer Science Engineering' ? 'selected' : ''; ?>>Computer Science Engineering</option>
+                                        <option value="Information Technology" <?php echo ($profile['course'] ?? '') == 'Information Technology' ? 'selected' : ''; ?>>Information Technology</option>
+                                        <option value="Electronics & Communication" <?php echo ($profile['course'] ?? '') == 'Electronics & Communication' ? 'selected' : ''; ?>>Electronics & Communication</option>
+                                        <option value="Mechanical Engineering" <?php echo ($profile['course'] ?? '') == 'Mechanical Engineering' ? 'selected' : ''; ?>>Mechanical Engineering</option>
+                                        <option value="Civil Engineering" <?php echo ($profile['course'] ?? '') == 'Civil Engineering' ? 'selected' : ''; ?>>Civil Engineering</option>
+                                    </select>
+                                </div>
+
+                                <!-- Role specific fields -->
+                                <?php if ($role === 'alumni'): ?>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Graduation Year</label>
+                                        <input type="number" name="graduation_year" class="input-glass" min="1950" max="2035" value="<?php echo htmlspecialchars($profile['graduation_year'] ?? date('Y')); ?>" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Company</label>
+                                        <input type="text" name="company" class="input-glass" placeholder="e.g. Google" value="<?php echo htmlspecialchars($profile['company'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Position</label>
+                                        <input type="text" name="position" class="input-glass" placeholder="e.g. Senior Software Engineer" value="<?php echo htmlspecialchars($profile['position'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Industry Sector</label>
+                                        <input type="text" name="industry" class="input-glass" placeholder="e.g. Technology" value="<?php echo htmlspecialchars($profile['industry'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Website Portfolio URL</label>
+                                        <input type="url" name="website" class="input-glass" placeholder="https://myportfolio.io" value="<?php echo htmlspecialchars($profile['website'] ?? ''); ?>">
+                                    </div>
+                                <?php else: ?>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Academic Year (1-4)</label>
+                                        <input type="number" name="current_year" class="input-glass" min="1" max="4" value="<?php echo htmlspecialchars($profile['current_year'] ?? 1); ?>" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Cumulative CGPA (0.00 - 10.00)</label>
+                                        <input type="number" name="cgpa" step="0.01" min="0" max="10" class="input-glass" placeholder="8.50" value="<?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?>" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">GitHub URL</label>
+                                        <input type="url" name="github" class="input-glass" placeholder="https://github.com/myname" value="<?php echo htmlspecialchars($profile['github'] ?? ''); ?>">
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">LinkedIn URL</label>
+                                    <input type="url" name="linkedin" class="input-glass" placeholder="https://linkedin.com/in/myname" value="<?php echo htmlspecialchars($profile['linkedin'] ?? ''); ?>">
+                                </div>
+
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Upload Avatar Picture</label>
+                                    <input type="file" name="profile_pic" accept="image/*" class="input-glass">
+                                </div>
+
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Short Biography</label>
+                                    <textarea name="bio" class="input-glass" rows="4" required><?php echo htmlspecialchars($profile['bio'] ?? ''); ?></textarea>
+                                </div>
+
+                            </div>
+
+                            <div style="display:flex; justify-content:flex-end; gap:1rem;">
+                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
             </div>
@@ -344,5 +469,18 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
+<script>
+function toggleProfileEdit(showEdit) {
+    const viewCard = document.getElementById('profile-view-card');
+    const editCard = document.getElementById('profile-edit-card');
+    if (showEdit) {
+        viewCard.style.display = 'none';
+        editCard.style.display = 'block';
+    } else {
+        viewCard.style.display = 'block';
+        editCard.style.display = 'none';
+    }
+}
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

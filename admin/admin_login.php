@@ -165,7 +165,7 @@ require_once __DIR__ . '/../includes/header.php';
         </form>
 
         <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem;">
-            <a href="index.php" style="color: var(--theme-text-secondary); font-weight: 500;"><i class="fa-solid fa-arrow-left"></i> Return to Public Site</a>
+            <a href="../index.php" style="color: var(--theme-text-secondary); font-weight: 500;"><i class="fa-solid fa-arrow-left"></i> Return to Public Site</a>
         </div>
     </div>
 </div>

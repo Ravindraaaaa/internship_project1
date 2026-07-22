@@ -97,8 +97,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <h2>Messenger Logs</h2>
             </div>
             <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i data-lucide="palette" style="width: 20px; height: 20px;"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 
                 <!-- Start New Chat Dropdown -->

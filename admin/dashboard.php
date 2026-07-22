@@ -108,8 +108,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <i class="fa-solid fa-calendar-plus"></i> Schedule Event
                 </button>
 
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i data-lucide="palette" style="width: 20px; height: 20px;"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 
                 <!-- Notification Bell -->
@@ -322,8 +322,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         <td><?php echo htmlspecialchars($std['email']); ?></td>
                                         <td>Year <?php echo htmlspecialchars($std['current_year'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($std['course'] ?? 'N/A'); ?></td>
-                                        <td style="text-align: right;">
-                                            <a href="admin_approvals.php?action=delete_user&id=<?php echo $std['id']; ?>&tab=students" class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;" onclick="return confirm('Delete student profile completely?')">Delete Student</a>
+                                        <td style="text-align: right; display: flex; justify-content: flex-end; gap: 0.4rem;">
+                                            <button onclick="viewStudentDetails(<?php echo $std['id']; ?>)" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;"><i class="fa-solid fa-eye"></i> View Profile</button>
+                                            <a href="admin_approvals.php?action=delete_user&id=<?php echo $std['id']; ?>&tab=students" class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;" onclick="return confirm('Delete student profile completely?')">Delete</a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -729,6 +730,64 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<!-- Student Details View Modal -->
+<div class="modal" id="studentDetailsModal">
+    <div class="modal-content" style="max-width: 750px; padding: 2.5rem; max-height: 85vh; overflow-y: auto;">
+        <button class="modal-close" onclick="closeModal('studentDetailsModal')">&times;</button>
+        
+        <div style="display: flex; gap: 1.5rem; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+            <img id="m-student-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--theme-border);">
+            <div>
+                <h2 id="m-student-name" style="margin: 0; font-size: 1.45rem;"></h2>
+                <p id="m-student-course" style="color: var(--theme-accent-purple); font-weight: 600; font-size: 0.92rem; margin: 0.2rem 0;"></p>
+                <div style="font-size: 0.8rem; color: var(--theme-text-secondary); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 0.25rem;">
+                    <span><i class="fa-solid fa-envelope"></i> <span id="m-student-email"></span></span>
+                    <span><i class="fa-solid fa-phone"></i> <span id="m-student-phone"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <!-- Column 1: Academic & Bio -->
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-blue); padding-left: 0.5rem;">Academic Info</h3>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); padding: 1rem; border-radius: var(--border-radius-sm); font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    <div><strong>Academic Year:</strong> Year <span id="m-student-year"></span></div>
+                    <div><strong>Cumulative CGPA:</strong> <span id="m-student-cgpa"></span> / 10.00</div>
+                    <div id="m-student-resume-container"></div>
+                </div>
+
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-blue); padding-left: 0.5rem;">Biography</h3>
+                <p id="m-student-bio" style="font-size: 0.88rem; color: var(--theme-text-secondary); line-height: 1.6; margin-bottom: 1.5rem; white-space: pre-line;"></p>
+                
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-blue); padding-left: 0.5rem;">Social Connections</h3>
+                <div style="display: flex; gap: 0.75rem; font-size: 1.25rem;">
+                    <a id="m-student-linkedin" href="#" target="_blank" class="btn btn-secondary btn-small" style="font-size: 0.85rem; display:none;"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
+                    <a id="m-student-github" href="#" target="_blank" class="btn btn-secondary btn-small" style="font-size: 0.85rem; display:none;"><i class="fa-brands fa-github"></i> GitHub</a>
+                </div>
+            </div>
+
+            <!-- Column 2: Skills, Certs, Achievements -->
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-purple); padding-left: 0.5rem;">Skills Stack</h3>
+                <div id="m-student-skills" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <!-- Skills progress bars go here -->
+                </div>
+
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-purple); padding-left: 0.5rem;">Uploaded Credentials</h3>
+                <div id="m-student-certs" style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.5rem; font-size: 0.85rem;">
+                    <!-- Certificates list goes here -->
+                </div>
+
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--theme-text); border-left: 3px solid var(--theme-accent-purple); padding-left: 0.5rem;">Key Achievements</h3>
+                <div id="m-student-achievements" style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.85rem;">
+                    <!-- Achievements go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 <script>
@@ -738,6 +797,133 @@ require_once __DIR__ . '/../includes/header.php';
             if (sidebar) sidebar.classList.add('collapsed');
         }
     });
+
+    function viewStudentDetails(studentId) {
+        const modal = document.getElementById('studentDetailsModal');
+        if (!modal) return;
+        
+        // Clear out previous details
+        document.getElementById('m-student-name').textContent = 'Loading...';
+        document.getElementById('m-student-course').textContent = '';
+        document.getElementById('m-student-email').textContent = '';
+        document.getElementById('m-student-phone').textContent = '';
+        document.getElementById('m-student-year').textContent = '';
+        document.getElementById('m-student-cgpa').textContent = '';
+        document.getElementById('m-student-bio').textContent = '';
+        document.getElementById('m-student-skills').innerHTML = '';
+        document.getElementById('m-student-certs').innerHTML = '';
+        document.getElementById('m-student-achievements').innerHTML = '';
+        document.getElementById('m-student-resume-container').innerHTML = '';
+        document.getElementById('m-student-linkedin').style.display = 'none';
+        document.getElementById('m-student-github').style.display = 'none';
+        
+        openModal('studentDetailsModal');
+        
+        fetch('../api/get_student_details.php?id=' + studentId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const user = data.user;
+                    const profile = data.profile;
+                    const resume = data.resume;
+                    const certs = data.certificates;
+                    const skills = data.skills;
+                    const achievements = data.achievements;
+                    
+                    document.getElementById('m-student-name').textContent = user.name;
+                    document.getElementById('m-student-email').textContent = user.email;
+                    document.getElementById('m-student-phone').textContent = user.phone || 'No phone number';
+                    
+                    const avatarImg = document.getElementById('m-student-avatar');
+                    if (profile.profile_pic) {
+                        avatarImg.src = '../' + profile.profile_pic;
+                    } else {
+                        avatarImg.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    }
+                    
+                    document.getElementById('m-student-course').textContent = profile.course || 'No stream configured';
+                    document.getElementById('m-student-year').textContent = profile.current_year || '1';
+                    document.getElementById('m-student-cgpa').textContent = profile.cgpa || '0.00';
+                    document.getElementById('m-student-bio').textContent = profile.bio || 'No bio written yet.';
+                    
+                    if (profile.linkedin) {
+                        const ln = document.getElementById('m-student-linkedin');
+                        ln.href = profile.linkedin;
+                        ln.style.display = 'inline-flex';
+                    }
+                    if (profile.github) {
+                        const gh = document.getElementById('m-student-github');
+                        gh.href = profile.github;
+                        gh.style.display = 'inline-flex';
+                    }
+                    
+                    const resumeContainer = document.getElementById('m-student-resume-container');
+                    if (resume) {
+                        resumeContainer.innerHTML = `<strong>Resume File:</strong> <a href="../${resume.file_path}" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-file-pdf"></i> Download Resume</a>`;
+                    } else {
+                        resumeContainer.innerHTML = '<strong>Resume File:</strong> <span style="color: var(--theme-text-secondary);">No resume uploaded</span>';
+                    }
+                    
+                    const skillsContainer = document.getElementById('m-student-skills');
+                    if (skills.length > 0) {
+                        skills.forEach(sk => {
+                            skillsContainer.innerHTML += `
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+                                        <span>${sk.name}</span>
+                                        <span>${sk.progress}%</span>
+                                    </div>
+                                    <div style="width:100%; background:rgba(255,255,255,0.05); height:6px; border-radius:10px; overflow:hidden;">
+                                        <div style="background:var(--theme-accent-gradient); width:${sk.progress}%; height:100%;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        skillsContainer.innerHTML = '<div style="color:var(--theme-text-secondary); font-size:0.85rem;">No skills mapped to profile.</div>';
+                    }
+                    
+                    const certsContainer = document.getElementById('m-student-certs');
+                    if (certs.length > 0) {
+                        certs.forEach(c => {
+                            certsContainer.innerHTML += `
+                                <div style="background:rgba(255,255,255,0.01); border:1px solid var(--theme-border); padding:0.75rem; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                                    <div>
+                                        <strong style="display:block; font-size:0.85rem;">${c.name}</strong>
+                                        <span style="font-size:0.75rem; color:var(--theme-text-secondary);">${c.issuer} | Issued: ${c.issue_date}</span>
+                                    </div>
+                                    <a href="../${c.file_path}" target="_blank" class="btn btn-secondary btn-small" style="font-size:0.75rem; padding:0.2rem 0.5rem;"><i class="fa-solid fa-file-arrow-download"></i> View</a>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        certsContainer.innerHTML = '<div style="color:var(--theme-text-secondary); font-size:0.85rem;">No credentials/certificates uploaded.</div>';
+                    }
+                    
+                    const achContainer = document.getElementById('m-student-achievements');
+                    if (achievements.length > 0) {
+                        achievements.forEach(a => {
+                            achContainer.innerHTML += `
+                                <div style="background:rgba(255,255,255,0.01); border:1px solid var(--theme-border); padding:0.75rem; border-radius:6px; margin-bottom: 0.5rem;">
+                                    <strong style="display:block; font-size:0.85rem;">${a.title}</strong>
+                                    <p style="font-size:0.78rem; color:var(--theme-text-secondary); margin:0.2rem 0 0.4rem 0;">${a.description}</p>
+                                    <span style="font-size:0.72rem; color:var(--theme-accent-purple); font-weight:600;"><i class="fa-solid fa-trophy"></i> Date: ${a.date_achieved}</span>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        achContainer.innerHTML = '<div style="color:var(--theme-text-secondary); font-size:0.85rem;">No key achievements recorded.</div>';
+                    }
+                } else {
+                    document.getElementById('m-student-name').textContent = 'Error loading details.';
+                    alert(data.error || 'Failed to load details.');
+                }
+            })
+            .catch(err => {
+                document.getElementById('m-student-name').textContent = 'Request failed.';
+                console.error(err);
+            });
+    }
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

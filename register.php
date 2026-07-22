@@ -11,106 +11,130 @@ if (is_logged_in()) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $first_name = trim($_POST['first_name'] ?? '');
-    $last_name = trim($_POST['last_name'] ?? '');
-    $name = trim($first_name . ' ' . $last_name);
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-    $role = trim($_POST['role'] ?? 'student'); // 'student' or 'alumni'
-
-    if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
-        $register_error = 'All core credentials fields are required.';
-    } elseif ($password !== $confirm_password) {
-        $register_error = 'Passwords do not match.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $register_error = 'Invalid email address format.';
+    // CSRF Protection
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!check_csrf($csrf_token)) {
+        $register_error = 'Invalid security token (CSRF). Please reload the page and try again.';
     } else {
-        try {
-            // Check email uniqueness
-            $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE email = ? UNION SELECT id FROM admins WHERE email = ?");
-            $stmtCheck->execute([$email, $email]);
-            if ($stmtCheck->fetch()) {
-                $register_error = 'This email is already registered.';
-            } else {
-                $status = ($role === 'alumni') ? 'pending' : 'approved';
-                $hashed_pass = password_hash($password, PASSWORD_BCRYPT);
+        $first_name = trim(filter_var($_POST['first_name'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
+        $last_name = trim(filter_var($_POST['last_name'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
+        $name = trim($first_name . ' ' . $last_name);
+        $email = trim(filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL));
+        $phone = trim($_POST['phone'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        $role = trim($_POST['role'] ?? 'student'); // 'student' or 'alumni'
+        if (!in_array($role, ['student', 'alumni'])) {
+            $role = 'student';
+        }
 
-                $username_base = explode('@', $email)[0];
-                $username = $username_base;
-                $stmtUsernameCheck = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-                $stmtUsernameCheck->execute([$username]);
-                $count = 1;
-                while ($stmtUsernameCheck->fetch()) {
-                    $username = $username_base . $count;
+        // Clean phone number: remove any non-digit characters
+        $phone_digits = preg_replace('/[^0-9]/', '', $phone);
+
+        if (empty($first_name) || empty($last_name) || empty($email) || empty($phone) || empty($password) || empty($confirm_password)) {
+            $register_error = 'All required credential fields must be filled out.';
+        } elseif (strlen($phone_digits) !== 10 || !preg_match('/^[0-9]{10}$/', $phone_digits)) {
+            $register_error = 'Phone number must contain exactly 10 digits (numbers only, e.g., 9876543210).';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $register_error = 'Invalid email address format.';
+        } elseif (strlen($password) < 6) {
+            $register_error = 'Password must be at least 6 characters long.';
+        } elseif ($password !== $confirm_password) {
+            $register_error = 'Passwords do not match.';
+        } else {
+            try {
+                // Check email uniqueness
+                $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE email = ? UNION SELECT id FROM admins WHERE email = ?");
+                $stmtCheck->execute([$email, $email]);
+                if ($stmtCheck->fetch()) {
+                    $register_error = 'This email address is already registered.';
+                } else {
+                    $status = ($role === 'alumni') ? 'pending' : 'approved';
+                    $hashed_pass = password_hash($password, PASSWORD_BCRYPT);
+
+                    $username_base = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', explode('@', $email)[0]));
+                    if (empty($username_base)) {
+                        $username_base = 'user';
+                    }
+                    $username = $username_base;
+                    $stmtUsernameCheck = $pdo->prepare("SELECT id FROM users WHERE username = ?");
                     $stmtUsernameCheck->execute([$username]);
-                    $count++;
-                }
+                    $count = 1;
+                    while ($stmtUsernameCheck->fetch()) {
+                        $username = $username_base . $count;
+                        $stmtUsernameCheck->execute([$username]);
+                        $count++;
+                    }
 
-                $pdo->beginTransaction();
+                    // Handle profile picture upload first
+                    $profile_pic_path = '';
+                    if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+                        $fileTmpPath = $_FILES['profile_pic']['tmp_name'];
+                        $fileName = $_FILES['profile_pic']['name'];
+                        $fileSize = $_FILES['profile_pic']['size'];
+                        
+                        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+                        
+                        // Strict MIME inspection
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $mimeType = finfo_file($finfo, $fileTmpPath);
+                        finfo_close($finfo);
+                        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
 
-                // 1. Insert into users table
-                $stmtInsertUser = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmtInsertUser->execute([$name, $email, $username, $hashed_pass, $role, $status]);
-                $new_user_id = $pdo->lastInsertId();
-
-                // Handle file upload
-                $profile_pic_path = '';
-                if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
-                    $fileTmpPath = $_FILES['profile_pic']['tmp_name'];
-                    $fileName = $_FILES['profile_pic']['name'];
-                    $fileNameCmps = explode(".", $fileName);
-                    $fileExtension = strtolower(end($fileNameCmps));
-                    
-                    $allowedExtensions = ['jpg', 'jpeg', 'png'];
-                    if (in_array($fileExtension, $allowedExtensions)) {
-                        $uploadFileDir = './uploads/profiles/';
-                        if (!is_dir($uploadFileDir)) {
-                            mkdir($uploadFileDir, 0755, true);
-                        }
-                        $newFileName = md5(time() . $new_user_id) . '.' . $fileExtension;
-                        $dest_path = $uploadFileDir . $newFileName;
-                        if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                            $profile_pic_path = 'uploads/profiles/' . $newFileName;
+                        if (in_array($fileExtension, $allowedExtensions) && in_array($mimeType, $allowedMimes) && $fileSize <= 2 * 1024 * 1024) {
+                            $uploadFileDir = './uploads/profiles/';
+                            if (!is_dir($uploadFileDir)) {
+                                mkdir($uploadFileDir, 0755, true);
+                            }
+                            $newFileName = bin2hex(random_bytes(16)) . '.' . $fileExtension;
+                            $dest_path = $uploadFileDir . $newFileName;
+                            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                                $profile_pic_path = 'uploads/profiles/' . $newFileName;
+                            }
                         }
                     }
-                }
 
-                if ($role === 'student') {
-                    $current_year = 1;
-                    $course = trim($_POST['course'] ?? '');
-                    $bio = 'Registered Student.';
-
-                    $stmtProfile = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, bio, profile_pic) VALUES (?, ?, ?, ?, ?)");
-                    $stmtProfile->execute([$new_user_id, $current_year, $course, $bio, $profile_pic_path]);
-                } else {
+                    $course = trim(filter_var($_POST['course'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
                     $grad_year = intval($_POST['grad_year'] ?? date('Y'));
-                    $course = trim($_POST['course'] ?? '');
-                    $company = '';
-                    $position = '';
-                    $industry = '';
-                    $bio = 'Registered Alumnus.';
 
-                    $stmtProfile = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, bio, profile_pic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmtProfile->execute([$new_user_id, $grad_year, $course, $company, $position, $industry, $bio, $profile_pic_path]);
+                    // Generate random 6-digit OTP code
+                    $otp_code = sprintf('%06d', mt_rand(100000, 999999));
+
+                    $_SESSION['otp_verify'] = [
+                        'type' => 'signup',
+                        'code' => $otp_code,
+                        'expires_at' => time() + 300, // 5 mins
+                        'attempts' => 0,
+                        'email' => $email,
+                        'phone' => $phone_digits,
+                        'user_data' => [
+                            'name' => $name,
+                            'email' => $email,
+                            'username' => $username,
+                            'password' => $hashed_pass,
+                            'phone' => $phone_digits,
+                            'role' => $role,
+                            'status' => $status,
+                            'course' => $course,
+                            'grad_year' => $grad_year,
+                            'profile_pic_path' => $profile_pic_path
+                        ]
+                    ];
+
+                    // Dispatch real-time SMTP Verification Email
+                    send_signup_otp_email($email, $otp_code);
+
+                    // Redirect to OTP Verification Screen
+                    header('Location: verify_otp.php');
+                    exit;
                 }
-
-                $pdo->commit();
-                log_activity($new_user_id, 'registration', 'User registered as ' . $role);
-
-                if ($role === 'alumni') {
-                    set_flash('success', 'Registration submitted! Awaiting administrator approval.');
-                } else {
-                    set_flash('success', 'Registration successful! Please log in.');
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
                 }
-                header('Location: login.php');
-                exit;
+                $register_error = 'Registration failed: ' . $e->getMessage();
             }
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            set_flash('error', 'Registration failed: ' . $e->getMessage());
         }
     }
 }
@@ -220,7 +244,8 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         <?php endif; ?>
 
-        <form action="register.php" method="POST" enctype="multipart/form-data">
+        <form action="register.php" method="POST" enctype="multipart/form-data" id="signup-form">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
             
             <div class="form-grid">
                 
@@ -236,32 +261,47 @@ require_once __DIR__ . '/includes/header.php';
                     <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Upload Preview" class="avatar-preview" id="profile-pic-preview">
                     <div>
                         <h4 style="font-size: 0.9rem; margin-bottom: 0.25rem;">Choose Avatar</h4>
-                        <p style="font-size: 0.75rem; color: var(--theme-text-secondary); margin-bottom: 0.75rem;">Supported formats: JPG, PNG (Max 2MB)</p>
+                        <p style="font-size: 0.75rem; color: var(--theme-text-secondary); margin-bottom: 0.75rem;">Supported formats: JPG, PNG, WEBP (Max 2MB)</p>
                         <label class="btn btn-secondary btn-small" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; cursor:pointer;">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Photo
-                            <input type="file" name="profile_pic" accept="image/*" onchange="previewAvatarPic(this)" style="display: none;">
+                            <input type="file" name="profile_pic" accept="image/jpeg,image/png,image/webp" onchange="previewAvatarPic(this)" style="display: none;">
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="first_name" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">First Name</label>
-                    <input type="text" name="first_name" id="first_name" class="input-glass" placeholder="John" required>
+                    <input type="text" name="first_name" id="first_name" class="input-glass" placeholder="John" required value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="last_name" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Last Name</label>
-                    <input type="text" name="last_name" id="last_name" class="input-glass" placeholder="Doe" required>
+                    <input type="text" name="last_name" id="last_name" class="input-glass" placeholder="Doe" required value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="email" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Email Address</label>
-                    <input type="email" name="email" id="email" class="input-glass" placeholder="john@example.com" required>
+                    <input type="email" name="email" id="email" class="input-glass" placeholder="john@example.com" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="phone" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Phone Number</label>
-                    <input type="tel" name="phone" id="phone" class="input-glass" placeholder="+91 9876543210" required>
+                    <label for="phone" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Phone Number (10 Digits)</label>
+                    <input type="text" 
+                           name="phone" 
+                           id="phone" 
+                           class="input-glass" 
+                           placeholder="9876543210" 
+                           maxlength="10" 
+                           minlength="10" 
+                           pattern="[0-9]{10}" 
+                           inputmode="numeric" 
+                           required 
+                           oninput="validatePhoneNumber(this)"
+                           onkeypress="return isNumberKey(event)"
+                           value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
+                    <small id="phone-hint" style="font-size: 0.73rem; color: var(--theme-text-secondary); margin-top: 0.35rem; display: block; transition: color 0.2s ease;">
+                        Must be exactly 10 numeric digits
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -310,6 +350,41 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <script>
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+
+    function validatePhoneNumber(input) {
+        // Strict integer filter: replace any non-numeric characters instantly
+        input.value = input.value.replace(/[^0-9]/g, '').slice(0, 10);
+        const hint = document.getElementById('phone-hint');
+        if (input.value.length === 10) {
+            hint.style.color = '#22c55e';
+            hint.textContent = '✓ Valid 10-digit numeric phone number';
+        } else if (input.value.length > 0) {
+            hint.style.color = '#ef4444';
+            hint.textContent = 'Must be exactly 10 digits (' + (10 - input.value.length) + ' more needed)';
+        } else {
+            hint.style.color = 'var(--theme-text-secondary)';
+            hint.textContent = 'Must be exactly 10 numeric digits';
+        }
+    }
+
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+        const phoneInput = document.getElementById('phone');
+        const phoneVal = phoneInput.value.replace(/[^0-9]/g, '');
+        if (phoneVal.length !== 10) {
+            e.preventDefault();
+            alert('Phone number must contain exactly 10 numeric digits.');
+            phoneInput.focus();
+            return false;
+        }
+    });
+
     function previewAvatarPic(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();

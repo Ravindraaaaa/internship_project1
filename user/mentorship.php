@@ -147,8 +147,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <h2>Mentorship connections</h2>
             </div>
             <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i class="fa-solid fa-palette"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 <a href="dashboard.php" class="btn btn-secondary btn-small"><i class="fa-solid fa-gauge"></i> Dashboard</a>
             </div>

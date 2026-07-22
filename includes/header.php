@@ -42,8 +42,8 @@ if (is_logged_in()) {
     <!-- GSAP CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <!-- Lenis Smooth Scroll -->
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.27/dist/lenis.min.js"></script>
+    <!-- Lenis Smooth Scroll (Loaded locally to prevent Tracking Prevention warnings) -->
+    <script src="<?php echo $path_prefix; ?>assets/js/lenis.min.js"></script>
 </head>
 <body>
 
@@ -52,14 +52,8 @@ if (is_logged_in()) {
         <div class="loader-spinner"></div>
     </div>
 
-    <!-- ==================== CUSTOM MOUSE GLOW ==================== -->
-    <div class="custom-cursor-glow" id="custom-cursor-glow"></div>
-
-    <!-- ==================== DYNAMIC BACKDROP LAYER ==================== -->
+    <!-- ==================== CLEAN STATIC BACKDROP LAYER ==================== -->
     <div class="custom-bg-overlay"></div>
-    <div class="custom-bg-canvas-container">
-        <canvas id="custom-bg-canvas"></canvas>
-    </div>
 
     <!-- ==================== PUBLIC STICKY NAV HEADER ==================== -->
     <?php 
@@ -76,10 +70,9 @@ if (is_logged_in()) {
             <li><a href="<?php echo $path_prefix; ?>user/alumni.php" class="nav-public-link <?php echo $current_script === 'alumni.php' ? 'active' : ''; ?>">Alumni</a></li>
             <li><a href="<?php echo $path_prefix; ?>user/jobs.php" class="nav-public-link <?php echo $current_script === 'jobs.php' ? 'active' : ''; ?>">Jobs</a></li>
             <li><a href="<?php echo $path_prefix; ?>user/events.php" class="nav-public-link <?php echo $current_script === 'events.php' ? 'active' : ''; ?>">Events</a></li>
-            
             <li>
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i class="fa-solid fa-palette"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
             </li>
             

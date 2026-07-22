@@ -3,113 +3,6 @@
         <i class="fa-solid fa-arrow-up"></i>
     </button>
 
-    <!-- ==================== FAB OPEN SETTINGS DRAWER ==================== -->
-    <button class="fab" onclick="openSettingsDrawer()" title="Customize Theme & Visual Backgrounds">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-    </button>
-
-    <!-- ==================== SLIDING SETTINGS DRAWER ==================== -->
-    <div class="settings-drawer" id="settings-drawer">
-        <div class="drawer-header">
-            <h3><i data-lucide="sliders" style="width:18px;height:18px;vertical-align:middle;margin-right:0.25rem;"></i> Visual Settings</h3>
-            <button class="drawer-close-btn" onclick="closeSettingsDrawer()">&times;</button>
-        </div>
-        
-        <div class="drawer-body">
-            
-            <!-- 1. Color Themes -->
-            <div class="drawer-section">
-                <h4 class="drawer-section-title"><i data-lucide="palette" style="width:14px;height:14px;vertical-align:middle;margin-right:0.25rem;"></i> 1. Color Theme</h4>
-                <div class="customizer-grid" style="grid-template-columns: repeat(2, 1fr);">
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-dark">Dark Theme</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-light">Light Theme</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-glass">Glass Theme</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-midnight">Midnight Theme</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-aurora">Aurora Theme</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-cyber-blue">Cyber Blue</button>
-                    <button class="customizer-btn theme-select-btn" data-theme="theme-royal-purple">Royal Purple</button>
-                </div>
-            </div>
-
-            <!-- 2. Accent Colors -->
-            <div class="drawer-section">
-                <h4 class="drawer-section-title"><i data-lucide="droplet" style="width:14px;height:14px;vertical-align:middle;margin-right:0.25rem;"></i> 2. Accent Color</h4>
-                <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-                    <div class="accent-color-circle active" data-color="#3b82f6" style="background: #3b82f6;" title="Electric Blue"></div>
-                    <div class="accent-color-circle" data-color="#8b5cf6" style="background: #8b5cf6;" title="Cyber Purple"></div>
-                    <div class="accent-color-circle" data-color="#10b981" style="background: #10b981;" title="Neon Green"></div>
-                    <div class="accent-color-circle" data-color="#ec4899" style="background: #ec4899;" title="Cyber Pink"></div>
-                    <div class="accent-color-circle" data-color="#f59e0b" style="background: #f59e0b;" title="Golden Amber"></div>
-                    <div class="accent-color-circle" data-color="#ef4444" style="background: #ef4444;" title="Crimson Red"></div>
-                </div>
-            </div>
-
-            <!-- 3. Dynamic Background Selection -->
-            <div class="drawer-section">
-                <h4 class="drawer-section-title"><i data-lucide="image" style="width:14px;height:14px;vertical-align:middle;margin-right:0.25rem;"></i> 3. Canvas Background</h4>
-                <div class="customizer-grid" style="grid-template-columns: repeat(2, 1fr);">
-                    <button class="customizer-btn bg-option-btn" data-bg="aurora">Animated Aurora</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="mesh">Mesh Gradient</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="gradient">Animated Gradient</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="glass-bg">Glass Background</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="blobs">Floating Blobs</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="particles">Particles</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="stars">Stars</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="waves">Waves</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="grid">Animated Grid</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="shapes">Abstract Shapes</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="bubbles">Floating Bubbles</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="galaxy">Galaxy</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="minimal-white">Minimal White</button>
-                    <button class="customizer-btn bg-option-btn" data-bg="custom-image">Custom Upload</button>
-                </div>
-            </div>
-
-            <!-- 4. Adjust Sliders & Custom Background -->
-            <div class="drawer-section">
-                <h4 class="drawer-section-title"><i data-lucide="sliders" style="width:14px;height:14px;vertical-align:middle;margin-right:0.25rem;"></i> 4. Adjust Parameters</h4>
-                
-                <div class="slider-group">
-                    <label for="custom-bg-blur">Background Blur <span id="blur-val">15px</span></label>
-                    <input type="range" id="custom-bg-blur" class="custom-range" min="0" max="30" value="15" oninput="document.getElementById('blur-val').textContent = this.value + 'px'">
-                </div>
-
-                <div class="slider-group">
-                    <label for="custom-bg-opacity">Background Opacity <span id="opacity-val">100%</span></label>
-                    <input type="range" id="custom-bg-opacity" class="custom-range" min="10" max="100" value="100" oninput="document.getElementById('opacity-val').textContent = this.value + '%'">
-                </div>
-
-                <div class="slider-group">
-                    <label for="custom-bg-speed">Animation Speed <span id="speed-val">1.0x</span></label>
-                    <input type="range" id="custom-bg-speed" class="custom-range" min="0.1" max="3" step="0.1" value="1.0" oninput="document.getElementById('speed-val').textContent = this.value + 'x'">
-                </div>
-
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
-                    <label class="btn btn-secondary btn-small" style="font-size: 0.8rem; cursor: pointer; flex-grow: 1; text-align: center;">
-                        <i class="fa-solid fa-image"></i> Upload Custom Image
-                        <input type="file" id="custom-bg-upload" accept="image/*" style="display: none;">
-                    </label>
-                </div>
-            </div>
-
-            <!-- 5. Toggles -->
-            <div class="drawer-section">
-                <h4 class="drawer-section-title"><i data-lucide="play" style="width:14px;height:14px;vertical-align:middle;margin-right:0.25rem;"></i> 5. Performance Options</h4>
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: var(--border-radius-sm); border: 1px solid var(--theme-border);">
-                    <span style="font-size: 0.88rem; font-weight: 500;">Enable Animations</span>
-                    <label class="switch-container">
-                        <input type="checkbox" id="performance-toggle" checked>
-                        <span class="switch-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; margin-top: 2rem; margin-bottom: 2rem;">
-                <button class="btn btn-danger" id="custom-bg-reset" style="width: 100%; font-size: 0.85rem;"><i data-lucide="rotate-ccw" style="width:16px;height:16px;vertical-align:middle;margin-right:0.25rem;"></i> Reset Style</button>
-            </div>
-
-        </div>
-    </div>
 
     <!-- Main JavaScript Core Asset -->
     <script src="<?php echo $path_prefix; ?>assets/js/main.js?v=<?php echo time(); ?>"></script>
@@ -127,24 +20,6 @@
             // Initialize Lucide Icons
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
-            }
-            
-            // Re-render slider displays on load
-            const blurInput = document.getElementById('custom-bg-blur');
-            const opacityInput = document.getElementById('custom-bg-opacity');
-            const speedInput = document.getElementById('custom-bg-speed');
-            
-            if (blurInput) {
-                blurInput.value = localStorage.getItem('bg-blur') || '15';
-                document.getElementById('blur-val').textContent = blurInput.value + 'px';
-            }
-            if (opacityInput) {
-                opacityInput.value = localStorage.getItem('bg-opacity') || '100';
-                document.getElementById('opacity-val').textContent = opacityInput.value + '%';
-            }
-            if (speedInput) {
-                speedInput.value = localStorage.getItem('bg-speed') || '1.0';
-                document.getElementById('speed-val').textContent = speedInput.value + 'x';
             }
         });
     </script>
@@ -558,6 +433,85 @@
             }
         </script>
     <?php endif; ?>
+
+    <!-- ==================== PROFESSIONAL SYSTEM FOOTER ==================== -->
+    <?php
+    // Admin contact details
+    $admin_display_name = 'Ashwin Pande';
+    $admin_display_email = 'ashwinpande30092007@gmail.com';
+    $admin_display_phone = '+91 9226830066';
+
+    if (isset($pdo) && $pdo instanceof PDO) {
+        try {
+            $stmt_admin_fetch = $pdo->query("SELECT name, email, phone FROM users WHERE role = 'admin' AND status = 'approved' ORDER BY id ASC LIMIT 1");
+            $admin_row = $stmt_admin_fetch->fetch(PDO::FETCH_ASSOC);
+            if ($admin_row) {
+                if (!empty($admin_row['name'])) {
+                    $admin_display_name = htmlspecialchars($admin_row['name']);
+                }
+                if (!empty($admin_row['email'])) {
+                    $admin_display_email = htmlspecialchars($admin_row['email']);
+                }
+                if (!empty($admin_row['phone'])) {
+                    $admin_display_phone = htmlspecialchars($admin_row['phone']);
+                }
+            }
+        } catch (Exception $e) {
+            // Fallback to defaults
+        }
+    }
+    $path_prefix = $path_prefix ?? '';
+    ?>
+
+    <!-- ==================== COMPACT SIDE-BY-SIDE SYSTEM FOOTER ==================== -->
+    <footer class="app-footer <?php echo (isset($GLOBALS['sidebar_rendered']) && $GLOBALS['sidebar_rendered']) ? 'has-sidebar' : ''; ?>" style="background: var(--theme-sidebar, #0f172a); border-top: 1px solid var(--theme-border, rgba(255,255,255,0.1)); padding: 1.25rem 1.5rem; margin-top: auto; color: var(--theme-text-secondary, #94a3b8); font-size: 0.85rem;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; align-items: flex-start;">
+            
+            <!-- SECTION 1: HELP -->
+            <div style="flex: 1; min-width: 280px;">
+                <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; margin: 0 0 0.5rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-circle-question" style="color: var(--theme-accent-blue, #38bdf8);"></i> 1. Help & Support
+                </h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; font-size: 0.82rem; margin-top: 0.3rem;">
+                    <a href="<?php echo $path_prefix; ?>user/help.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                        <i class="fa-solid fa-headset" style="color: var(--theme-accent-blue, #38bdf8);"></i> Help Center & FAQs
+                    </a>
+                    <span style="opacity: 0.3;">|</span>
+                    <a href="<?php echo $path_prefix; ?>user/feedback.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                        <i class="fa-solid fa-comment-dots" style="color: var(--theme-accent-blue, #38bdf8);"></i> Feedback & Tickets
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ABOUT & ADMIN INFO -->
+            <div style="flex: 1.2; min-width: 320px;">
+                <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; margin: 0 0 0.5rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8);"></i> 2. <a href="<?php echo $path_prefix; ?>about.php" style="color: inherit; text-decoration: underline;">About Us</a> & Contact
+                </h4>
+                <div style="font-size: 0.82rem; line-height: 1.5; color: var(--theme-text-secondary, #94a3b8);">
+                    <div style="margin-bottom: 0.3rem; color: var(--theme-text, #f8fafc);">
+                        <a href="<?php echo $path_prefix; ?>about.php" style="color: var(--theme-accent-purple, #818cf8); font-weight: 700; text-decoration: underline;">About AlumniNet:</a> Enterprise Alumni Engagement & Mentorship Platform.
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; align-items: center;">
+                        <span><i class="fa-solid fa-user-shield" style="color: var(--theme-accent-purple, #818cf8);"></i> <strong>Admin:</strong> <?php echo $admin_display_name; ?></span>
+                        <span style="opacity: 0.3;">|</span>
+                        <span><i class="fa-solid fa-phone" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Contact:</strong> <a href="tel:9226830066" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500;"><?php echo $admin_display_phone; ?></a></span>
+                        <span style="opacity: 0.3;">|</span>
+                        <span><i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Email:</strong> <a href="mailto:<?php echo $admin_display_email; ?>" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500;"><?php echo $admin_display_email; ?></a></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTTOM COPYRIGHT BAR -->
+        <div style="max-width: 1200px; margin: 0.8rem auto 0 auto; padding-top: 0.6rem; border-top: 1px solid var(--theme-border, rgba(255,255,255,0.06)); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; font-size: 0.78rem; opacity: 0.85;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--theme-text, #f8fafc); font-weight: 600;">
+                <i class="fa-solid fa-graduation-cap" style="color: var(--theme-accent-purple, #818cf8);"></i> AlumniNet Platform
+            </div>
+            <div>&copy; <?php echo date('Y'); ?> AlumniNet. All rights reserved.</div>
+        </div>
+    </footer>
 
 </body>
 </html>

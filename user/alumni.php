@@ -76,22 +76,29 @@ $is_subfolder = true;
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<style>
-    .page-wrapper {
-        padding: 9rem 4rem 4rem 4rem;
-        min-height: 90vh;
-    }
-    .page-header {
-        margin-bottom: 2.5rem;
-    }
-    .page-header h1 {
-        font-size: 2.4rem;
-        margin-bottom: 0.25rem;
-    }
-    .page-header p {
-        color: var(--theme-text-secondary);
-        font-size: 1rem;
-    }
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <?php render_sidebar('alumni'); ?>
+
+    <!-- Workspace Content -->
+    <div class="dashboard-content-area">
+        <nav class="top-nav">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
+                <h2>Alumni Directory</h2>
+            </div>
+            <div class="top-nav-actions">
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Bright Mode">
+                    <i class="fa-solid fa-sun" id="theme-toggle-icon"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main class="dashboard-workspace">
+            <div class="page-header" style="margin-bottom: 2rem;">
+                <h1>Connect with Alumni</h1>
+                <p>Filter by graduation year, department, and industry to request mentorship & networking.</p>
+            </div>
     .alumni-card-avatar {
         width: 55px;
         height: 55px;
@@ -290,6 +297,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <button type="submit" class="btn btn-primary">Submit Request</button>
             </div>
         </form>
+        </main>
     </div>
 </div>
 

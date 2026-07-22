@@ -192,8 +192,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--theme-text);">Requirement & Eligibility Manager</h3>
             </div>
             <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="openSettingsDrawer()" title="Open visual settings">
-                    <i data-lucide="palette" style="width: 20px; height: 20px;"></i>
+                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
             </div>
         </nav>

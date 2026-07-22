@@ -21,3 +21,7 @@ vendor/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Security & Temp files
+scratch/
+config/smtp.php

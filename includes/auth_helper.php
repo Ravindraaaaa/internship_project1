@@ -162,14 +162,14 @@ if (!function_exists('display_flash')) {
         $flash = get_flash();
         if ($flash) {
             $typeClass = htmlspecialchars($flash['type']);
-            $message = htmlspecialchars($flash['message']);
+            $message = $flash['message'];
             echo "<script>
                 document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(function() {
                         if (window.showToast) {
                             window.showToast(" . json_encode($message) . ", " . json_encode($typeClass) . ");
                         } else {
-                            alert(" . json_encode($message) . ");
+                            alert(" . json_encode(strip_tags($message)) . ");
                         }
                     }, 100);
                 });
@@ -270,6 +270,7 @@ if (!function_exists('get_avatar_url')) {
 
 if (!function_exists('render_sidebar')) {
     function render_sidebar($active_page = '') {
+        $GLOBALS['sidebar_rendered'] = true;
         global $pdo;
         $uid = get_user_id();
         $role = get_user_role();
@@ -372,6 +373,9 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
                             <a href="<?php echo $sub_prefix; ?>feedback.php"><i class="fa-solid fa-comments"></i> <span class="link-text">Feedback</span></a>
                         </li>
+                        <li class="sidebar-item <?php echo $active_page === 'help' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>help.php"><i class="fa-solid fa-circle-question"></i> <span class="link-text">Help & Support</span></a>
+                        </li>
                     <?php endif; ?>
                 <?php else: ?>
                     <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
@@ -382,6 +386,9 @@ if (!function_exists('render_sidebar')) {
                     </li>
                     <li class="sidebar-item <?php echo $active_page === 'events' ? 'active' : ''; ?>">
                         <a href="<?php echo $sub_prefix; ?>events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
+                    </li>
+                    <li class="sidebar-item <?php echo $active_page === 'help' ? 'active' : ''; ?>">
+                        <a href="<?php echo $sub_prefix; ?>help.php"><i class="fa-solid fa-circle-question"></i> <span class="link-text">Help & Support</span></a>
                     </li>
                 <?php endif; ?>
             </ul>

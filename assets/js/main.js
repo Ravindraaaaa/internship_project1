@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sidebar.classList.remove('show');
             } else {
                 sidebar.classList.toggle('collapsed');
+                document.body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed'));
                 const icon = sidebarToggle.querySelector('i');
                 if (icon) {
                     if (sidebar.classList.contains('collapsed')) {
@@ -123,129 +124,72 @@ document.addEventListener('DOMContentLoaded', function() {
         gsap.ticker.lagSmoothing(0);
     }
 
-    // ==================== 3. CUSTOM ANIMATED CURSOR WITH TRAIL ====================
-    const cursorGlow = document.getElementById('custom-cursor-glow');
-    let cursorDot = document.getElementById('custom-cursor-dot');
-    
-    // Dynamically spawn cursor dot if missing
-    if (!cursorDot) {
-        cursorDot = document.createElement('div');
-        cursorDot.id = 'custom-cursor-dot';
-        cursorDot.style.position = 'fixed';
-        cursorDot.style.width = '8px';
-        cursorDot.style.height = '8px';
-        cursorDot.style.backgroundColor = 'var(--theme-accent-blue)';
-        cursorDot.style.borderRadius = '50%';
-        cursorDot.style.pointerEvents = 'none';
-        cursorDot.style.zIndex = '100000';
-        cursorDot.style.transform = 'translate(-50%, -50%)';
-        document.body.appendChild(cursorDot);
-    }
+    // ==================== 3. CLEAN STANDARD CURSOR ====================
+    // Standard professional system cursor used without animated dot overlays
 
-    // Hide custom cursor on mobile touchscreens
-    const isMobile = window.matchMedia("(max-width: 768px)").matches || 'ontouchstart' in window;
-    if (isMobile) {
-        if (cursorGlow) cursorGlow.style.display = 'none';
-        if (cursorDot) cursorDot.style.display = 'none';
-    } else {
-        window.addEventListener('mousemove', (e) => {
-            // Immediate cursor dot tracking
-            gsap.set(cursorDot, { x: e.clientX, y: e.clientY });
-
-            // Lagged glow cursor trail
-            if (cursorGlow) {
-                if (animationsEnabled) {
-                    gsap.to(cursorGlow, {
-                        x: e.clientX,
-                        y: e.clientY,
-                        duration: 0.45,
-                        ease: 'power2.out'
-                    });
-                } else {
-                    gsap.set(cursorGlow, { x: e.clientX, y: e.clientY });
-                }
-            }
-        });
-
-        // Enlarge cursor on interactive links/buttons
-        const interactives = document.querySelectorAll('a, button, .btn, .card-glass, .sidebar-item');
-        interactives.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                gsap.to(cursorDot, { scale: 2.2, backgroundColor: 'transparent', borderColor: 'var(--theme-accent-blue)', borderWidth: '1.5px', duration: 0.25 });
-                if (cursorGlow) gsap.to(cursorGlow, { scale: 1.25, duration: 0.25 });
-            });
-            el.addEventListener('mouseleave', () => {
-                gsap.to(cursorDot, { scale: 1, backgroundColor: 'var(--theme-accent-blue)', borderWidth: '0px', duration: 0.25 });
-                if (cursorGlow) gsap.to(cursorGlow, { scale: 1, duration: 0.25 });
-            });
-        });
-    }
-
-    // ==================== 4. SETTINGS SLIDING DRAWER ====================
+    // ==================== 4. SETTINGS DRAWER MANAGEMENT ====================
     window.openSettingsDrawer = function() {
-        gsap.to('#settings-drawer', {
-            right: 0,
-            duration: 0.5,
-            ease: 'power3.out'
-        });
+        const drawer = document.getElementById('settings-drawer');
+        if (drawer) drawer.classList.add('active');
     };
 
     window.closeSettingsDrawer = function() {
-        gsap.to('#settings-drawer', {
-            right: -390,
-            duration: 0.4,
-            ease: 'power3.in'
-        });
+        const drawer = document.getElementById('settings-drawer');
+        if (drawer) drawer.classList.remove('active');
     };
 
-    // Close settings drawer on click outside
-    document.addEventListener('click', function(e) {
-        const drawer = document.getElementById('settings-drawer');
-        const trigger = document.querySelector('.fab');
-        const navTriggers = document.querySelectorAll('.theme-toggle-btn');
-        
-        let clickedTrigger = false;
-        navTriggers.forEach(nt => {
-            if (nt.contains(e.target)) clickedTrigger = true;
-        });
-
-        if (drawer && !drawer.contains(e.target) && trigger && !trigger.contains(e.target) && !clickedTrigger) {
-            closeSettingsDrawer();
+    // ==================== 5. SIMPLE DARK / BRIGHT (LIGHT) MODE ENGINE ====================
+    window.toggleThemeMode = function() {
+        const isLight = document.body.classList.contains('theme-light');
+        if (isLight) {
+            document.body.classList.remove('theme-light');
+            document.body.classList.add('theme-dark');
+            localStorage.setItem('theme_mode', 'dark');
+            updateThemeIcon('dark');
+        } else {
+            document.body.classList.remove('theme-dark');
+            document.body.classList.add('theme-light');
+            localStorage.setItem('theme_mode', 'light');
+            updateThemeIcon('light');
         }
-    });
+    };
 
-    // ==================== 5. MULTI-THEME ENGINE ====================
-    const themeButtons = document.querySelectorAll('.theme-select-btn');
-    const savedTheme = localStorage.getItem('theme-style') || 'theme-dark';
-    
-    applyTheme(savedTheme);
-
-    themeButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const themeClass = this.getAttribute('data-theme');
-            applyTheme(themeClass);
-            showToast(`Theme updated to: ${themeClass.replace('theme-', '').toUpperCase()}`, 'info');
-        });
-    });
-
-    function applyTheme(themeClass) {
-        // Clear old classes
-        document.body.className = document.body.className.replace(/\btheme-\S+/g, '');
-        document.body.classList.add(themeClass);
-        localStorage.setItem('theme-style', themeClass);
-        
-        themeButtons.forEach(btn => {
-            if (btn.getAttribute('data-theme') === themeClass) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
+    function updateThemeIcon(mode) {
+        const icons = document.querySelectorAll('#theme-toggle-icon, .theme-toggle-btn i');
+        icons.forEach(icon => {
+            if (icon && (icon.classList.contains('fa-sun') || icon.classList.contains('fa-moon') || icon.classList.contains('fa-palette'))) {
+                if (mode === 'light') {
+                    icon.className = 'fa-solid fa-moon';
+                } else {
+                    icon.className = 'fa-solid fa-sun';
+                }
             }
         });
-
-        if (animationsEnabled) {
-            gsap.fromTo('body', { opacity: 0.95 }, { opacity: 1, duration: 0.45, ease: 'sine.out' });
-        }
     }
+
+    // Restore saved theme on load
+    const savedMode = localStorage.getItem('theme_mode') || 'dark';
+    if (savedMode === 'light') {
+        document.body.classList.remove('theme-dark');
+        document.body.classList.add('theme-light');
+        updateThemeIcon('light');
+    } else {
+        document.body.classList.remove('theme-light');
+        document.body.classList.add('theme-dark');
+        updateThemeIcon('dark');
+    }
+
+    // Attach click handler to theme-toggle-btn
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        if (!btn.id || btn.id !== 'mobile-sidebar-toggle') {
+            if (!btn.hasAttribute('onclick')) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toggleThemeMode();
+                });
+            }
+        }
+    });
 
     // ==================== 6. ACCENT COLOR ENGINE ====================
     const accentCircles = document.querySelectorAll('.accent-color-circle');
@@ -755,6 +699,18 @@ document.addEventListener('DOMContentLoaded', function() {
             canvasAnimationId = requestAnimationFrame(drawLoop);
         }
 
+        // ==================== 8. CLEAN BACKGROUND ENGINE ====================
+        function initCanvasBackground(mode, customImageSrc) {
+            if (canvasAnimationId) {
+                cancelAnimationFrame(canvasAnimationId);
+                canvasAnimationId = null;
+            }
+            const canvas = document.getElementById('custom-bg-canvas');
+            if (canvas) {
+                canvas.style.display = 'none';
+            }
+        }
+
         // Draw static representation
         function drawStaticFrame(currentMode, customImg) {
             ctx.clearRect(0, 0, width, height);
@@ -1007,4 +963,65 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
+
+    // ==================== 10. GLOBAL PAGE LOADER INTERACTIVITY ====================
+    const pageLoader = document.getElementById('page-loader');
+
+    window.showLoader = function() {
+        if (pageLoader) {
+            pageLoader.style.visibility = 'visible';
+            pageLoader.style.opacity = '1';
+        }
+    };
+
+    window.hideLoader = function() {
+        if (pageLoader) {
+            if (animationsEnabled && typeof gsap !== 'undefined') {
+                try {
+                    gsap.to(pageLoader, {
+                        opacity: 0,
+                        duration: 0.4,
+                        onComplete: () => {
+                            pageLoader.style.visibility = 'hidden';
+                        }
+                    });
+                } catch (e) {
+                    pageLoader.style.opacity = '0';
+                    setTimeout(() => {
+                        pageLoader.style.visibility = 'hidden';
+                    }, 400);
+                }
+            } else {
+                pageLoader.style.opacity = '0';
+                setTimeout(() => {
+                    pageLoader.style.visibility = 'hidden';
+                }, 400);
+            }
+        }
+    };
+
+    // Auto-dismiss loader once full page assets/scripts load
+    window.addEventListener('load', function() {
+        window.hideLoader();
+    });
+
+    // Auto-trigger inline button dot-loading on form submit to cover server delays
+    document.querySelectorAll('form').forEach(form => {
+        if (!form.hasAttribute('data-no-loader') && form.getAttribute('action') !== 'api/send_otp.php') {
+            form.addEventListener('submit', function() {
+                if (form.checkValidity()) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        if (form.hasAttribute('data-full-loader')) {
+                            window.showLoader();
+                        } else {
+                            submitBtn.disabled = true;
+                            submitBtn.style.pointerEvents = 'none';
+                            submitBtn.innerHTML = '<span class="dots-loader"><span></span><span></span><span></span></span>';
+                        }
+                    }
+                }
+            });
+        }
+    });
 });
