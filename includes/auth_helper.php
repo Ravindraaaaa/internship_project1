@@ -345,6 +345,9 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=feedback"><i class="fa-solid fa-comments"></i> <span class="link-text">User Feedback</span></a>
                         </li>
+                        <li class="sidebar-item <?php echo $active_page === 'chat' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Live Support Chat</span></a>
+                        </li>
                     <?php else: ?>
                         <li class="sidebar-item <?php echo $active_page === 'dashboard' ? 'active' : ''; ?>">
                             <a href="<?php echo $sub_prefix; ?>dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>

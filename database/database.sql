@@ -309,21 +309,27 @@ INSERT INTO departments (id, name, code) VALUES
 -- Users Seeding
 -- Admin Password hash for Admin@123 -> $2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla
 -- User Password hash for User@123 -> $2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6
-INSERT INTO users (id, name, email, username, password, role, status, department_id) VALUES
-(1, 'System Administrator', 'admin@internship.com', 'admin', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', 'admin', 'approved', 1),
-(2, 'Demo Student User', 'user@internship.com', 'user', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'student', 'approved', 1),
-(3, 'Jane Doe (Alumni)', 'jane@alumni.com', 'jane_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'alumni', 'approved', 1),
-(4, 'John Smith (Alumni)', 'john@alumni.com', 'john_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'alumni', 'approved', 2),
-(5, 'Alice Johnson (Student)', 'alice@alumni.com', 'alice_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'student', 'approved', 3),
-(6, 'Bob Wilson (Alumni)', 'bob@alumni.com', 'bob_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'alumni', 'approved', 4),
-(7, 'Charlie Brown (Student)', 'charlie@alumni.com', 'charlie_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'student', 'approved', 1),
-(8, 'David Miller (Alumni)', 'david@alumni.com', 'david_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'alumni', 'pending', 1),
-(9, 'Emily Davis (Alumni)', 'emily@alumni.com', 'emily_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'alumni', 'rejected', 2),
-(10, 'Frank Thomas (Student)', 'frank@alumni.com', 'frank_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'student', 'approved', 4);
+INSERT INTO users (id, name, email, username, password, phone, role, status, department_id) VALUES
+(1, 'Ashwin Pande', 'admin@internship.com', 'admin', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', '9226830066', 'admin', 'approved', 1),
+(2, 'Demo Student User', 'user@internship.com', 'user', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 1),
+(3, 'Jane Doe (Alumni)', 'jane@alumni.com', 'jane_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'alumni', 'approved', 1),
+(4, 'John Smith (Alumni)', 'john@alumni.com', 'john_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'alumni', 'approved', 2),
+(5, 'Alice Johnson (Student)', 'alice@alumni.com', 'alice_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 3),
+(6, 'Bob Wilson (Alumni)', 'bob@alumni.com', 'bob_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'alumni', 'approved', 4),
+(7, 'Charlie Brown (Student)', 'charlie@alumni.com', 'charlie_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 1),
+(8, 'David Miller (Alumni)', 'david@alumni.com', 'david_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'alumni', 'pending', 1),
+(9, 'Emily Davis (Alumni)', 'emily@alumni.com', 'emily_alumni', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'alumni', 'rejected', 2),
+(10, 'Frank Thomas (Student)', 'frank@alumni.com', 'frank_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 4),
+(11, 'Ravindra Mude', 'ravindramude44@gmail.com', 'ravindra', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9209276332', 'admin', 'approved', 1),
+(14, 'Yashraj Nanaware', 'yashrajnanaware0@gmail.com', 'yashraj', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9325818393', 'admin', 'approved', 1),
+(15, 'Kaif Khan', 'alikaif8585@gmail.com', 'kaif', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9589904746', 'admin', 'approved', 1);
 
 -- Admins Seeding
 INSERT INTO admins (id, user_id, username, name, email, password, role) VALUES
-(1, 1, 'admin', 'System Administrator', 'admin@internship.com', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', 'superadmin');
+(1, 1, 'admin', 'Ashwin Pande', 'admin@internship.com', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', 'superadmin'),
+(2, 11, 'ravindra', 'Ravindra Mude', 'ravindramude44@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin'),
+(3, 14, 'yashraj', 'Yashraj Nanaware', 'yashrajnanaware0@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin'),
+(4, 15, 'kaif', 'Kaif Khan', 'alikaif8585@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin');
 
 -- Alumni Profiles Seeding
 INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, linkedin, website, bio) VALUES

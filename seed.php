@@ -22,13 +22,29 @@ try {
     $mock_password_user = password_hash('User@123', PASSWORD_BCRYPT);
     $admin_password_hash = password_hash('Admin@123', PASSWORD_BCRYPT);
 
-    // Update Admin user (ID = 1)
-    $stmtAdminUpdate = $pdo->prepare("UPDATE users SET name = 'System Administrator', email = 'admin@internship.com', username = 'admin', password = ?, role = 'admin', status = 'approved' WHERE id = 1");
+    // Update Admin user (ID = 1) - Ashwin Pande
+    $stmtAdminUpdate = $pdo->prepare("UPDATE users SET name = 'Ashwin Pande', email = 'admin@internship.com', username = 'admin', password = ?, phone = '9226830066', role = 'admin', status = 'approved' WHERE id = 1");
     $stmtAdminUpdate->execute([$admin_password_hash]);
 
     // Also update in admins table if exists
-    $stmtAdminTableUpdate = $pdo->prepare("UPDATE admins SET name = 'System Administrator', email = 'admin@internship.com', username = 'admin', password = ? WHERE user_id = 1");
+    $stmtAdminTableUpdate = $pdo->prepare("UPDATE admins SET name = 'Ashwin Pande', email = 'admin@internship.com', username = 'admin', password = ? WHERE user_id = 1");
     $stmtAdminTableUpdate->execute([$admin_password_hash]);
+
+    // Seed other admins
+    $other_admins = [
+        ['Ravindra Mude', 'ravindramude44@gmail.com', 'ravindra', $admin_password_hash, '9209276332'],
+        ['Yashraj Nanaware', 'yashrajnanaware0@gmail.com', 'yashraj', $admin_password_hash, '9325818393'],
+        ['Kaif Khan', 'alikaif8585@gmail.com', 'kaif', $admin_password_hash, '9589904746']
+    ];
+
+    $insert_admin_user = $pdo->prepare("INSERT INTO users (name, email, username, password, phone, role, status, department_id) VALUES (?, ?, ?, ?, ?, 'admin', 'approved', 1)");
+    $insert_admin_record = $pdo->prepare("INSERT INTO admins (user_id, username, name, email, password, role) VALUES (?, ?, ?, ?, ?, 'superadmin')");
+
+    foreach ($other_admins as $oa) {
+        $insert_admin_user->execute([$oa[0], $oa[1], $oa[2], $oa[3], $oa[4]]);
+        $new_user_id = $pdo->lastInsertId();
+        $insert_admin_record->execute([$new_user_id, $oa[2], $oa[0], $oa[1], $oa[3]]);
+    }
 
     // 1. Insert mock users (Alumni and Students)
     $mock_users = [

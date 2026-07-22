@@ -437,29 +437,42 @@
     <!-- ==================== PROFESSIONAL SYSTEM FOOTER ==================== -->
     <?php
     // Admin contact details
-    $admin_display_name = 'Ashwin Pande';
-    $admin_display_email = 'ashwinpande30092007@gmail.com';
-    $admin_display_phone = '+91 9226830066';
+    $fallback_admins = [
+        ['name' => 'Ashwin Pande', 'phone' => '9226830066', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Ravindra Mude', 'phone' => '9209276332', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Yashraj Nanaware', 'phone' => '9325818393', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Kaif Khan', 'phone' => '9589904746', 'email' => 'alumninethelp@gmail.com']
+    ];
+
+    $admin_display_email = 'alumninethelp@gmail.com';
+    $admins_to_show = [];
 
     if (isset($pdo) && $pdo instanceof PDO) {
         try {
-            $stmt_admin_fetch = $pdo->query("SELECT name, email, phone FROM users WHERE role = 'admin' AND status = 'approved' ORDER BY id ASC LIMIT 1");
-            $admin_row = $stmt_admin_fetch->fetch(PDO::FETCH_ASSOC);
-            if ($admin_row) {
-                if (!empty($admin_row['name'])) {
-                    $admin_display_name = htmlspecialchars($admin_row['name']);
-                }
-                if (!empty($admin_row['email'])) {
-                    $admin_display_email = htmlspecialchars($admin_row['email']);
-                }
-                if (!empty($admin_row['phone'])) {
-                    $admin_display_phone = htmlspecialchars($admin_row['phone']);
-                }
-            }
+            $stmt_admin_fetch = $pdo->query("SELECT name, email, phone FROM users WHERE role = 'admin' AND status = 'approved' AND (phone IS NOT NULL AND phone != '') GROUP BY name ORDER BY id ASC");
+            $admins_to_show = $stmt_admin_fetch->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            // Fallback to defaults
+            // Fallback
         }
     }
+
+    if (empty($admins_to_show)) {
+        $admins_to_show = $fallback_admins;
+    }
+
+    $admin_elements = [];
+    foreach ($admins_to_show as $admin) {
+        if (!empty($admin['name'])) {
+            $formatted = htmlspecialchars($admin['name']);
+            if (!empty($admin['phone'])) {
+                $clean_phone = preg_replace('/[^0-9+]/', '', $admin['phone']);
+                $formatted .= ' (<a href="tel:' . $clean_phone . '" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color=\'var(--theme-accent-blue, #38bdf8)\'" onmouseout="this.style.color=\'var(--theme-text, #f8fafc)\'">' . htmlspecialchars($admin['phone']) . '</a>)';
+            }
+            $admin_elements[] = $formatted;
+        }
+    }
+
+    $admins_formatted_str = implode(', ', $admin_elements);
     $path_prefix = $path_prefix ?? '';
     ?>
 
@@ -493,11 +506,9 @@
                         <a href="<?php echo $path_prefix; ?>about.php" style="color: var(--theme-accent-purple, #818cf8); font-weight: 700; text-decoration: underline;">About AlumniNet:</a> Enterprise Alumni Engagement & Mentorship Platform.
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; align-items: center;">
-                        <span><i class="fa-solid fa-user-shield" style="color: var(--theme-accent-purple, #818cf8);"></i> <strong>Admin:</strong> <?php echo $admin_display_name; ?></span>
+                        <span><i class="fa-solid fa-user-shield" style="color: var(--theme-accent-purple, #818cf8);"></i> <strong>Admins:</strong> <?php echo $admins_formatted_str; ?></span>
                         <span style="opacity: 0.3;">|</span>
-                        <span><i class="fa-solid fa-phone" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Contact:</strong> <a href="tel:9226830066" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500;"><?php echo $admin_display_phone; ?></a></span>
-                        <span style="opacity: 0.3;">|</span>
-                        <span><i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Email:</strong> <a href="mailto:<?php echo $admin_display_email; ?>" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500;"><?php echo $admin_display_email; ?></a></span>
+                        <span><i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($admin_display_email); ?>" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text, #f8fafc)'"><?php echo htmlspecialchars($admin_display_email); ?></a></span>
                     </div>
                 </div>
             </div>

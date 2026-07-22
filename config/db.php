@@ -51,6 +51,32 @@ try {
             $pdo->exec("ALTER TABLE users ADD COLUMN last_active TIMESTAMP NULL DEFAULT NULL");
         }
     }
+
+    // 3. Check & create ai_chats table if missing
+    $checkAiChatsTable = $pdo->query("SHOW TABLES LIKE 'ai_chats'")->fetch();
+    if (!$checkAiChatsTable) {
+        $pdo->exec("CREATE TABLE ai_chats (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            query TEXT NOT NULL,
+            response TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 4. Check & add type, priority in notifications table if missing
+    $checkNotificationsTable = $pdo->query("SHOW TABLES LIKE 'notifications'")->fetch();
+    if ($checkNotificationsTable) {
+        $checkType = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'type'")->fetch();
+        if (!$checkType) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN type VARCHAR(50) DEFAULT 'info'");
+        }
+        $checkPriority = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'priority'")->fetch();
+        if (!$checkPriority) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN priority VARCHAR(50) DEFAULT 'medium'");
+        }
+    }
 } catch (Exception $e) {
     // fail-silent during uninitialized database setup
 }
