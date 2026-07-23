@@ -286,6 +286,10 @@ require_once __DIR__ . '/../includes/header.php';
                         
                         <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                             <div>
+                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Professional Member ID</h4>
+                                <p style="font-size: 0.95rem; font-weight: 700; color: var(--theme-accent-purple); margin: 0;"><i class="fa-solid fa-id-badge"></i> <?php echo htmlspecialchars(get_student_id_string($uid, $profile['course'] ?? '')); ?></p>
+                            </div>
+                            <div>
                                 <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Full Name</h4>
                                 <p style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($user_name); ?></p>
                             </div>

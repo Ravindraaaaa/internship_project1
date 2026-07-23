@@ -55,19 +55,40 @@ body.theme-dark {
 
 /* 2. Light Theme (Clean Modern Ivory) */
 body.theme-light {
-    --theme-bg: #f8fafc;
+    --theme-bg: #f1f5f9; /* Slate 100 - slightly darker so white cards have excellent contrast */
     --theme-bg-secondary: #ffffff;
-    --theme-sidebar: rgba(255, 255, 255, 0.85);
-    --theme-card: rgba(255, 255, 255, 0.9);
-    --theme-card-hover: #ffffff;
+    --theme-sidebar: rgba(255, 255, 255, 0.95);
+    --theme-card: #ffffff; /* Solid white cards for premium light interface */
+    --theme-card-hover: #f8fafc;
     --theme-text: #0f172a;
-    --theme-text-secondary: #475569;
-    --theme-border: rgba(0, 0, 0, 0.08);
+    --theme-text-secondary: #334155; /* Slightly darker gray for better readability */
+    --theme-border: rgba(15, 23, 42, 0.12); /* Higher contrast border */
     --theme-accent-blue: #2563eb;
     --theme-accent-purple: #7c3aed;
     --theme-accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     --theme-accent-glow: rgba(37, 99, 235, 0.15);
-    --shadow-soft: 0 16px 40px -12px rgba(15, 23, 42, 0.08);
+    --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+/* Light Theme Element Visibility Polish */
+body.theme-light .input-glass {
+    background: rgba(15, 23, 42, 0.035) !important;
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+body.theme-light .input-glass::placeholder {
+    color: #64748b !important;
+}
+body.theme-light .input-glass:focus {
+    background: #ffffff !important;
+    border-color: var(--theme-accent-purple) !important;
+}
+body.theme-light .dropdown-item:hover {
+    background: rgba(15, 23, 42, 0.05) !important;
+}
+body.theme-light .chat-bubble.received {
+    background: rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
 }
 
 /* 3. Glass Theme */
@@ -2055,6 +2076,88 @@ body.theme-light .skeleton::after {
 .skeleton-text.short { width: 40%; }
 .skeleton-text.medium { width: 70%; }
 .skeleton-text.long { width: 100%; }
+
+/* ==================== 22. BODY-LEVEL PAGE SKELETON LOAD SYSTEM ==================== */
+body.page-loading .dashboard-workspace .card-glass:not(.no-skeleton),
+body.page-loading .page-wrapper .card-glass:not(.no-skeleton),
+body.page-loading .dashboard-content-area .card-glass:not(.no-skeleton),
+body.page-loading .stat-card-view,
+body.page-loading .recent-activities-table,
+body.page-loading .chat-sidebar-glass,
+body.page-loading .chat-conversation-glass,
+body.page-loading .profile-score-card {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: transparent !important;
+    border-radius: 6px;
+}
+
+body.page-loading.theme-light .dashboard-workspace .card-glass:not(.no-skeleton),
+body.page-loading.theme-light .page-wrapper .card-glass:not(.no-skeleton),
+body.page-loading.theme-light .dashboard-content-area .card-glass:not(.no-skeleton),
+body.page-loading.theme-light .stat-card-view,
+body.page-loading.theme-light .recent-activities-table,
+body.page-loading.theme-light .chat-sidebar-glass,
+body.page-loading.theme-light .chat-conversation-glass,
+body.page-loading.theme-light .profile-score-card {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+body.page-loading .dashboard-workspace .card-glass:not(.no-skeleton) *,
+body.page-loading .page-wrapper .card-glass:not(.no-skeleton) *,
+body.page-loading .dashboard-content-area .card-glass:not(.no-skeleton) *,
+body.page-loading .stat-card-view *,
+body.page-loading .recent-activities-table *,
+body.page-loading .chat-sidebar-glass *,
+body.page-loading .chat-conversation-glass *,
+body.page-loading .profile-score-card * {
+    visibility: hidden !important;
+}
+
+body.page-loading .dashboard-workspace .card-glass:not(.no-skeleton)::after,
+body.page-loading .page-wrapper .card-glass:not(.no-skeleton)::after,
+body.page-loading .dashboard-content-area .card-glass:not(.no-skeleton)::after,
+body.page-loading .stat-card-view::after,
+body.page-loading .recent-activities-table::after,
+body.page-loading .chat-sidebar-glass::after,
+body.page-loading .chat-conversation-glass::after,
+body.page-loading .profile-score-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.06) 20%,
+        rgba(255, 255, 255, 0.12) 60%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: skeleton-shimmer 1.6s infinite;
+}
+
+body.page-loading.theme-light .dashboard-workspace .card-glass:not(.no-skeleton)::after,
+body.page-loading.theme-light .page-wrapper .card-glass:not(.no-skeleton)::after,
+body.page-loading.theme-light .dashboard-content-area .card-glass:not(.no-skeleton)::after,
+body.page-loading.theme-light .stat-card-view::after,
+body.page-loading.theme-light .recent-activities-table::after,
+body.page-loading.theme-light .chat-sidebar-glass::after,
+body.page-loading.theme-light .chat-conversation-glass::after,
+body.page-loading.theme-light .profile-score-card::after {
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(0, 0, 0, 0.03) 20%,
+        rgba(0, 0, 0, 0.06) 60%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
 
 
 

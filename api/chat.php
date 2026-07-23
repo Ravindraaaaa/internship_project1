@@ -42,6 +42,7 @@ try {
         $stmt = $pdo->prepare("
             SELECT c.id as conversation_id, c.created_at,
                    u.id as peer_id, u.name as peer_name, u.role as peer_role,
+                   ap.course as alumni_course, sp.course as student_course,
                    COALESCE(ap.profile_pic, sp.profile_pic, '') as peer_avatar,
                    (SELECT message FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
                    (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
@@ -56,8 +57,10 @@ try {
         $stmt->execute([$user_id, $user_id, $user_id, $user_id, $user_id]);
         $conversations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Normalize avatar images paths
+        // Normalize avatar images paths and calculate Member ID
         foreach ($conversations as &$c) {
+            $peer_course = $c['alumni_course'] ?? $c['student_course'] ?? '';
+            $c['peer_member_id'] = get_student_id_string($c['peer_id'], $peer_course);
             if (!empty($c['peer_avatar']) && file_exists(__DIR__ . '/../' . $c['peer_avatar'])) {
                 $c['peer_avatar'] = '../' . $c['peer_avatar'];
             } else {

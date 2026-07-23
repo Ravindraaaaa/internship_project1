@@ -11,28 +11,26 @@ $user_name = get_user_name();
 // 1. Process Actions (GET / POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'request') {
-        require_role(['student']);
-        
-        $alumni_id = intval($_POST['alumni_id'] ?? 0);
+        $alumni_id = intval($_POST['alumni_id'] ?? 0); // target user_id
         $message = trim($_POST['message'] ?? '');
 
         if ($alumni_id <= 0 || empty($message)) {
-            set_flash('error', 'Invalid mentorship request details.');
+            set_flash('error', 'Invalid connection request details.');
         } else {
             try {
-                $stmtCheckAlumni = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'alumni'");
-                $stmtCheckAlumni->execute([$alumni_id]);
-                if (!$stmtCheckAlumni->fetch()) {
-                    set_flash('error', 'Target user is not an alumnus.');
+                $stmtCheckUser = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+                $stmtCheckUser->execute([$alumni_id]);
+                if (!$stmtCheckUser->fetch()) {
+                    set_flash('error', 'Target user not found.');
                 } else {
-                    $stmtCheckDup = $pdo->prepare("SELECT id FROM mentorship_requests WHERE student_id = ? AND alumni_id = ?");
-                    $stmtCheckDup->execute([$uid, $alumni_id]);
+                    $stmtCheckDup = $pdo->prepare("SELECT id FROM mentorship_requests WHERE (student_id = ? AND alumni_id = ?) OR (student_id = ? AND alumni_id = ?)");
+                    $stmtCheckDup->execute([$uid, $alumni_id, $alumni_id, $uid]);
                     if ($stmtCheckDup->fetch()) {
-                        set_flash('info', 'Mentorship request already exists.');
+                        set_flash('info', 'Connection request already exists.');
                     } else {
                         $stmtInsert = $pdo->prepare("INSERT INTO mentorship_requests (student_id, alumni_id, message, status) VALUES (?, ?, ?, 'pending')");
                         $stmtInsert->execute([$uid, $alumni_id, $message]);
-                        set_flash('success', 'Mentorship request sent successfully!');
+                        set_flash('success', 'Connection request sent successfully!');
                     }
                 }
             } catch (Exception $e) {
@@ -45,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    require_role(['alumni']);
+    require_role(['alumni', 'student']);
     
     // Check if approved
     $stmtApproveCheck = $pdo->prepare("SELECT status FROM users WHERE id = ?");
@@ -53,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     $is_approved = $stmtApproveCheck->fetchColumn() === 'approved';
 
     if (!$is_approved) {
-        set_flash('error', 'Your profile must be approved by admin to accept mentorships.');
+        set_flash('error', 'Your profile must be approved by admin to accept connection requests.');
         header('Location: dashboard.php');
         exit;
     }
@@ -71,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                 $stmtUpdate->execute([$status, $req_id]);
                 
                 if ($status === 'accepted') {
-                    set_flash('success', 'Mentorship request accepted!');
+                    set_flash('success', 'Connection request accepted!');
                 } else {
-                    set_flash('info', 'Mentorship request declined.');
+                    set_flash('info', 'Connection request declined.');
                 }
             } else {
                 set_flash('error', 'Request not found.');
@@ -93,25 +91,35 @@ $received_requests = [];
 $sent_requests = [];
 
 try {
-    if ($role === 'alumni') {
-        $stmt = $pdo->prepare("SELECT mr.id, mr.message, mr.status, mr.created_at, u.name as student_name, u.email as student_email, sp.course, sp.profile_pic, sp.linkedin, sp.github
-                               FROM mentorship_requests mr 
-                               JOIN users u ON mr.student_id = u.id 
-                               LEFT JOIN student_profiles sp ON u.id = sp.user_id 
-                               WHERE mr.alumni_id = ? 
-                               ORDER BY mr.created_at DESC");
-        $stmt->execute([$uid]);
-        $received_requests = $stmt->fetchAll();
-    } elseif ($role === 'student') {
-        $stmt = $pdo->prepare("SELECT mr.id, mr.message, mr.status, mr.created_at, u.name as alumni_name, u.email as alumni_email, ap.company, ap.position, ap.course, ap.profile_pic, ap.linkedin, ap.website
-                               FROM mentorship_requests mr 
-                               JOIN users u ON mr.alumni_id = u.id 
-                               LEFT JOIN alumni_profiles ap ON u.id = ap.user_id 
-                               WHERE mr.student_id = ? 
-                               ORDER BY mr.created_at DESC");
-        $stmt->execute([$uid]);
-        $sent_requests = $stmt->fetchAll();
-    }
+    // Load all incoming requests (where logged in user is the receiver/alumni_id)
+    $stmtReceived = $pdo->prepare("
+        SELECT mr.id, mr.message, mr.status, mr.created_at, u.id as sender_id, u.name as sender_name, u.email as sender_email, u.role as sender_role,
+               COALESCE(ap.course, sp.course) as course,
+               COALESCE(ap.profile_pic, sp.profile_pic) as profile_pic
+        FROM mentorship_requests mr 
+        JOIN users u ON mr.student_id = u.id 
+        LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
+        WHERE mr.alumni_id = ? 
+        ORDER BY mr.created_at DESC
+    ");
+    $stmtReceived->execute([$uid]);
+    $received_requests = $stmtReceived->fetchAll();
+
+    // Load all outgoing requests (where logged in user is the sender/student_id)
+    $stmtSent = $pdo->prepare("
+        SELECT mr.id, mr.message, mr.status, mr.created_at, u.id as receiver_id, u.name as receiver_name, u.email as receiver_email, u.role as receiver_role,
+               COALESCE(ap.course, sp.course) as course,
+               COALESCE(ap.profile_pic, sp.profile_pic) as profile_pic
+        FROM mentorship_requests mr 
+        JOIN users u ON mr.alumni_id = u.id 
+        LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
+        WHERE mr.student_id = ? 
+        ORDER BY mr.created_at DESC
+    ");
+    $stmtSent->execute([$uid]);
+    $sent_requests = $stmtSent->fetchAll();
 } catch (Exception $e) {
     set_flash('error', 'Failed loading connections: ' . $e->getMessage());
 }
@@ -156,95 +164,90 @@ require_once __DIR__ . '/../includes/header.php';
 
         <main class="dashboard-workspace">
             
-            <!-- ALUMNI MENTORSHIP RECEIVED VIEW -->
-            <?php if ($role === 'alumni'): ?>
-                <div class="card-glass">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-handshake-angle" style="color: var(--theme-accent-purple);"></i> Received Connections</h3>
-                    
-                    <?php if (!empty($received_requests)): ?>
-                        <div style="display:flex; flex-direction:column; gap: 1.5rem;">
-                             <?php foreach ($received_requests as $req): 
-                                 $student_pic = get_avatar_url($req['profile_pic'] ?? '');
-                             ?>
-                                <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-                                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                                            <img src="<?php echo $student_pic; ?>" alt="Avatar" style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
-                                            <div>
-                                                <h4 style="font-size:0.95rem;"><?php echo htmlspecialchars($req['student_name']); ?></h4>
-                                                <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($req['course']); ?></p>
-                                            </div>
+            <!-- Incoming Requests -->
+            <div class="card-glass" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-handshake-angle" style="color: var(--theme-accent-purple);"></i> Incoming Connection Requests</h3>
+                
+                <?php if (!empty($received_requests)): ?>
+                    <div style="display:flex; flex-direction:column; gap: 1.5rem;">
+                         <?php foreach ($received_requests as $req): 
+                             $sender_pic = get_avatar_url($req['profile_pic'] ?? '');
+                             $sender_id_str = get_student_id_string($req['sender_id'], $req['course'] ?? '');
+                         ?>
+                            <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <img src="<?php echo $sender_pic; ?>" alt="Avatar" style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
+                                        <div>
+                                            <h4 style="font-size:0.95rem;"><?php echo htmlspecialchars($req['sender_name']); ?> <small style="opacity: 0.6; font-size: 0.75rem;">(<?php echo $sender_id_str; ?>)</small></h4>
+                                            <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($req['course']); ?> | <strong style="text-transform: uppercase;"><?php echo htmlspecialchars($req['sender_role']); ?></strong></p>
                                         </div>
-                                        <span class="badge badge-<?php echo $req['status'] === 'accepted' ? 'approved' : ($req['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($req['status']); ?></span>
                                     </div>
-                                    <p style="font-size:0.85rem; color:var(--theme-text-secondary); font-style:italic; background:rgba(0,0,0,0.1); padding:0.5rem 0.75rem; border-radius:6px; margin-bottom:0.75rem;">
-                                        "<?php echo htmlspecialchars($req['message']); ?>"
-                                    </p>
-                                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <span style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-clock"></i> Received: <?php echo date('M d, Y', strtotime($req['created_at'])); ?></span>
-                                        <div style="display:flex; gap:0.5rem;">
-                                            <?php if ($req['status'] === 'pending'): ?>
-                                                <a href="mentorship.php?action=accept&id=<?php echo $req['id']; ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-check"></i> Accept</a>
-                                                <a href="mentorship.php?action=decline&id=<?php echo $req['id']; ?>" class="btn btn-danger btn-small" onclick="return confirm('Decline request?')"><i class="fa-solid fa-xmark"></i> Decline</a>
-                                            <?php elseif ($req['status'] === 'accepted'): ?>
-                                                <a href="mailto:<?php echo htmlspecialchars($req['student_email']); ?>" class="btn btn-secondary btn-small"><i class="fa-solid fa-envelope"></i> Email Student</a>
-                                                <?php if ($req['linkedin']): ?>
-                                                    <a href="<?php echo htmlspecialchars($req['linkedin']); ?>" target="_blank" class="btn btn-secondary btn-small"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-                                        </div>
+                                    <span class="badge badge-<?php echo $req['status'] === 'accepted' ? 'approved' : ($req['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($req['status']); ?></span>
+                                </div>
+                                <p style="font-size:0.85rem; color:var(--theme-text-secondary); font-style:italic; background:rgba(0,0,0,0.02); border: 1px solid var(--theme-border); padding:0.5rem 0.75rem; border-radius:6px; margin-bottom:0.75rem;">
+                                    "<?php echo htmlspecialchars($req['message']); ?>"
+                                </p>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-clock"></i> Received: <?php echo date('M d, Y', strtotime($req['created_at'])); ?></span>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <?php if ($req['status'] === 'pending'): ?>
+                                            <a href="mentorship.php?action=accept&id=<?php echo $req['id']; ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-check"></i> Accept</a>
+                                            <a href="mentorship.php?action=decline&id=<?php echo $req['id']; ?>" class="btn btn-danger btn-small" onclick="return confirm('Decline request?')"><i class="fa-solid fa-xmark"></i> Decline</a>
+                                        <?php elseif ($req['status'] === 'accepted'): ?>
+                                            <a href="chat.php?peer_id=<?php echo $req['sender_id']; ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-comment-dots"></i> Chat</a>
+                                            <a href="view_profile.php?id=<?php echo $req['sender_id']; ?>" class="btn btn-secondary btn-small"><i class="fa-solid fa-user"></i> Profile</a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <p style="color:var(--theme-text-secondary); text-align:center; padding: 2rem 0;">No student connections requests received.</p>
-                    <?php endif; ?>
-                </div>
+                            </div>
+                         <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p style="color:var(--theme-text-secondary); text-align:center; padding: 2rem 0;">No incoming connection requests received.</p>
+                <?php endif; ?>
+            </div>
 
-            <!-- STUDENT MENTORSHIP SENT VIEW -->
-            <?php elseif ($role === 'student'): ?>
-                <div class="card-glass">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-handshake" style="color: var(--theme-accent-blue);"></i> Outgoing Connections</h3>
-                    
-                    <?php if (!empty($sent_requests)): ?>
-                        <div style="display:flex; flex-direction:column; gap:1.5rem;">
-                             <?php foreach ($sent_requests as $req): 
-                                 $alumni_pic = get_avatar_url($req['profile_pic'] ?? '');
-                             ?>
-                                <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-                                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                                            <img src="<?php echo $alumni_pic; ?>" alt="Avatar" style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
-                                            <div>
-                                                <h4 style="font-size:0.95rem;"><?php echo htmlspecialchars($req['alumni_name']); ?></h4>
-                                                <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($req['position'] ?? 'Graduate'); ?> at <?php echo htmlspecialchars($req['company'] ?? 'AlumniNet'); ?></p>
-                                            </div>
+            <!-- Outgoing Requests -->
+            <div class="card-glass">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-handshake" style="color: var(--theme-accent-blue);"></i> Outgoing Connection Requests</h3>
+                
+                <?php if (!empty($sent_requests)): ?>
+                    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                         <?php foreach ($sent_requests as $req): 
+                             $receiver_pic = get_avatar_url($req['profile_pic'] ?? '');
+                             $receiver_id_str = get_student_id_string($req['receiver_id'], $req['course'] ?? '');
+                         ?>
+                            <div style="border-bottom: 1px solid var(--theme-border); padding-bottom: 1.25rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <img src="<?php echo $receiver_pic; ?>" alt="Avatar" style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
+                                        <div>
+                                            <h4 style="font-size:0.95rem;"><?php echo htmlspecialchars($req['receiver_name']); ?> <small style="opacity: 0.6; font-size: 0.75rem;">(<?php echo $receiver_id_str; ?>)</small></h4>
+                                            <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($req['course']); ?> | <strong style="text-transform: uppercase;"><?php echo htmlspecialchars($req['receiver_role']); ?></strong></p>
                                         </div>
-                                        <span class="badge badge-<?php echo $req['status'] === 'accepted' ? 'approved' : ($req['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($req['status']); ?></span>
                                     </div>
-                                    <p style="font-size:0.85rem; color:var(--theme-text-secondary); font-style:italic; background:rgba(0,0,0,0.1); padding:0.5rem 0.75rem; border-radius:6px; margin-bottom:0.75rem;">
-                                        "<?php echo htmlspecialchars($req['message']); ?>"
-                                    </p>
-                                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <span style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-clock"></i> Sent: <?php echo date('M d, Y', strtotime($req['created_at'])); ?></span>
-                                        <div style="display:flex; gap:0.5rem;">
-                                            <?php if ($req['status'] === 'accepted'): ?>
-                                                <a href="mailto:<?php echo htmlspecialchars($req['alumni_email']); ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-envelope"></i> Email Mentor</a>
-                                                <?php if ($req['linkedin']): ?>
-                                                    <a href="<?php echo htmlspecialchars($req['linkedin']); ?>" target="_blank" class="btn btn-secondary btn-small"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-                                        </div>
+                                    <span class="badge badge-<?php echo $req['status'] === 'accepted' ? 'approved' : ($req['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($req['status']); ?></span>
+                                </div>
+                                <p style="font-size:0.85rem; color:var(--theme-text-secondary); font-style:italic; background:rgba(0,0,0,0.02); border: 1px solid var(--theme-border); padding:0.5rem 0.75rem; border-radius:6px; margin-bottom:0.75rem;">
+                                    "<?php echo htmlspecialchars($req['message']); ?>"
+                                </p>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-clock"></i> Sent: <?php echo date('M d, Y', strtotime($req['created_at'])); ?></span>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <?php if ($req['status'] === 'accepted'): ?>
+                                            <a href="chat.php?peer_id=<?php echo $req['receiver_id']; ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-comment-dots"></i> Chat</a>
+                                            <a href="view_profile.php?id=<?php echo $req['receiver_id']; ?>" class="btn btn-secondary btn-small"><i class="fa-solid fa-user"></i> Profile</a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <p style="color:var(--theme-text-secondary); text-align:center; padding: 2rem 0;">No active mentorship requests. Search directory to request a mentor!</p>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+                            </div>
+                         <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p style="color:var(--theme-text-secondary); text-align:center; padding: 2rem 0;">No outgoing connection requests sent. Search directory to establish connections!</p>
+                <?php endif; ?>
+            </div>
 
         </main>
     </div>

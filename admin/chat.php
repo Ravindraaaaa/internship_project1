@@ -446,11 +446,20 @@ require_once __DIR__ . '/../includes/header.php';
     }
 
     function loadConversationsList() {
+        const listContainer = document.getElementById('conversations-list-container');
+        if (listContainer && !listContainer.querySelector('.convo-item') && !listContainer.querySelector('.skeleton')) {
+            listContainer.innerHTML = `
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+            `;
+        }
+
         fetch('../api/chat.php?action=list')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const listContainer = document.getElementById('conversations-list-container');
                     listContainer.innerHTML = '';
                     
                     if (data.conversations && data.conversations.length > 0) {
@@ -491,6 +500,16 @@ require_once __DIR__ . '/../includes/header.php';
     }
 
     function loadThreadMessages() {
+        const messagesContainer = document.getElementById('chat-messages-stream');
+        if (messagesContainer && !messagesContainer.querySelector('.chat-bubble') && !messagesContainer.querySelector('.skeleton')) {
+            messagesContainer.innerHTML = `
+                <div class="chat-bubble received skeleton" style="width: 55%; height: 50px; border-radius: 12px; margin-bottom: 1rem; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble sent skeleton" style="width: 40%; height: 35px; border-radius: 12px; margin-bottom: 1rem; margin-left: auto; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble received skeleton" style="width: 65%; height: 65px; border-radius: 12px; margin-bottom: 1rem; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble sent skeleton" style="width: 30%; height: 40px; border-radius: 12px; margin-bottom: 1rem; margin-left: auto; border: none; background: rgba(255,255,255,0.05);"></div>
+            `;
+        }
+
         let url = `../api/chat.php?action=thread&conversation_id=${activeConversationId}`;
         if (activeConversationId <= 0 && activePeerId > 0) {
             url += `&peer_id=${activePeerId}`;
@@ -504,8 +523,6 @@ require_once __DIR__ . '/../includes/header.php';
                         activeConversationId = data.conversation_id;
                         loadConversationsList();
                     }
-
-                    const messagesContainer = document.getElementById('chat-messages-stream');
                     
                     // Filter out placeholders
                     const placeholder = document.getElementById('chat-stream-placeholder');

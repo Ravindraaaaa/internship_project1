@@ -506,4 +506,26 @@ if (!function_exists('check_remember_me_cookie')) {
         }
     }
 }
+
+if (!function_exists('get_student_id_string')) {
+    function get_student_id_string($user_id, $course) {
+        if (empty($course)) {
+            return 'ST-' . (1000 + $user_id);
+        }
+        $course = strtolower($course);
+        $prefix = 'ST';
+        if (strpos($course, 'computer') !== false || strpos($course, 'cs') !== false) {
+            $prefix = 'CS';
+        } elseif (strpos($course, 'information') !== false || strpos($course, 'it') !== false) {
+            $prefix = 'IT';
+        } elseif (strpos($course, 'electronics') !== false || strpos($course, 'ec') !== false) {
+            $prefix = 'EC';
+        } elseif (strpos($course, 'mechanical') !== false || strpos($course, 'me') !== false) {
+            $prefix = 'ME';
+        } elseif (strpos($course, 'civil') !== false || strpos($course, 'ce') !== false) {
+            $prefix = 'CE';
+        }
+        return $prefix . '-' . (1000 + $user_id);
+    }
+}
 ?>

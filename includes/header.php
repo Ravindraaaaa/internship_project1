@@ -16,13 +16,13 @@ if (is_logged_in()) {
     } else if ($role === 'alumni') {
         $stmt = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
-        $profile = $stmt->fetch();
-        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
+        $header_profile = $stmt->fetch();
+        $navbar_avatar = get_avatar_url($header_profile['profile_pic'] ?? '');
     } else if ($role === 'student') {
         $stmt = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
-        $profile = $stmt->fetch();
-        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
+        $header_profile = $stmt->fetch();
+        $navbar_avatar = get_avatar_url($header_profile['profile_pic'] ?? '');
     }
 }
 ?>
@@ -45,12 +45,14 @@ if (is_logged_in()) {
     <!-- Lenis Smooth Scroll (Loaded locally to prevent Tracking Prevention warnings) -->
     <script src="<?php echo $path_prefix; ?>assets/js/lenis.min.js"></script>
 </head>
-<body>
+<body <?php echo is_logged_in() ? 'class="page-loading"' : ''; ?>>
 
     <!-- ==================== PAGE LOADER ==================== -->
+    <?php if (!is_logged_in()): ?>
     <div class="loader-overlay" id="page-loader">
         <div class="loader-spinner"></div>
     </div>
+    <?php endif; ?>
 
     <!-- ==================== CLEAN STATIC BACKDROP LAYER ==================== -->
     <div class="custom-bg-overlay"></div>

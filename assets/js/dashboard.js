@@ -1,26 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     
-    // ==================== 0. SKELETON LOAD IN DASHBOARD ====================
-    const skeletonElements = document.querySelectorAll('.stat-card-view, .dashboard-workspace .card-glass, .recent-activities-table');
-    
-    skeletonElements.forEach(el => {
-        el.classList.add('skeleton');
-    });
-
-    setTimeout(() => {
-        skeletonElements.forEach(el => {
-            el.classList.remove('skeleton');
-        });
-        if (typeof gsap !== 'undefined') {
-            gsap.from(skeletonElements, {
-                opacity: 0,
-                y: 8,
-                stagger: 0.05,
-                duration: 0.35,
-                ease: 'power1.out'
-            });
-        }
-    }, 450);
+    // Global dashboard skeleton loader is now handled in main.js
     
     // ==================== 3. CHART.JS CONFIGURATIONS & REFERENCES ====================
     let userActivityChartInstance = null;

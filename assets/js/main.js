@@ -1,5 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
     var canvasAnimationId = null;
+
+    // ==================== GLOBAL SKELETON LOADER FOR FIXED INTERFACES ====================
+    if (document.body.classList.contains('page-loading')) {
+        const skeletonElements = document.querySelectorAll(
+            '.dashboard-workspace .card-glass:not(.no-skeleton), ' +
+            '.page-wrapper .card-glass:not(.no-skeleton), ' +
+            '.dashboard-content-area .card-glass:not(.no-skeleton), ' +
+            '.stat-card-view, ' +
+            '.recent-activities-table, ' +
+            '.chat-sidebar-glass, ' +
+            '.chat-conversation-glass, ' +
+            '.profile-score-card'
+        );
+
+        setTimeout(() => {
+            document.body.classList.remove('page-loading');
+            if (typeof gsap !== 'undefined' && skeletonElements.length > 0) {
+                try {
+                    gsap.from(skeletonElements, {
+                        opacity: 0,
+                        y: 8,
+                        stagger: 0.05,
+                        duration: 0.35,
+                        ease: 'power1.out'
+                    });
+                } catch (e) {
+                    console.error("GSAP animation error in skeleton loaders:", e);
+                }
+            }
+        }, 450);
+    }
     
     // ==================== 0. SIDEBAR & DROPDOWNS GLOBAL ====================
     const sidebar = document.getElementById('sidebar');
