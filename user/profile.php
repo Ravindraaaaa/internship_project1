@@ -368,6 +368,35 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
                     </div>
+
+                    <!-- Platform Activity Metrics -->
+                    <div class="card-glass">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-chart-simple" style="color: var(--theme-accent-blue);"></i> Platform Activity</h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.5rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-circle-nodes"></i> Connections</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo count($connected_users); ?></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.5rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-briefcase"></i> Saved Jobs</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo isset($bookmarked_jobs) ? count($bookmarked_jobs) : 0; ?></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.25rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-calendar-check"></i> Reserved RSVPs</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo isset($saved_events) ? count($saved_events) : 0; ?></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Shortcuts -->
+                    <div class="card-glass">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-rocket" style="color: var(--theme-accent-purple);"></i> Quick Links</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <a href="portfolio.php" class="btn btn-secondary btn-small" style="width: 100%; text-align: left; justify-content: flex-start; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-invoice"></i> My Resume & Locker</a>
+                            <a href="chat.php" class="btn btn-secondary btn-small" style="width: 100%; text-align: left; justify-content: flex-start; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-comment-dots"></i> Message Center</a>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Right side: View profile details or edit form -->

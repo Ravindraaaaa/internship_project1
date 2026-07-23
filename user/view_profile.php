@@ -233,6 +233,44 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <!-- Target User Platform Metrics -->
+                    <div class="card-glass" style="padding: 2rem 1.5rem;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1.25rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; color: var(--theme-text);">
+                            <i class="fa-solid fa-chart-simple" style="color:var(--theme-accent-purple);"></i> Network Stats
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.5rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-circle-nodes"></i> Connections</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo count($connected_users); ?></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.5rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-code"></i> Skills Listed</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo count($skills); ?></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.25rem;">
+                                <span style="font-size: 0.82rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-award"></i> Achievements</span>
+                                <strong style="font-size: 0.9rem; color: var(--theme-text);"><?php echo count($achievements); ?></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection Insights Card -->
+                    <div class="card-glass" style="padding: 2rem 1.5rem;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1.25rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; color: var(--theme-text);">
+                            <i class="fa-solid fa-circle-info" style="color:var(--theme-accent-blue);"></i> Connectivity
+                        </h3>
+                        <?php if ($conn_status === 'accepted'): ?>
+                            <p style="font-size: 0.85rem; color: var(--theme-text-secondary); line-height: 1.5; margin: 0;">
+                                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> You are connected with <?php echo htmlspecialchars($target_user['name']); ?>. You can send messages directly.
+                            </p>
+                        <?php else: ?>
+                            <p style="font-size: 0.85rem; color: var(--theme-text-secondary); line-height: 1.5; margin: 0;">
+                                Connect with <?php echo htmlspecialchars($target_user['name']); ?> to unlock secure chats and request career mentoring references.
+                            </p>
+                        <?php endif; ?>
+                    </div>
+
                 </div>
 
             <!-- Right Column: Biography, Skills, Achievements, Certificates -->
