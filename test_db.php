@@ -1,0 +1,1 @@
+﻿<?php require_once 'includes/db.php'; try { $stmt = $pdo->prepare('SELECT * FROM student_profiles WHERE user_id = 2'); $stmt->execute(); print_r($stmt->fetch(PDO::FETCH_ASSOC)); } catch (Exception $e) { echo $e->getMessage(); } ?>
