@@ -211,7 +211,7 @@ require_once __DIR__ . '/../includes/header.php';
         cursor: pointer;
         transition: all 0.2s ease;
         text-decoration: none;
-        color: var(--theme-text-primary);
+        color: var(--theme-text);
     }
     .convo-item:hover, .convo-item.active {
         background: rgba(255,255,255,0.04);
@@ -281,6 +281,9 @@ require_once __DIR__ . '/../includes/header.php';
         background: rgba(255,255,255,0.06);
     }
     @media (max-width: 768px) {
+        #chat-back-mobile-btn {
+            display: inline-block !important;
+        }
         .conversations-pane {
             width: 100% !important;
         }
