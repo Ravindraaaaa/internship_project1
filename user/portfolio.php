@@ -245,13 +245,13 @@ require_once __DIR__ . '/../includes/header.php';
                     <div style="position: relative; width: 100px; height: 100px; flex-shrink:0;">
                         <!-- Progress Circle -->
                         <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3" />
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="3" />
                             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--theme-accent-blue)" stroke-width="3" stroke-dasharray="<?php echo $profile_score; ?>; 100" />
                         </svg>
-                        <div style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); font-size: 1.35rem; font-weight: 700; color: #ffffff;"><?php echo $profile_score; ?>%</div>
+                        <div style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); font-size: 1.35rem; font-weight: 700; color: var(--theme-text);"><?php echo $profile_score; ?>%</div>
                     </div>
                     <div>
-                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem;">Profile Completeness</h3>
+                        <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--theme-text); margin-bottom: 0.5rem;">Profile Completeness</h3>
                         <p style="font-size: 0.88rem; color: var(--theme-text-secondary); line-height: 1.5;">
                             <?php if ($profile_score >= 90): ?>
                                 Excellent! Your profile is highly detailed. This helps you get better mentorship matches and recruiter recommendations.
@@ -271,7 +271,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- 2. Resume & CV Section -->
                 <div class="card-glass" style="padding: 2rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-file-invoice" style="color:var(--theme-accent-blue);"></i> Resume & CV Locker</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-file-invoice" style="color:var(--theme-accent-blue);"></i> Resume & CV Locker</h3>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <!-- Upload custom resume -->
@@ -308,7 +308,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- 3. Skill & Progress Manager -->
                 <div class="card-glass" style="padding: 2rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-bolt" style="color:var(--theme-accent-purple);"></i> Technical Skills Tracker</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-bolt" style="color:var(--theme-accent-purple);"></i> Technical Skills Tracker</h3>
                     
                     <form action="portfolio.php" method="POST" style="margin-bottom: 2rem;">
                         <input type="hidden" name="action" value="add_skill">
@@ -337,7 +337,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.5rem;">
                                 <?php foreach ($user_skills as $us): ?>
                                     <div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight:600; margin-bottom: 0.4rem; color:#ffffff;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight:600; margin-bottom: 0.4rem; color: var(--theme-text);">
                                             <span><?php echo htmlspecialchars($us['name']); ?></span>
                                             <span><?php echo $us['progress']; ?>%</span>
                                         </div>
@@ -357,7 +357,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- 4. Certificate Locker -->
                 <div class="card-glass" style="padding: 2rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-award" style="color:var(--theme-accent-blue);"></i> Credentials & Certificates</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-award" style="color:var(--theme-accent-blue);"></i> Credentials & Certificates</h3>
                     
                     <!-- Upload Certificate Form -->
                     <form id="cert-upload-form" style="margin-bottom: 2rem; padding: 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--theme-border); border-radius: var(--border-radius-sm);">
@@ -391,7 +391,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php foreach ($certificates as $cert): ?>
                                 <div class="card-glass" style="background:rgba(255,255,255,0.02); border-color:var(--theme-border); padding: 1.25rem; border-radius: var(--border-radius-sm); display: flex; justify-content: space-between; align-items: flex-start;">
                                     <div>
-                                        <h4 style="font-size:0.95rem; font-weight:700; color:#ffffff; margin-bottom:0.15rem;"><?php echo htmlspecialchars($cert['name']); ?></h4>
+                                        <h4 style="font-size:0.95rem; font-weight:700; color: var(--theme-text); margin-bottom:0.15rem;"><?php echo htmlspecialchars($cert['name']); ?></h4>
                                         <p style="font-size:0.8rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Issued by: <?php echo htmlspecialchars($cert['issuer']); ?></p>
                                         <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-calendar-days"></i> <?php echo date('M Y', strtotime($cert['issue_date'])); ?></p>
                                     </div>
@@ -409,7 +409,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- 5. Achievements Showcase -->
                 <div class="card-glass" style="padding: 2rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border); margin-top: 2rem;">
-                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-trophy" style="color:#fbbf24;"></i> Honors & Achievements</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-trophy" style="color:#fbbf24;"></i> Honors & Achievements</h3>
                     
                     <!-- Add Achievement Form -->
                     <form action="portfolio.php" method="POST" style="margin-bottom: 2rem; padding: 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--theme-border); border-radius: var(--border-radius-sm);">
@@ -439,7 +439,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <div style="flex-grow:1; padding-right:1rem;">
                                         <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
                                             <i class="fa-solid fa-award" style="color:#fbbf24;"></i>
-                                            <h4 style="font-size:0.95rem; font-weight:700; color:#ffffff; margin:0;"><?php echo htmlspecialchars($ach['title']); ?></h4>
+                                            <h4 style="font-size:0.95rem; font-weight:700; color: var(--theme-text); margin:0;"><?php echo htmlspecialchars($ach['title']); ?></h4>
                                         </div>
                                         <p style="font-size:0.82rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;"><?php echo htmlspecialchars($ach['description']); ?></p>
                                         <p style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-calendar-days"></i> <?php echo date('M d, Y', strtotime($ach['date_achieved'])); ?></p>
@@ -464,13 +464,13 @@ require_once __DIR__ . '/../includes/header.php';
                 
                 <!-- 1. Enterprise Bookmarks -->
                 <div class="card-glass" style="padding: 1.5rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-bookmark" style="color:var(--theme-accent-blue);"></i> Saved Jobs</h3>
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-bookmark" style="color:var(--theme-accent-blue);"></i> Saved Jobs</h3>
                     <?php if ($bookmarked_jobs): ?>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <?php foreach ($bookmarked_jobs as $bj): ?>
                                 <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--border-radius-sm); border: 1px solid var(--theme-border);">
                                     <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">
-                                        <a href="jobs.php?id=<?php echo $bj['id']; ?>" style="font-size:0.82rem; font-weight:600; color:#ffffff; text-decoration:none;"><?php echo htmlspecialchars($bj['title']); ?></a>
+                                        <a href="jobs.php?id=<?php echo $bj['id']; ?>" style="font-size:0.82rem; font-weight:600; color: var(--theme-text); text-decoration:none;"><?php echo htmlspecialchars($bj['title']); ?></a>
                                         <p style="font-size:0.72rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($bj['company']); ?></p>
                                     </div>
                                     <form action="portfolio.php" method="POST">
@@ -487,13 +487,13 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div class="card-glass" style="padding: 1.5rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-calendar-heart" style="color:var(--theme-accent-purple);"></i> Saved Events</h3>
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-calendar-heart" style="color:var(--theme-accent-purple);"></i> Saved Events</h3>
                     <?php if ($saved_events): ?>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <?php foreach ($saved_events as $se): ?>
                                 <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--border-radius-sm); border: 1px solid var(--theme-border);">
                                     <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">
-                                        <a href="events.php?id=<?php echo $se['id']; ?>" style="font-size:0.82rem; font-weight:600; color:#ffffff; text-decoration:none;"><?php echo htmlspecialchars($se['title']); ?></a>
+                                        <a href="events.php?id=<?php echo $se['id']; ?>" style="font-size:0.82rem; font-weight:600; color: var(--theme-text); text-decoration:none;"><?php echo htmlspecialchars($se['title']); ?></a>
                                         <p style="font-size:0.72rem; color:var(--theme-text-secondary);"><?php echo date('M d, Y', strtotime($se['event_date'])); ?></p>
                                     </div>
                                     <form action="portfolio.php" method="POST">
@@ -511,14 +511,14 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- 2. Security Configuration Settings -->
                 <div class="card-glass" style="padding: 1.5rem; border-radius: var(--border-radius-lg); background: var(--theme-card); border: 1px solid var(--theme-border);">
-                    <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-shield-halved" style="color:var(--theme-accent-purple);"></i> Security Center</h3>
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--theme-text); margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-shield-halved" style="color:var(--theme-accent-purple);"></i> Security Center</h3>
                     
                     <!-- Toggle 2FA -->
                     <form action="portfolio.php" method="POST" id="toggle-2fa-form" style="margin-bottom: 1.5rem;">
                         <input type="hidden" name="action" value="toggle_2fa">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:0.8rem; border-radius:var(--border-radius-sm); border:1px solid var(--theme-border);">
                             <div>
-                                <span style="font-size:0.82rem; font-weight:600; color:#ffffff; display:block;">Two-Factor Auth</span>
+                                <span style="font-size:0.82rem; font-weight:600; color: var(--theme-text); display:block;">Two-Factor Auth</span>
                                 <span style="font-size:0.72rem; color:var(--theme-text-secondary);">Toggle login verification</span>
                             </div>
                             <label class="switch-container">
@@ -533,8 +533,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php if ($security_logs): ?>
                         <div style="display:flex; flex-direction:column; gap:0.65rem;">
                             <?php foreach ($security_logs as $log): ?>
-                                <div style="font-size:0.72rem; background:rgba(0,0,0,0.1); padding:0.65rem; border-radius:var(--border-radius-sm); border:1px solid rgba(255,255,255,0.02);">
-                                    <div style="font-weight:600; color:#ffffff;"><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $log['action']))); ?></div>
+                                <div style="font-size:0.72rem; background:rgba(0,0,0,0.02); padding:0.65rem; border-radius:var(--border-radius-sm); border:1px solid var(--theme-border);">
+                                    <div style="font-weight:600; color: var(--theme-text);"><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $log['action']))); ?></div>
                                     <p style="color:var(--theme-text-secondary); margin:0.15rem 0;"><?php echo htmlspecialchars($log['details']); ?></p>
                                     <span style="font-size:0.65rem; opacity:0.6; color:var(--theme-text-secondary);"><?php echo date('M d, H:i', strtotime($log['created_at'])); ?> | IP: <?php echo htmlspecialchars($log['ip_address']); ?></span>
                                 </div>

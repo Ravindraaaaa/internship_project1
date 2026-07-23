@@ -14,6 +14,23 @@ $user_name = get_user_name();
 $page_title = "AlumniNet Messenger";
 
 $peer_id_preselect = intval($_GET['peer_id'] ?? 0);
+$preselected_peer_data = null;
+if ($peer_id_preselect > 0) {
+    $stmtPre = $pdo->prepare("
+        SELECT u.id, u.name, u.role, ap.course as alumni_course, sp.course as student_course,
+               COALESCE(ap.profile_pic, sp.profile_pic, '') as profile_pic
+        FROM users u
+        LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
+        WHERE u.id = ? AND u.status = 'approved'
+    ");
+    $stmtPre->execute([$peer_id_preselect]);
+    $preselected_peer_data = $stmtPre->fetch();
+    if ($preselected_peer_data) {
+        $preselected_peer_data['member_id'] = get_student_id_string($preselected_peer_data['id'], $preselected_peer_data['alumni_course'] ?? $preselected_peer_data['student_course'] ?? '');
+        $preselected_peer_data['avatar_url'] = get_avatar_url($preselected_peer_data['profile_pic']);
+    }
+}
 
 $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 if ($role === 'alumni') {
@@ -32,9 +49,17 @@ if ($role === 'alumni') {
     }
 }
 
-// Fetch all available network peers for creating new conversation
-$stmtPeers = $pdo->prepare("SELECT id, name, role FROM users WHERE id != ? AND status = 'approved' ORDER BY name ASC");
-$stmtPeers->execute([$uid]);
+// Fetch only network peers with an accepted connection/mentorship request
+$stmtPeers = $pdo->prepare("
+    SELECT u.id, u.name, u.role, ap.course as alumni_course, sp.course as student_course
+    FROM users u
+    JOIN mentorship_requests mr ON (mr.student_id = ? AND mr.alumni_id = u.id) OR (mr.alumni_id = ? AND mr.student_id = u.id)
+    LEFT JOIN alumni_profiles ap ON u.id = ap.user_id
+    LEFT JOIN student_profiles sp ON u.id = sp.user_id
+    WHERE u.id != ? AND u.status = 'approved' AND mr.status = 'accepted'
+    ORDER BY u.name ASC
+");
+$stmtPeers->execute([$uid, $uid, $uid]);
 $network_peers = $stmtPeers->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
@@ -80,7 +105,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <a href="events.php"><i data-lucide="calendar"></i> <span class="link-text">Events Board</span></a>
             </li>
             <li class="sidebar-item">
-                <a href="portfolio.php"><i data-lucide="folder-open"></i> <span class="link-text">My Portfolio</span></a>
+                <a href="portfolio.php"><i data-lucide="folder-kanban"></i> <span class="link-text">My Portfolio</span></a>
             </li>
             <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
                 <a href="../logout.php" style="color: var(--accent-danger);"><i data-lucide="log-out"></i> <span class="link-text">Sign Out</span></a>
@@ -279,6 +304,7 @@ require_once __DIR__ . '/../includes/header.php';
     let chatInterval = null;
     let selectedChatFile = null;
     let lastTypingTime = 0;
+    const activePeerPreselected = <?php echo json_encode($preselected_peer_data); ?>;
 
     const emojiList = ['😀', '😂', '😍', '👍', '🎉', '🔥', '👏', '🙌', '🌟', '💡', '🚀', '💯', '❤️', '💼', '🎓', '🤝', '📅', '📝'];
 
@@ -307,7 +333,9 @@ require_once __DIR__ . '/../includes/header.php';
                 e.preventDefault();
                 const peerId = parseInt(item.getAttribute('data-id'));
                 const peerName = item.getAttribute('data-name');
-                startConversationWithPeer(peerId, peerName);
+                const peerRole = item.getAttribute('data-role');
+                const peerMemberId = item.getAttribute('data-member-id');
+                startConversationWithPeer(peerId, peerName, peerRole, peerMemberId);
             });
         });
 
@@ -332,8 +360,14 @@ require_once __DIR__ . '/../includes/header.php';
         setInterval(loadConversationsList, 10000); // refresh list every 10s
 
         // If peer pre-selected (from Alumni Directory direct message link)
-        if (activePeerId > 0) {
-            startConversationWithPeer(activePeerId, "Contacting Member...");
+        if (activePeerPreselected) {
+            startConversationWithPeer(
+                activePeerPreselected.id,
+                activePeerPreselected.name,
+                activePeerPreselected.role,
+                activePeerPreselected.member_id,
+                activePeerPreselected.avatar_url
+            );
         }
     });
 
@@ -424,7 +458,7 @@ require_once __DIR__ . '/../includes/header.php';
         activePeerId = 0;
     }
 
-    function startConversationWithPeer(peerId, peerName) {
+    function startConversationWithPeer(peerId, peerName, peerRole = 'MEMBER', peerMemberId = '', avatarUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png') {
         activePeerId = peerId;
         activeConversationId = 0; // fetch/create via API send or thread
         
@@ -434,8 +468,8 @@ require_once __DIR__ . '/../includes/header.php';
         document.getElementById('chat-stream-placeholder').style.display = 'none';
 
         document.getElementById('active-peer-name').innerText = peerName;
-        document.getElementById('active-peer-role').innerText = 'CONTACT';
-        document.getElementById('active-peer-avatar').src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        document.getElementById('active-peer-role').innerText = peerRole.toUpperCase() + (peerMemberId ? ' (' + peerMemberId + ')' : '');
+        document.getElementById('active-peer-avatar').src = avatarUrl;
 
         const grid = document.querySelector('.messenger-grid');
         if (grid) grid.classList.add('chat-active-mobile');
@@ -447,7 +481,7 @@ require_once __DIR__ . '/../includes/header.php';
         chatInterval = setInterval(loadThreadMessages, 3000);
     }
 
-    function selectConversation(convoId, peerId, peerName, peerRole, avatarUrl) {
+    function selectConversation(convoId, peerId, peerName, peerRole, avatarUrl, peerMemberId = '') {
         activeConversationId = convoId;
         activePeerId = peerId;
 
@@ -456,7 +490,7 @@ require_once __DIR__ . '/../includes/header.php';
         document.getElementById('chat-stream-placeholder').style.display = 'none';
 
         document.getElementById('active-peer-name').innerText = peerName;
-        document.getElementById('active-peer-role').innerText = peerRole;
+        document.getElementById('active-peer-role').innerText = peerRole.toUpperCase() + (peerMemberId ? ' (' + peerMemberId + ')' : '');
         document.getElementById('active-peer-avatar').src = avatarUrl;
 
         // Highlight active convo item
@@ -475,11 +509,20 @@ require_once __DIR__ . '/../includes/header.php';
     }
 
     function loadConversationsList() {
+        const listContainer = document.getElementById('conversations-list-container');
+        if (listContainer && !listContainer.querySelector('.convo-item') && !listContainer.querySelector('.skeleton')) {
+            listContainer.innerHTML = `
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 65px; margin-bottom: 0.75rem; border-radius: 8px;"></div>
+            `;
+        }
+
         fetch('../api/chat.php?action=list')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const listContainer = document.getElementById('conversations-list-container');
                     listContainer.innerHTML = '';
                     
                     if (data.conversations && data.conversations.length > 0) {
@@ -498,7 +541,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <img src="${convo.peer_avatar}" alt="Peer Avatar" class="convo-avatar">
                                 <div style="flex-grow:1; min-width:0;">
                                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.15rem;">
-                                        <strong class="peer-name-el" style="font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(convo.peer_name)}</strong>
+                                        <strong class="peer-name-el" style="font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(convo.peer_name)} <span style="font-size: 0.72rem; font-weight: normal; opacity: 0.65; display: block; margin-top: 0.1rem;">${convo.peer_member_id}</span></strong>
                                         <span style="font-size:0.68rem;color:var(--theme-text-secondary);">${formatMsgTime(convo.last_message_time || convo.created_at)}</span>
                                     </div>
                                     <p style="font-size:0.75rem;color:var(--theme-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">${lastMsg}</p>
@@ -507,7 +550,7 @@ require_once __DIR__ . '/../includes/header.php';
                             `;
                             link.addEventListener('click', (e) => {
                                 e.preventDefault();
-                                selectConversation(convo.conversation_id, convo.peer_id, convo.peer_name, convo.peer_role, convo.peer_avatar);
+                                selectConversation(convo.conversation_id, convo.peer_id, convo.peer_name, convo.peer_role, convo.peer_avatar, convo.peer_member_id);
                             });
                             listContainer.appendChild(link);
                         });
@@ -520,6 +563,16 @@ require_once __DIR__ . '/../includes/header.php';
     }
 
     function loadThreadMessages() {
+        const messagesContainer = document.getElementById('chat-messages-stream');
+        if (messagesContainer && !messagesContainer.querySelector('.chat-bubble') && !messagesContainer.querySelector('.skeleton')) {
+            messagesContainer.innerHTML = `
+                <div class="chat-bubble received skeleton" style="width: 55%; height: 50px; border-radius: 12px; margin-bottom: 1rem; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble sent skeleton" style="width: 40%; height: 35px; border-radius: 12px; margin-bottom: 1rem; margin-left: auto; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble received skeleton" style="width: 65%; height: 65px; border-radius: 12px; margin-bottom: 1rem; border: none; background: rgba(255,255,255,0.05);"></div>
+                <div class="chat-bubble sent skeleton" style="width: 30%; height: 40px; border-radius: 12px; margin-bottom: 1rem; margin-left: auto; border: none; background: rgba(255,255,255,0.05);"></div>
+            `;
+        }
+
         let url = `../api/chat.php?action=thread&conversation_id=${activeConversationId}`;
         if (activeConversationId <= 0 && activePeerId > 0) {
             url += `&peer_id=${activePeerId}`;
@@ -534,8 +587,6 @@ require_once __DIR__ . '/../includes/header.php';
                         loadConversationsList();
                     }
 
-                    const messagesContainer = document.getElementById('chat-messages-stream');
-                    
                     // Filter out placeholders
                     const placeholder = document.getElementById('chat-stream-placeholder');
                     if (placeholder) placeholder.style.display = 'none';
@@ -714,7 +765,4 @@ require_once __DIR__ . '/../includes/header.php';
     }
 </script>
 
-<?php 
-$GLOBALS['sidebar_rendered'] = true;
-require_once __DIR__ . '/../includes/footer.php'; 
-?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
