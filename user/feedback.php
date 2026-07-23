@@ -50,18 +50,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Workspace Content -->
     <div class="dashboard-content-area">
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h2>Platform Feedback</h2>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <a href="dashboard.php" class="btn btn-secondary btn-small"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <main class="dashboard-workspace" style="max-width: 720px; margin: 0 auto; padding-top: 2rem;">
             

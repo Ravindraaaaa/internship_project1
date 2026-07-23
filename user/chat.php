@@ -80,7 +80,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <a href="events.php"><i data-lucide="calendar"></i> <span class="link-text">Events Board</span></a>
             </li>
             <li class="sidebar-item">
-                <a href="portfolio.php"><i data-lucide="folder-kanban"></i> <span class="link-text">My Portfolio</span></a>
+                <a href="portfolio.php"><i data-lucide="folder-open"></i> <span class="link-text">My Portfolio</span></a>
             </li>
             <li class="sidebar-item" style="margin-top: auto; border-top: 1px solid var(--theme-border); padding-top: 1rem;">
                 <a href="../logout.php" style="color: var(--accent-danger);"><i data-lucide="log-out"></i> <span class="link-text">Sign Out</span></a>
@@ -91,36 +91,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- ==================== MAIN WORKSPACE ==================== -->
     <div class="dashboard-content-area" style="display: flex; flex-direction: column; height: 100vh;">
         <!-- Top Navbar -->
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h2>Messenger Logs</h2>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                
-                <!-- Start New Chat Dropdown -->
-                <div style="position: relative;" class="new-chat-dropdown-container">
-                    <button class="btn btn-primary btn-small" id="start-new-chat-btn"><i class="fa-solid fa-plus"></i> New Message</button>
-                    <div class="nav-dropdown-menu" id="new-chat-menu" style="width: 260px; max-height: 350px; overflow-y: auto; padding: 0.5rem;">
-                        <h4 style="font-size:0.82rem; margin:0.5rem; color:var(--theme-text-secondary);">Select Member</h4>
-                        <div style="border-bottom:1px solid var(--theme-border); margin:0.25rem 0;"></div>
-                        <?php if(!empty($network_peers)): ?>
-                            <?php foreach($network_peers as $peer): ?>
-                                <a href="#" class="dropdown-item select-peer-item" data-id="<?php echo $peer['id']; ?>" data-name="<?php echo htmlspecialchars($peer['name']); ?>">
-                                    <strong><?php echo htmlspecialchars($peer['name']); ?></strong>
-                                    <span style="font-size: 0.65rem; color: var(--theme-accent-blue); float: right; text-transform: uppercase;"><?php echo $peer['role']; ?></span>
-                                </a>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div style="padding:1rem; text-align:center; color:var(--theme-text-secondary); font-size:0.8rem;">No contacts found.</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <!-- Messenger Layout Grid -->
         <div class="messenger-grid" style="display: flex; flex-grow: 1; overflow: hidden; border-top: 1px solid var(--theme-border);">
@@ -743,4 +714,7 @@ require_once __DIR__ . '/../includes/header.php';
     }
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php 
+$GLOBALS['sidebar_rendered'] = true;
+require_once __DIR__ . '/../includes/footer.php'; 
+?>

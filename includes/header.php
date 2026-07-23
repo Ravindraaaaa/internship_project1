@@ -16,13 +16,11 @@ if (is_logged_in()) {
     } else if ($role === 'alumni') {
         $stmt = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
-        $profile = $stmt->fetch();
-        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
+        $navbar_avatar = get_avatar_url($stmt->fetchColumn() ?: '');
     } else if ($role === 'student') {
         $stmt = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
         $stmt->execute([$uid]);
-        $profile = $stmt->fetch();
-        $navbar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
+        $navbar_avatar = get_avatar_url($stmt->fetchColumn() ?: '');
     }
 }
 ?>

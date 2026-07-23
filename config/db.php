@@ -39,16 +39,27 @@ try {
     if ($checkStudentTable) {
         $checkCgpa = $pdo->query("SHOW COLUMNS FROM student_profiles LIKE 'cgpa'")->fetch();
         if (!$checkCgpa) {
-            $pdo->exec("ALTER TABLE student_profiles ADD COLUMN cgpa DECIMAL(3,2) DEFAULT 0.00");
+            $pdo->exec("ALTER TABLE student_profiles ADD COLUMN cgpa DECIMAL(4,2) DEFAULT 0.00");
+        } else {
+            // Ensure it's DECIMAL(4,2) so 10.00 doesn't crash
+            $pdo->exec("ALTER TABLE student_profiles MODIFY COLUMN cgpa DECIMAL(4,2) DEFAULT 0.00");
         }
     }
 
-    // 2. Check & add last_active in users
+    // 2. Check & add last_active and two_factor_secret in users
     $checkUsersTable = $pdo->query("SHOW TABLES LIKE 'users'")->fetch();
     if ($checkUsersTable) {
         $checkLastActive = $pdo->query("SHOW COLUMNS FROM users LIKE 'last_active'")->fetch();
         if (!$checkLastActive) {
             $pdo->exec("ALTER TABLE users ADD COLUMN last_active TIMESTAMP NULL DEFAULT NULL");
+        }
+        $check2FA = $pdo->query("SHOW COLUMNS FROM users LIKE 'two_factor_secret'")->fetch();
+        if (!$check2FA) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN two_factor_secret VARCHAR(255) NULL DEFAULT NULL");
+        }
+        $checkPhone = $pdo->query("SHOW COLUMNS FROM users LIKE 'phone'")->fetch();
+        if (!$checkPhone) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT NULL");
         }
     }
 
@@ -75,6 +86,15 @@ try {
         $checkPriority = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'priority'")->fetch();
         if (!$checkPriority) {
             $pdo->exec("ALTER TABLE notifications ADD COLUMN priority VARCHAR(50) DEFAULT 'medium'");
+        }
+    }
+
+    // 5. Check & add progress in user_skills if missing
+    $checkUserSkillsTable = $pdo->query("SHOW TABLES LIKE 'user_skills'")->fetch();
+    if ($checkUserSkillsTable) {
+        $checkProgress = $pdo->query("SHOW COLUMNS FROM user_skills LIKE 'progress'")->fetch();
+        if (!$checkProgress) {
+            $pdo->exec("ALTER TABLE user_skills ADD COLUMN progress INT DEFAULT 0");
         }
     }
 } catch (Exception $e) {

@@ -107,20 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php render_sidebar('jobs'); ?>
 
     <div class="dashboard-content-area">
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h2>Job Opportunities Board</h2>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <?php if (is_admin() || (is_logged_in() && get_user_role() === 'alumni' && $user_status === 'approved')): ?>
-                    <button class="btn btn-primary" onclick="openModal('postJobModal')"><i class="fa-solid fa-plus"></i> Share Job Referral</button>
-                <?php endif; ?>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <main class="dashboard-workspace">
             

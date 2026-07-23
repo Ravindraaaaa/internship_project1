@@ -234,17 +234,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- ==================== MAIN WORKSPACE ==================== -->
     <div class="dashboard-content-area">
         <!-- Top Navbar -->
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--theme-text);">Portfolio Manager</h3>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <main class="dashboard-workspace" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; padding: 2rem;">
             <!-- LEFT MAIN COLUMNS -->

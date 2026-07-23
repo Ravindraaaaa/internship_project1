@@ -82,23 +82,10 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Workspace Content -->
     <div class="dashboard-content-area">
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h2>Alumni Directory</h2>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Bright Mode">
-                    <i class="fa-solid fa-sun" id="theme-toggle-icon"></i>
-                </button>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <main class="dashboard-workspace">
-            <div class="page-header" style="margin-bottom: 2rem;">
-                <h1>Connect with Alumni</h1>
-                <p>Filter by graduation year, department, and industry to request mentorship & networking.</p>
-            </div>
+<style>
     .alumni-card-avatar {
         width: 55px;
         height: 55px;

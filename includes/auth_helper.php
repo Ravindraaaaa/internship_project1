@@ -339,6 +339,9 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'messages' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=messages"><i class="fa-solid fa-envelope"></i> <span class="link-text">System Messages</span></a>
                         </li>
+                        <li class="sidebar-item <?php echo $active_page === 'announcements' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=announcements"><i class="fa-solid fa-bullhorn"></i> <span class="link-text">Announcements</span></a>
+                        </li>
                         <li class="sidebar-item <?php echo $active_page === 'reports' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=reports"><i class="fa-solid fa-chart-line"></i> <span class="link-text">Reports</span></a>
                         </li>
@@ -368,7 +371,7 @@ if (!function_exists('render_sidebar')) {
                             <a href="<?php echo $sub_prefix; ?>events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'portfolio' ? 'active' : ''; ?>">
-                            <a href="<?php echo $sub_prefix; ?>portfolio.php"><i class="fa-solid fa-folder-kanban"></i> <span class="link-text">My Portfolio</span></a>
+                            <a href="<?php echo $sub_prefix; ?>portfolio.php"><i class="fa-solid fa-folder-open"></i> <span class="link-text">My Portfolio</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'chat' ? 'active' : ''; ?>">
                             <a href="<?php echo $sub_prefix; ?>chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Messenger</span></a>

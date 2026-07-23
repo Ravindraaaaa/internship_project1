@@ -88,51 +88,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="dashboard-content-area">
         
         <!-- Top Navbar -->
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <div class="top-nav-search">
-                    <i data-lucide="search" style="width: 18px; height: 18px; color: var(--theme-text-secondary);"></i>
-                    <input type="text" class="input-glass" style="padding-left: 2.5rem;" placeholder="Search entries...">
-                </div>
-            </div>
-
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                
-                <!-- Notification Bell -->
-                <div class="top-nav-icon-wrapper" id="notif-bell-toggle">
-                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-                    <span class="top-nav-badge">1</span>
-                    <div class="nav-dropdown-menu" id="notif-dropdown-menu">
-                        <div class="dropdown-header-info">
-                            <h4>Recent Alerts</h4>
-                            <p>You have 1 new notice</p>
-                        </div>
-                        <div class="notif-item">
-                            <div class="notif-item-title"><i class="fa-solid fa-info-circle" style="color: var(--theme-accent-blue);"></i> Welcome to AlumniNet! Check your profile completion.</div>
-                            <div class="notif-item-time">System notification</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User profile dropdown -->
-                <div style="position: relative;">
-                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
-                    <div class="nav-dropdown-menu" id="profile-dropdown-menu">
-                        <div class="dropdown-header-info">
-                            <h4><?php echo htmlspecialchars($user_name); ?></h4>
-                            <p><?php echo htmlspecialchars($role); ?> portal</p>
-                        </div>
-                        <a href="profile.php" class="dropdown-item"><i data-lucide="user" style="width:16px;height:16px;"></i> My Profile</a>
-                        <div style="border-top: 1px solid var(--theme-border); margin: 0.25rem 0;"></div>
-                        <a href="../logout.php" class="dropdown-item" style="color: var(--accent-danger);"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign Out</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <!-- Main Workspace -->
         <main class="dashboard-workspace">

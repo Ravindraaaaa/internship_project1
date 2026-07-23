@@ -1,4 +1,7 @@
 <?php
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 ob_start();
 require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../includes/db.php';
@@ -202,18 +205,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php render_sidebar('profile'); ?>
 
     <div class="dashboard-content-area">
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <h2>Edit Member Profile</h2>
-            </div>
-            <div class="top-nav-actions">
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <a href="dashboard.php" class="btn btn-secondary btn-small"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <main class="dashboard-workspace">
             
@@ -372,10 +364,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="card-glass" id="profile-edit-card" style="display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem;">
                             <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-user-pen" style="color: var(--theme-accent-blue);"></i> Edit Profile Details</h3>
-                            <button type="button" class="btn btn-secondary btn-small" onclick="toggleProfileEdit(false)" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Cancel</button>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="toggleProfileEdit(false); document.getElementById('profile-form').reset();" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Cancel</button>
                         </div>
                         
-                        <form action="profile.php" method="POST" enctype="multipart/form-data">
+                        <form id="profile-form" action="profile.php" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="update_profile">
                             
                             <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">

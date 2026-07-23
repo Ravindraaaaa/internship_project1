@@ -1041,7 +1041,7 @@ body.theme-glass-white .input-glass:focus {
 /* Profile specific headers */
 .profile-cover-wrapper {
     position: relative;
-    margin-bottom: 8.5rem;
+    margin-bottom: 2.5rem;
 }
 
 .profile-cover-photo {
@@ -1055,10 +1055,10 @@ body.theme-glass-white .input-glass:focus {
 
 .profile-avatar-row {
     position: absolute;
-    bottom: -65px;
-    left: 2.5rem;
+    bottom: 30px;
+    left: 3rem;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 1.75rem;
 }
 
@@ -1068,20 +1068,25 @@ body.theme-glass-white .input-glass:focus {
     border-radius: 50%;
     object-fit: cover;
     border: 4px solid var(--theme-bg);
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 
 .profile-header-info {
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 .profile-header-info h2 {
-    font-size: 1.8rem;
+    font-size: 2.1rem;
+    color: #ffffff;
+    margin: 0 0 0.2rem 0;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
 .profile-header-info p {
-    color: var(--theme-text-secondary);
-    font-size: 0.98rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.05rem;
+    margin: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .profile-two-columns {

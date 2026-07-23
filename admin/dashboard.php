@@ -3,6 +3,7 @@ $is_subfolder = true;
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../middleware/admin.php';
+require_once __DIR__ . '/../includes/auth_helper.php';
 check_admin();
 
 $uid = $_SESSION['admin_id'];
@@ -14,6 +15,46 @@ $page_title = "Admin Dashboard";
 $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png'; // Admin default icon
 
 $tab = $_GET['tab'] ?? 'overview';
+
+// Handle Announcement Creation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_announcement') {
+    $title = trim($_POST['title'] ?? '');
+    $content = trim($_POST['content'] ?? '');
+    $audience = $_POST['audience'] ?? 'all';
+    
+    if ($title && $content) {
+        try {
+            $pdo->beginTransaction();
+            // Insert into announcements
+            $stmt = $pdo->prepare("INSERT INTO announcements (title, content, audience, created_by) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$title, $content, $audience, $uid]);
+            
+            // Get target users
+            $query = "SELECT id FROM users";
+            if ($audience === 'students') $query .= " WHERE role = 'student'";
+            if ($audience === 'alumni') $query .= " WHERE role = 'alumni'";
+            
+            $users = $pdo->query($query)->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Bulk insert notifications
+            if (count($users) > 0) {
+                $notif_stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, 'info')");
+                foreach ($users as $user_id) {
+                    $notif_stmt->execute([$user_id, 'New Announcement: ' . $title, substr($content, 0, 100) . '...']);
+                }
+            }
+            $pdo->commit();
+            set_flash('success', 'Announcement published successfully!');
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            set_flash('error', 'Error creating announcement: ' . $e->getMessage());
+        }
+    } else {
+        set_flash('error', 'Title and content are required.');
+    }
+    header("Location: dashboard.php?tab=announcements");
+    exit;
+}
 
 $admin_stats = [];
 $pending_approvals = [];
@@ -74,6 +115,12 @@ try {
                              JOIN users u ON f.user_id = u.id 
                              ORDER BY f.created_at DESC");
         $all_feedback = $stmt->fetchAll();
+    } elseif ($tab === 'announcements') {
+        $stmt = $pdo->query("SELECT a.*, u.name as admin_name 
+                             FROM announcements a 
+                             LEFT JOIN users u ON a.created_by = u.id 
+                             ORDER BY a.created_at DESC");
+        $all_announcements = $stmt->fetchAll();
     }
 } catch (Exception $e) {
     set_flash('error', 'Error loading admin data: ' . $e->getMessage());
@@ -91,57 +138,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="dashboard-content-area">
         
         <!-- Top Navbar -->
-        <nav class="top-nav">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
-                <div class="top-nav-search">
-                    <i data-lucide="search" style="width: 18px; height: 18px; color: var(--theme-text-secondary);"></i>
-                    <input type="text" class="input-glass" style="padding-left: 2.5rem;" placeholder="Search entries...">
-                </div>
-            </div>
-
-            <div class="top-nav-actions">
-                <button class="btn btn-primary btn-small" onclick="openModal('postJobModal')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 6px; font-weight: 600;">
-                    <i class="fa-solid fa-briefcase"></i> Share Job
-                </button>
-                <button class="btn btn-primary btn-small" onclick="openModal('createEventModal')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 6px; font-weight: 600;">
-                    <i class="fa-solid fa-calendar-plus"></i> Schedule Event
-                </button>
-
-                <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                
-                <!-- Notification Bell -->
-                <div class="top-nav-icon-wrapper" id="notif-bell-toggle">
-                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-                    <span class="top-nav-badge">1</span>
-                    <div class="nav-dropdown-menu" id="notif-dropdown-menu">
-                        <div class="dropdown-header-info">
-                            <h4>Recent Alerts</h4>
-                            <p>You have 1 new notice</p>
-                        </div>
-                        <div class="notif-item">
-                            <div class="notif-item-title"><i class="fa-solid fa-info-circle" style="color: var(--theme-accent-blue);"></i> Platform database synchronized.</div>
-                            <div class="notif-item-time">System notification</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User profile dropdown -->
-                <div style="position: relative;">
-                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
-                    <div class="nav-dropdown-menu" id="profile-dropdown-menu">
-                        <div class="dropdown-header-info">
-                            <h4><?php echo htmlspecialchars($user_name); ?></h4>
-                            <p>admin@alumni.com</p>
-                        </div>
-                        <div style="border-top: 1px solid var(--theme-border); margin: 0.25rem 0;"></div>
-                        <a href="../logout.php" class="dropdown-item" style="color: var(--accent-danger);"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign Out</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <?php include __DIR__ . '/../includes/top_nav.php'; ?>
 
         <!-- Main Workspace -->
         <main class="dashboard-workspace">
@@ -611,7 +608,68 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
+                
+            <!-- TAB: ANNOUNCEMENTS -->
+            <?php elseif ($tab === 'announcements'): ?>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 700;">Announcements</h2>
+                        <p style="color: var(--theme-text-secondary); font-size: 0.9rem;">Broadcast messages to all users or specific groups.</p>
+                    </div>
+                </div>
+                
+                <div class="card-glass" style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-bullhorn" style="color: var(--theme-accent-purple);"></i> Create New Announcement</h3>
+                    <form method="POST" action="dashboard.php?tab=announcements">
+                        <input type="hidden" name="action" value="create_announcement">
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:block; margin-bottom: 0.5rem;">Announcement Title</label>
+                            <input type="text" name="title" class="input-glass" required placeholder="e.g. Platform Maintenance Schedule">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:block; margin-bottom: 0.5rem;">Message Content</label>
+                            <textarea name="content" class="input-glass" rows="4" required placeholder="Write the full announcement here..."></textarea>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" style="display:block; margin-bottom: 0.5rem;">Target Audience</label>
+                            <select name="audience" class="input-glass">
+                                <option value="all">All Users (Students & Alumni)</option>
+                                <option value="students">Students Only</option>
+                                <option value="alumni">Alumni Only</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Publish Announcement</button>
+                    </form>
+                </div>
+                
+                <div class="card-glass">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-accent-blue);"></i> Previous Announcements</h3>
+                    <?php if (!empty($all_announcements)): ?>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <?php foreach ($all_announcements as $ann): ?>
+                                <div style="border: 1px solid var(--theme-border); border-radius: 8px; padding: 1rem; background: rgba(255,255,255,0.02);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <h4 style="margin: 0; font-size: 1.05rem;"><?php echo htmlspecialchars($ann['title']); ?></h4>
+                                        <span class="status-badge status-approved" style="font-size: 0.75rem;">To: <?php echo ucfirst(htmlspecialchars($ann['audience'])); ?></span>
+                                    </div>
+                                    <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--theme-text-secondary); white-space: pre-line;"><?php echo htmlspecialchars($ann['content']); ?></p>
+                                    <div style="font-size: 0.75rem; color: var(--theme-text-secondary);">
+                                        <i class="fa-solid fa-user"></i> By <?php echo htmlspecialchars($ann['admin_name'] ?? 'Admin'); ?> &nbsp;|&nbsp; 
+                                        <i class="fa-solid fa-clock"></i> <?php echo date('M d, Y h:i A', strtotime($ann['created_at'])); ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem; color: var(--theme-text-secondary);">
+                            <p>No announcements have been made yet.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
             <?php endif; ?>
+
+
 
         </main>
     </div>
