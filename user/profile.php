@@ -149,6 +149,25 @@ try {
     set_flash('error', 'Failed loading profile details.');
 }
 
+// 2.5 Load Connected Users List
+$connected_users = [];
+try {
+    $stmtConnUsers = $pdo->prepare("
+        SELECT u.id as user_id, u.name, u.role, 
+               COALESCE(ap.course, sp.course) as course,
+               COALESCE(ap.profile_pic, sp.profile_pic) as profile_pic
+        FROM mentorship_requests mr
+        JOIN users u ON (u.id = mr.student_id AND mr.alumni_id = ?) OR (u.id = mr.alumni_id AND mr.student_id = ?)
+        LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
+        WHERE mr.status = 'accepted' AND u.id != ?
+    ");
+    $stmtConnUsers->execute([$uid, $uid, $uid]);
+    $connected_users = $stmtConnUsers->fetchAll();
+} catch (Exception $e) {
+    $connected_users = [];
+}
+
 // 3. Calculate Profile Progress
 $total_fields = 8;
 $filled_fields = 0;
@@ -299,6 +318,9 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="profile-header-info">
                         <h2><?php echo htmlspecialchars($user_name); ?></h2>
                         <p><?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
+                        <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.82rem; font-weight: 700; margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple);">
+                            <i class="fa-solid fa-circle-nodes"></i> <?php echo count($connected_users); ?> Connections
+                        </a>
                     </div>
                 </div>
             </div>
@@ -596,6 +618,53 @@ function switchProfileTab(tabName) {
             gsap.fromTo('#profile-edit-tab', {opacity: 0, y: 15}, {opacity: 1, y: 0, duration: 0.4, ease: 'power2.out'});
         }
     }
+}
+</script>
+
+<!-- Connections Modal -->
+<div class="modal" id="connectionsListModal">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem;">
+        <button class="modal-close" onclick="closeModal('connectionsListModal')">&times;</button>
+        <h2 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--theme-text); font-size: 1.25rem;">
+            <i class="fa-solid fa-circle-nodes" style="color: var(--theme-accent-purple);"></i> My Connections
+        </h2>
+        
+        <?php if (!empty($connected_users)): ?>
+            <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 380px; overflow-y: auto; padding-right: 0.5rem;" class="custom-scrollbar">
+                <?php foreach ($connected_users as $conn): 
+                    $conn_avatar = get_avatar_url($conn['profile_pic'] ?? '');
+                    $conn_id_str = get_student_id_string($conn['user_id'], $conn['course'] ?? '');
+                ?>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.02); border: 1px solid var(--theme-border); padding: 0.75rem 1rem; border-radius: var(--border-radius-sm); transition: transform 0.2s;" onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform='none'">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; width: 70%;">
+                            <img src="<?php echo $conn_avatar; ?>" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <h4 style="font-size: 0.88rem; margin: 0; font-weight: 700;">
+                                    <a href="view_profile.php?id=<?php echo $conn['user_id']; ?>" style="color: var(--theme-text); text-decoration: none;"><?php echo htmlspecialchars($conn['name']); ?></a>
+                                </h4>
+                                <span style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($conn['course']); ?></span>
+                                <span class="badge" style="font-size: 0.6rem; padding: 0.15rem 0.4rem; background: var(--theme-accent-purple); color: #fff; margin-left: 0.35rem;"><?php echo $conn_id_str; ?></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="view_profile.php?id=<?php echo $conn['user_id']; ?>" class="btn btn-secondary btn-small" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" title="View Profile"><i class="fa-solid fa-user"></i></a>
+                            <a href="chat.php?peer_id=<?php echo $conn['user_id']; ?>" class="btn btn-primary btn-small" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" title="Send Message"><i class="fa-solid fa-comment-dots"></i></a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div style="text-align: center; padding: 2.5rem 1rem;">
+                <i class="fa-solid fa-user-group" style="font-size: 2.5rem; color: var(--theme-text-secondary); margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p style="color: var(--theme-text-secondary); font-size: 0.9rem; margin: 0;">You don't have any accepted network connections yet.</p>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+function openConnectionsModal() {
+    openModal('connectionsListModal');
 }
 </script>
 

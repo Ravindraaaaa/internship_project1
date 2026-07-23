@@ -83,6 +83,25 @@ try {
     exit;
 }
 
+// 6.5 Load Target User's Connections List
+$connected_users = [];
+try {
+    $stmtConnUsers = $pdo->prepare("
+        SELECT u.id as user_id, u.name, u.role, 
+               COALESCE(ap.course, sp.course) as course,
+               COALESCE(ap.profile_pic, sp.profile_pic) as profile_pic
+        FROM mentorship_requests mr
+        JOIN users u ON (u.id = mr.student_id AND mr.alumni_id = ?) OR (u.id = mr.alumni_id AND mr.student_id = ?)
+        LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
+        WHERE mr.status = 'accepted' AND u.id != ?
+    ");
+    $stmtConnUsers->execute([$target_id, $target_id, $target_id]);
+    $connected_users = $stmtConnUsers->fetchAll();
+} catch (Exception $e) {
+    $connected_users = [];
+}
+
 $page_title = htmlspecialchars($target_user['name']) . "'s Profile";
 $sidebar_avatar = get_avatar_url($profile['profile_pic'] ?? '');
 $target_display_id = get_student_id_string($target_user['id'], $profile['course'] ?? '');
@@ -110,93 +129,111 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </nav>
 
-        <main class="dashboard-workspace" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+        <main class="dashboard-workspace">
             
-            <!-- Left Column: Core Info & Connection Card -->
-            <div style="display:flex; flex-direction:column; gap:2rem;">
-                <div class="card-glass" style="text-align: center; padding: 2rem 1.5rem;">
-                    <img src="<?php echo $sidebar_avatar; ?>" alt="Avatar" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--theme-accent-purple); margin: 0 auto 1.25rem;">
-                    
-                    <h2 style="font-size: 1.35rem; margin-bottom: 0.25rem;"><?php echo htmlspecialchars($target_user['name']); ?></h2>
-                    
-                    <?php if ($target_role === 'student'): ?>
-                        <span class="badge" style="background: var(--theme-accent-purple); color: #fff; font-size: 0.72rem; margin-bottom: 1rem; display: inline-block;">Student (<?php echo htmlspecialchars($target_display_id); ?>)</span>
-                    <?php else: ?>
-                        <span class="badge badge-alumni" style="font-size: 0.72rem; margin-bottom: 1rem; display: inline-block;">Alumni (<?php echo htmlspecialchars($target_display_id); ?>)</span>
-                    <?php endif; ?>
-
-                    <div style="border-top: 1px solid var(--theme-border); padding-top: 1.25rem; margin-top: 1rem; text-align: left; display: flex; flex-direction: column; gap: 1rem;">
-                        <div>
-                            <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Course / Branch</h4>
-                            <p style="font-size: 0.92rem; font-weight: 600; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['course'] ?? 'Not configured'); ?></p>
+            <!-- Cover Header -->
+            <div class="profile-cover-wrapper">
+                <div class="profile-cover-photo"></div>
+                <div class="profile-avatar-row">
+                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" class="profile-avatar-main">
+                    <div class="profile-header-info">
+                        <h2><?php echo htmlspecialchars($target_user['name']); ?></h2>
+                        <p><?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                            <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple);">
+                                <i class="fa-solid fa-circle-nodes"></i> <?php echo count($connected_users); ?> Connections
+                            </a>
+                            <?php if ($target_role === 'student'): ?>
+                                <span class="badge" style="background: var(--theme-accent-purple); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.6rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
+                            <?php else: ?>
+                                <span class="badge badge-alumni" style="font-size: 0.68rem; padding: 0.2rem 0.6rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
+                            <?php endif; ?>
                         </div>
-
-                        <?php if ($target_role === 'alumni'): ?>
-                            <div>
-                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Graduation Year</h4>
-                                <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'Not set'); ?></p>
-                            </div>
-                            <?php if (!empty($profile['company'])): ?>
-                                <div>
-                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Current Employment</h4>
-                                    <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;"><strong><?php echo htmlspecialchars($profile['position']); ?></strong> at <?php echo htmlspecialchars($profile['company']); ?> (<?php echo htmlspecialchars($profile['industry']); ?>)</p>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($profile['website'])): ?>
-                                <div>
-                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Website / Portfolio</h4>
-                                    <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['website']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Visit Website</a></p>
-                                </div>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <div>
-                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Academic Year</h4>
-                                <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;">Year <?php echo htmlspecialchars($profile['current_year'] ?? '1'); ?></p>
-                            </div>
-                            <div>
-                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Cumulative CGPA</h4>
-                                <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?> / 10.00</p>
-                            </div>
-                            <?php if (!empty($profile['github'])): ?>
-                                <div>
-                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">GitHub Portfolio</h4>
-                                    <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['github']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-github"></i> Visit GitHub</a></p>
-                                </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-
-                        <!-- Email Address Hidden for Privacy Constraint -->
-                        <div>
-                            <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">Email Address</h4>
-                            <p style="font-size: 0.92rem; color: var(--theme-text-secondary); font-style: italic; margin: 0;"><i class="fa-solid fa-lock"></i> Protected for privacy</p>
-                        </div>
-
-                        <?php if (!empty($profile['linkedin'])): ?>
-                            <div>
-                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem;">LinkedIn Link</h4>
-                                <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['linkedin']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-linkedin"></i> Visit LinkedIn</a></p>
-                            </div>
-                        <?php endif; ?>
                     </div>
-
-                    <!-- Connect / Message Actions -->
-                    <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    
+                    <!-- Connect / Message Actions in cover header -->
+                    <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 25px;">
                         <?php if ($conn_status): ?>
                             <?php if ($conn_status === 'accepted'): ?>
-                                <button class="btn btn-secondary" style="width:100%; pointer-events:none; opacity:0.85;" disabled><i class="fa-solid fa-circle-check"></i> Connected</button>
-                                <a href="chat.php?peer_id=<?php echo $target_id; ?>" class="btn btn-primary" style="width:100%; text-align:center;"><i class="fa-solid fa-comment-dots"></i> Send Message</a>
+                                <button class="btn btn-secondary btn-small" style="pointer-events:none; opacity:0.85; padding: 0.6rem 1rem;" disabled><i class="fa-solid fa-circle-check"></i> Connected</button>
+                                <a href="chat.php?peer_id=<?php echo $target_id; ?>" class="btn btn-primary btn-small" style="padding: 0.6rem 1rem;"><i class="fa-solid fa-comment-dots"></i> Message</a>
                             <?php else: ?>
-                                <button class="btn btn-secondary" style="width:100%; pointer-events:none; opacity:0.8;" disabled><i class="fa-solid fa-hourglass-start"></i> Connection <?php echo ucfirst($conn_status); ?></button>
+                                <button class="btn btn-secondary btn-small" style="pointer-events:none; opacity:0.8; padding: 0.6rem 1rem;" disabled><i class="fa-solid fa-hourglass-start"></i> Connection <?php echo ucfirst($conn_status); ?></button>
                             <?php endif; ?>
                         <?php else: ?>
-                            <button class="btn btn-primary" style="width:100%;" onclick="openMentorshipSetup(<?php echo $target_id; ?>, '<?php echo htmlspecialchars(addslashes($target_user['name'])); ?>', '<?php echo $target_role; ?>')">
+                            <button class="btn btn-primary btn-small" style="padding: 0.6rem 1.2rem;" onclick="openMentorshipSetup(<?php echo $target_id; ?>, '<?php echo htmlspecialchars(addslashes($target_user['name'])); ?>', '<?php echo $target_role; ?>')">
                                 <i class="fa-solid <?php echo $target_role === 'alumni' ? 'fa-handshake-angle' : 'fa-user-plus'; ?>"></i> 
-                                Connect <?php echo $target_role === 'alumni' ? 'as Mentor' : 'with Student'; ?>
+                                Connect
                             </button>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
+
+            <!-- Profile Details Split Columns -->
+            <div style="display: grid; grid-template-columns: 1.1fr 2fr; gap: 2rem; align-items: start;">
+                
+                <!-- Left Column: Core Info Details Card -->
+                <div style="display:flex; flex-direction:column; gap:2rem;">
+                    <div class="card-glass" style="padding: 2rem 1.5rem;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1.25rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; color: var(--theme-text);">
+                            <i class="fa-solid fa-address-card" style="color:var(--theme-accent-blue);"></i> Core Profile Info
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <div>
+                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Course / Branch</h4>
+                                <p style="font-size: 0.92rem; font-weight: 600; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['course'] ?? 'Not configured'); ?></p>
+                            </div>
+
+                            <?php if ($target_role === 'alumni'): ?>
+                                <div>
+                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Graduation Year</h4>
+                                    <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'Not set'); ?></p>
+                                </div>
+                                <?php if (!empty($profile['company'])): ?>
+                                    <div>
+                                        <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Current Employment</h4>
+                                        <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;"><strong><?php echo htmlspecialchars($profile['position']); ?></strong> at <?php echo htmlspecialchars($profile['company']); ?> (<?php echo htmlspecialchars($profile['industry']); ?>)</p>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($profile['website'])): ?>
+                                    <div>
+                                        <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Website / Portfolio</h4>
+                                        <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['website']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Visit Website</a></p>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <div>
+                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Academic Year</h4>
+                                    <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;">Year <?php echo htmlspecialchars($profile['current_year'] ?? '1'); ?></p>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Cumulative CGPA</h4>
+                                    <p style="font-size: 0.92rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?> / 10.00</p>
+                                </div>
+                                <?php if (!empty($profile['github'])): ?>
+                                    <div>
+                                        <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">GitHub Portfolio</h4>
+                                        <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['github']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-github"></i> Visit GitHub</a></p>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+
+                            <!-- Email Address Hidden for Privacy Constraint -->
+                            <div>
+                                <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">Email Address</h4>
+                                <p style="font-size: 0.92rem; color: var(--theme-text-secondary); font-style: italic; margin: 0;"><i class="fa-solid fa-lock"></i> Protected for privacy</p>
+                            </div>
+
+                            <?php if (!empty($profile['linkedin'])): ?>
+                                <div>
+                                    <h4 style="font-size: 0.78rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.25rem; text-transform: uppercase;">LinkedIn Link</h4>
+                                    <p style="font-size: 0.92rem; margin: 0;"><a href="<?php echo htmlspecialchars($profile['linkedin']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-linkedin"></i> Visit LinkedIn</a></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
 
             <!-- Right Column: Biography, Skills, Achievements, Certificates -->
             <div style="display:flex; flex-direction:column; gap:2rem;">
@@ -322,6 +359,54 @@ require_once __DIR__ . '/../includes/header.php';
         }
         openModal('mentorshipRequestModal');
     }
+</script>
+<!-- Connections Modal -->
+<div class="modal" id="connectionsListModal">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem;">
+        <button class="modal-close" onclick="closeModal('connectionsListModal')">&times;</button>
+        <h2 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--theme-text); font-size: 1.25rem;">
+            <i class="fa-solid fa-circle-nodes" style="color: var(--theme-accent-purple);"></i> Connections List
+        </h2>
+        
+        <?php if (!empty($connected_users)): ?>
+            <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 380px; overflow-y: auto; padding-right: 0.5rem;" class="custom-scrollbar">
+                <?php foreach ($connected_users as $conn): 
+                    $conn_avatar = get_avatar_url($conn['profile_pic'] ?? '');
+                    $conn_id_str = get_student_id_string($conn['user_id'], $conn['course'] ?? '');
+                ?>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.02); border: 1px solid var(--theme-border); padding: 0.75rem 1rem; border-radius: var(--border-radius-sm); transition: transform 0.2s;" onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform='none'">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; width: 70%;">
+                            <img src="<?php echo $conn_avatar; ?>" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <h4 style="font-size: 0.88rem; margin: 0; font-weight: 700;">
+                                    <a href="view_profile.php?id=<?php echo $conn['user_id']; ?>" style="color: var(--theme-text); text-decoration: none;"><?php echo htmlspecialchars($conn['name']); ?></a>
+                                </h4>
+                                <span style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($conn['course']); ?></span>
+                                <span class="badge" style="font-size: 0.6rem; padding: 0.15rem 0.4rem; background: var(--theme-accent-purple); color: #fff; margin-left: 0.35rem;"><?php echo $conn_id_str; ?></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="view_profile.php?id=<?php echo $conn['user_id']; ?>" class="btn btn-secondary btn-small" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" title="View Profile"><i class="fa-solid fa-user"></i></a>
+                            <?php if ($conn['user_id'] != $uid): ?>
+                                <a href="chat.php?peer_id=<?php echo $conn['user_id']; ?>" class="btn btn-primary btn-small" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" title="Send Message"><i class="fa-solid fa-comment-dots"></i></a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div style="text-align: center; padding: 2.5rem 1rem;">
+                <i class="fa-solid fa-user-group" style="font-size: 2.5rem; color: var(--theme-text-secondary); margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p style="color: var(--theme-text-secondary); font-size: 0.9rem; margin: 0;">No active accepted connections recorded.</p>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+function openConnectionsModal() {
+    openModal('connectionsListModal');
+}
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
