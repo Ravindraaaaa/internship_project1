@@ -900,6 +900,9 @@ body.theme-glass-white .input-glass:focus {
 .dashboard-workspace {
     padding: 2.25rem;
     flex-grow: 1;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .dashboard-title-row {
