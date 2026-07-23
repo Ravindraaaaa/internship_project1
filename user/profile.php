@@ -194,6 +194,80 @@ require_once __DIR__ . '/../includes/header.php';
         border-radius: 50px;
         transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1);
     }
+    .profile-tabs .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 0.6rem 1.4rem;
+        border-radius: 50px;
+        color: var(--theme-text-secondary);
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.25s ease;
+    }
+    .profile-tabs .tab-btn.active {
+        background: var(--theme-accent-gradient);
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+    }
+    .profile-tabs .tab-btn:hover:not(.active) {
+        color: var(--theme-text);
+        background: rgba(0, 0, 0, 0.04);
+    }
+    .profile-bento-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .bento-card {
+        background: var(--theme-card);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .bento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-soft);
+    }
+    .bento-card-header {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--theme-border);
+        padding-bottom: 0.75rem;
+    }
+    .bento-item {
+        margin-bottom: 1rem;
+    }
+    .bento-item:last-child {
+        margin-bottom: 0;
+    }
+    .bento-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--theme-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+    .bento-value {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--theme-text);
+    }
+    .bio-quote-box {
+        border-left: 4px solid var(--theme-accent-purple);
+        background: rgba(139, 92, 246, 0.02);
+        padding: 1rem 1.25rem;
+        border-radius: 0 12px 12px 0;
+    }
 </style>
 
 <div class="dashboard-wrapper">
@@ -277,192 +351,215 @@ require_once __DIR__ . '/../includes/header.php';
                 <!-- Right side: View profile details or edit form -->
                 <div class="profile-main-content" style="flex-grow: 1;">
                     
-                    <!-- View Profile Card -->
-                    <div class="card-glass" id="profile-view-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem;">
-                            <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-id-card" style="color: var(--theme-accent-blue); margin-right: 0.5rem;"></i> Saved Profile Information</h3>
-                            <button type="button" class="btn btn-primary btn-small" onclick="toggleProfileEdit(true)" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
-                        </div>
-                        
-                        <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Professional Member ID</h4>
-                                <p style="font-size: 0.95rem; font-weight: 700; color: var(--theme-accent-purple); margin: 0;"><i class="fa-solid fa-id-badge"></i> <?php echo htmlspecialchars(get_student_id_string($uid, $profile['course'] ?? '')); ?></p>
-                            </div>
-                            <div>
-                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Full Name</h4>
-                                <p style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($user_name); ?></p>
-                            </div>
-                            <div>
-                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Email Address</h4>
-                                <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($user_core['email']); ?></p>
-                            </div>
-                            <div>
-                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Department / Stream</h4>
-                                <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['course'] ?? 'Not set'); ?></p>
-                            </div>
+                    <!-- Premium Tabs Capsule -->
+                    <div style="display: flex; gap: 0.5rem; background: rgba(15,23,42,0.03); border: 1px solid var(--theme-border); padding: 0.35rem; border-radius: 50px; width: fit-content; margin-bottom: 1.75rem;" class="profile-tabs">
+                        <button type="button" class="tab-btn active" id="tab-overview-btn" onclick="switchProfileTab('overview')">
+                            <i class="fa-solid fa-address-card"></i> Overview
+                        </button>
+                        <button type="button" class="tab-btn" id="tab-edit-btn" onclick="switchProfileTab('edit')">
+                            <i class="fa-solid fa-user-gear"></i> Edit Details
+                        </button>
+                    </div>
+
+                    <!-- 1. Overview Tab -->
+                    <div id="profile-overview-tab" class="profile-tab-content">
+                        <div class="profile-bento-grid">
                             
-                            <?php if ($role === 'alumni'): ?>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Graduation Year</h4>
-                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'N/A'); ?></p>
+                            <!-- Bento Card 1: Core Credentials -->
+                            <div class="bento-card">
+                                <div class="bento-card-header" style="color: var(--theme-text);">
+                                    <i class="fa-solid fa-shield-halved" style="color: var(--theme-accent-purple);"></i> Credentials & ID
                                 </div>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Current Employment</h4>
-                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">
-                                        <?php if (!empty($profile['position']) || !empty($profile['company'])): ?>
-                                            <?php echo htmlspecialchars($profile['position'] ?? ''); ?> at <?php echo htmlspecialchars($profile['company'] ?? ''); ?>
-                                        <?php else: ?>
-                                            Not specified
-                                        <?php endif; ?>
-                                    </p>
+                                <div class="bento-item">
+                                    <div class="bento-label">Member System ID</div>
+                                    <div class="bento-value" style="color: var(--theme-accent-purple); font-size: 1.05rem; font-weight: 700;">
+                                        <i class="fa-solid fa-id-badge"></i> <?php echo htmlspecialchars(get_student_id_string($uid, $profile['course'] ?? '')); ?>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Industry Sector</h4>
-                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['industry'] ?? 'N/A'); ?></p>
+                                <div class="bento-item">
+                                    <div class="bento-label">Full Name</div>
+                                    <div class="bento-value"><?php echo htmlspecialchars($user_name); ?></div>
                                 </div>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Website / Portfolio URL</h4>
-                                    <p style="font-size: 0.95rem; margin: 0;">
-                                        <?php if (!empty($profile['website'])): ?>
-                                            <a href="<?php echo htmlspecialchars($profile['website']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Visit Website</a>
-                                        <?php else: ?>
-                                            None
-                                        <?php endif; ?>
-                                    </p>
+                                <div class="bento-item">
+                                    <div class="bento-label">Account Role</div>
+                                    <div class="bento-value" style="text-transform: uppercase; font-size: 0.8rem;"><?php echo htmlspecialchars($role); ?></div>
                                 </div>
-                            <?php else: ?>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Academic Year</h4>
-                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;">Year <?php echo htmlspecialchars($profile['current_year'] ?? '1'); ?></p>
-                                </div>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">Cumulative CGPA</h4>
-                                    <p style="font-size: 0.95rem; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?> / 10.00</p>
-                                </div>
-                                <div>
-                                    <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">GitHub Portfolio</h4>
-                                    <p style="font-size: 0.95rem; margin: 0;">
-                                        <?php if (!empty($profile['github'])): ?>
-                                            <a href="<?php echo htmlspecialchars($profile['github']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-github"></i> Visit GitHub</a>
-                                        <?php else: ?>
-                                            None
-                                        <?php endif; ?>
-                                    </p>
-                                </div>
-                            <?php endif; ?>
-
-                            <div>
-                                <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.35rem;">LinkedIn Profile</h4>
-                                <p style="font-size: 0.95rem; margin: 0;">
-                                    <?php if (!empty($profile['linkedin'])): ?>
-                                        <a href="<?php echo htmlspecialchars($profile['linkedin']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-linkedin"></i> Visit LinkedIn</a>
-                                    <?php else: ?>
-                                        None
-                                    <?php endif; ?>
-                                </p>
                             </div>
-                        </div>
 
-                        <div style="border-top: 1px solid var(--theme-border); padding-top: 1.25rem;">
-                            <h4 style="font-size: 0.82rem; font-weight: 600; color: var(--theme-text-secondary); margin-bottom: 0.5rem;">Short Biography</h4>
-                            <p style="font-size: 0.9rem; color: var(--theme-text); line-height: 1.6; margin: 0; white-space: pre-line;">
-                                <?php echo htmlspecialchars($profile['bio'] ?? 'No bio has been written yet. Introduce yourself to the network!'); ?>
-                            </p>
+                            <!-- Bento Card 2: Academic & Employment -->
+                            <div class="bento-card">
+                                <div class="bento-card-header" style="color: var(--theme-text);">
+                                    <i class="fa-solid fa-graduation-cap" style="color: var(--theme-accent-blue);"></i> Course & Details
+                                </div>
+                                <div class="bento-item">
+                                    <div class="bento-label">Department / Stream</div>
+                                    <div class="bento-value"><?php echo htmlspecialchars($profile['course'] ?? 'Not configured'); ?></div>
+                                </div>
+                                <?php if ($role === 'alumni'): ?>
+                                    <div class="bento-item">
+                                        <div class="bento-label">Graduation Year</div>
+                                        <div class="bento-value">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'Not set'); ?></div>
+                                    </div>
+                                    <?php if (!empty($profile['company'])): ?>
+                                        <div class="bento-item">
+                                            <div class="bento-label">Current Role</div>
+                                            <div class="bento-value"><?php echo htmlspecialchars($profile['position']); ?> at <?php echo htmlspecialchars($profile['company']); ?></div>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="bento-item">
+                                        <div class="bento-label">Academic Year</div>
+                                        <div class="bento-value">Year <?php echo htmlspecialchars($profile['current_year'] ?? '1'); ?></div>
+                                    </div>
+                                    <div class="bento-item">
+                                        <div class="bento-label">Cumulative CGPA</div>
+                                        <div class="bento-value"><?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?> / 10.00</div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Bento Card 3: Social Connectivity -->
+                            <div class="bento-card" style="grid-column: span 2;">
+                                <div class="bento-card-header" style="color: var(--theme-text);">
+                                    <i class="fa-solid fa-share-nodes" style="color: var(--theme-accent-purple);"></i> Verified Network Connections
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                                    <div class="bento-item">
+                                        <div class="bento-label">Email Handle</div>
+                                        <div class="bento-value" style="font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="fa-solid fa-envelope"></i> <?php echo htmlspecialchars($user_core['email']); ?></div>
+                                    </div>
+                                    <div class="bento-item">
+                                        <div class="bento-label">LinkedIn profile</div>
+                                        <div class="bento-value" style="font-size: 0.82rem;">
+                                            <?php if (!empty($profile['linkedin'])): ?>
+                                                <a href="<?php echo htmlspecialchars($profile['linkedin']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-linkedin"></i> Verified Profile</a>
+                                            <?php else: ?>
+                                                <span style="opacity: 0.5;">Not connected</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="bento-item">
+                                        <div class="bento-label">GitHub / Website</div>
+                                        <div class="bento-value" style="font-size: 0.82rem;">
+                                            <?php if ($role === 'student' && !empty($profile['github'])): ?>
+                                                <a href="<?php echo htmlspecialchars($profile['github']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-brands fa-github"></i> Repository</a>
+                                            <?php elseif ($role === 'alumni' && !empty($profile['website'])): ?>
+                                                <a href="<?php echo htmlspecialchars($profile['website']); ?>" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Website</a>
+                                            <?php else: ?>
+                                                <span style="opacity: 0.5;">Not connected</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bento Card 4: Biography / Intro -->
+                            <div class="bento-card" style="grid-column: span 2;">
+                                <div class="bento-card-header" style="color: var(--theme-text);">
+                                    <i class="fa-solid fa-quote-left" style="color: var(--theme-accent-blue);"></i> About Me / Biography
+                                </div>
+                                <div class="bio-quote-box">
+                                    <p style="font-size: 0.92rem; color: var(--theme-text); line-height: 1.6; margin: 0; white-space: pre-line;">
+                                        <?php echo htmlspecialchars($profile['bio'] ?? 'Write a short professional description about your background, career, and research targets.'); ?>
+                                    </p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
-                    <!-- Edit Form Card -->
-                    <div class="card-glass" id="profile-edit-card" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem;">
-                            <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-user-pen" style="color: var(--theme-accent-blue);"></i> Edit Profile Details</h3>
-                            <button type="button" class="btn btn-secondary btn-small" onclick="toggleProfileEdit(false)" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Cancel</button>
-                        </div>
-                        
-                        <form action="profile.php" method="POST" enctype="multipart/form-data">
-                            <input type="hidden" name="action" value="update_profile">
+                    <!-- 2. Edit Profile Tab -->
+                    <div id="profile-edit-tab" class="profile-tab-content" style="display: none;">
+                        <div class="card-glass" style="border: 1px solid var(--theme-border); padding: 2rem;">
+                            <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 1rem; color: var(--theme-text);">
+                                <i class="fa-solid fa-user-pen" style="color: var(--theme-accent-blue);"></i> Edit Profile Details
+                            </h3>
                             
-                            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <form action="profile.php" method="POST" enctype="multipart/form-data">
+                                <input type="hidden" name="action" value="update_profile">
                                 
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Full Name</label>
-                                    <input type="text" name="name" class="input-glass" value="<?php echo htmlspecialchars($user_name); ?>" required>
+                                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Full Name</label>
+                                        <input type="text" name="name" class="input-glass" value="<?php echo htmlspecialchars($user_name); ?>" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Email Address (Read-only)</label>
+                                        <input type="email" class="input-glass" value="<?php echo htmlspecialchars($user_core['email']); ?>" readonly style="opacity: 0.6; cursor: not-allowed;">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Department / Stream</label>
+                                        <select name="course" class="input-glass" required>
+                                            <option value="Computer Science Engineering" <?php echo ($profile['course'] ?? '') == 'Computer Science Engineering' ? 'selected' : ''; ?>>Computer Science Engineering</option>
+                                            <option value="Information Technology" <?php echo ($profile['course'] ?? '') == 'Information Technology' ? 'selected' : ''; ?>>Information Technology</option>
+                                            <option value="Electronics & Communication" <?php echo ($profile['course'] ?? '') == 'Electronics & Communication' ? 'selected' : ''; ?>>Electronics & Communication</option>
+                                            <option value="Mechanical Engineering" <?php echo ($profile['course'] ?? '') == 'Mechanical Engineering' ? 'selected' : ''; ?>>Mechanical Engineering</option>
+                                            <option value="Civil Engineering" <?php echo ($profile['course'] ?? '') == 'Civil Engineering' ? 'selected' : ''; ?>>Civil Engineering</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Role specific fields -->
+                                    <?php if ($role === 'alumni'): ?>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Graduation Year</label>
+                                            <input type="number" name="graduation_year" class="input-glass" min="1950" max="2035" value="<?php echo htmlspecialchars($profile['graduation_year'] ?? date('Y')); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Current Company</label>
+                                            <input type="text" name="company" class="input-glass" placeholder="e.g. Google" value="<?php echo htmlspecialchars($profile['company'] ?? ''); ?>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Current Position</label>
+                                            <input type="text" name="position" class="input-glass" placeholder="e.g. Senior Software Engineer" value="<?php echo htmlspecialchars($profile['position'] ?? ''); ?>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Industry Sector</label>
+                                            <input type="text" name="industry" class="input-glass" placeholder="e.g. Technology" value="<?php echo htmlspecialchars($profile['industry'] ?? ''); ?>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Website Portfolio URL</label>
+                                            <input type="url" name="website" class="input-glass" placeholder="https://myportfolio.io" value="<?php echo htmlspecialchars($profile['website'] ?? ''); ?>">
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Current Academic Year (1-4)</label>
+                                            <input type="number" name="current_year" class="input-glass" min="1" max="4" value="<?php echo htmlspecialchars($profile['current_year'] ?? 1); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Cumulative CGPA (0.00 - 10.00)</label>
+                                            <input type="number" name="cgpa" step="0.01" min="0" max="10" class="input-glass" placeholder="8.50" value="<?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">GitHub URL</label>
+                                            <input type="url" name="github" class="input-glass" placeholder="https://github.com/myname" value="<?php echo htmlspecialchars($profile['github'] ?? ''); ?>">
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">LinkedIn URL</label>
+                                        <input type="url" name="linkedin" class="input-glass" placeholder="https://linkedin.com/in/myname" value="<?php echo htmlspecialchars($profile['linkedin'] ?? ''); ?>">
+                                    </div>
+
+                                    <div class="form-group" style="grid-column: span 2;">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Upload Avatar Picture</label>
+                                        <input type="file" name="profile_pic" accept="image/*" class="input-glass">
+                                    </div>
+
+                                    <div class="form-group" style="grid-column: span 2;">
+                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Short Biography</label>
+                                        <textarea name="bio" class="input-glass" rows="4" required><?php echo htmlspecialchars($profile['bio'] ?? ''); ?></textarea>
+                                    </div>
+
                                 </div>
 
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Email Address (Read-only)</label>
-                                    <input type="email" class="input-glass" value="<?php echo htmlspecialchars($user_core['email']); ?>" readonly style="opacity: 0.6; cursor: not-allowed;">
+                                <div style="display:flex; justify-content:flex-end; gap:1rem;">
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
                                 </div>
-
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Department / Stream</label>
-                                    <select name="course" class="input-glass" required>
-                                        <option value="Computer Science Engineering" <?php echo ($profile['course'] ?? '') == 'Computer Science Engineering' ? 'selected' : ''; ?>>Computer Science Engineering</option>
-                                        <option value="Information Technology" <?php echo ($profile['course'] ?? '') == 'Information Technology' ? 'selected' : ''; ?>>Information Technology</option>
-                                        <option value="Electronics & Communication" <?php echo ($profile['course'] ?? '') == 'Electronics & Communication' ? 'selected' : ''; ?>>Electronics & Communication</option>
-                                        <option value="Mechanical Engineering" <?php echo ($profile['course'] ?? '') == 'Mechanical Engineering' ? 'selected' : ''; ?>>Mechanical Engineering</option>
-                                        <option value="Civil Engineering" <?php echo ($profile['course'] ?? '') == 'Civil Engineering' ? 'selected' : ''; ?>>Civil Engineering</option>
-                                    </select>
-                                </div>
-
-                                <!-- Role specific fields -->
-                                <?php if ($role === 'alumni'): ?>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Graduation Year</label>
-                                        <input type="number" name="graduation_year" class="input-glass" min="1950" max="2035" value="<?php echo htmlspecialchars($profile['graduation_year'] ?? date('Y')); ?>" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Company</label>
-                                        <input type="text" name="company" class="input-glass" placeholder="e.g. Google" value="<?php echo htmlspecialchars($profile['company'] ?? ''); ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Position</label>
-                                        <input type="text" name="position" class="input-glass" placeholder="e.g. Senior Software Engineer" value="<?php echo htmlspecialchars($profile['position'] ?? ''); ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Industry Sector</label>
-                                        <input type="text" name="industry" class="input-glass" placeholder="e.g. Technology" value="<?php echo htmlspecialchars($profile['industry'] ?? ''); ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Website Portfolio URL</label>
-                                        <input type="url" name="website" class="input-glass" placeholder="https://myportfolio.io" value="<?php echo htmlspecialchars($profile['website'] ?? ''); ?>">
-                                    </div>
-                                <?php else: ?>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Academic Year (1-4)</label>
-                                        <input type="number" name="current_year" class="input-glass" min="1" max="4" value="<?php echo htmlspecialchars($profile['current_year'] ?? 1); ?>" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Cumulative CGPA (0.00 - 10.00)</label>
-                                        <input type="number" name="cgpa" step="0.01" min="0" max="10" class="input-glass" placeholder="8.50" value="<?php echo htmlspecialchars($profile['cgpa'] ?? '0.00'); ?>" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">GitHub URL</label>
-                                        <input type="url" name="github" class="input-glass" placeholder="https://github.com/myname" value="<?php echo htmlspecialchars($profile['github'] ?? ''); ?>">
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="form-group">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">LinkedIn URL</label>
-                                    <input type="url" name="linkedin" class="input-glass" placeholder="https://linkedin.com/in/myname" value="<?php echo htmlspecialchars($profile['linkedin'] ?? ''); ?>">
-                                </div>
-
-                                <div class="form-group" style="grid-column: span 2;">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Upload Avatar Picture</label>
-                                    <input type="file" name="profile_pic" accept="image/*" class="input-glass">
-                                </div>
-
-                                <div class="form-group" style="grid-column: span 2;">
-                                    <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Short Biography</label>
-                                    <textarea name="bio" class="input-glass" rows="4" required><?php echo htmlspecialchars($profile['bio'] ?? ''); ?></textarea>
-                                </div>
-
-                            </div>
-
-                            <div style="display:flex; justify-content:flex-end; gap:1rem;">
-                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
@@ -474,15 +571,30 @@ require_once __DIR__ . '/../includes/header.php';
 
 <script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 <script>
-function toggleProfileEdit(showEdit) {
-    const viewCard = document.getElementById('profile-view-card');
-    const editCard = document.getElementById('profile-edit-card');
-    if (showEdit) {
-        viewCard.style.display = 'none';
-        editCard.style.display = 'block';
+function switchProfileTab(tabName) {
+    const overviewTab = document.getElementById('profile-overview-tab');
+    const editTab = document.getElementById('profile-edit-tab');
+    const overviewBtn = document.getElementById('tab-overview-btn');
+    const editBtn = document.getElementById('tab-edit-btn');
+    
+    if (tabName === 'overview') {
+        overviewTab.style.display = 'block';
+        editTab.style.display = 'none';
+        overviewBtn.classList.add('active');
+        editBtn.classList.remove('active');
+        
+        if (window.gsap) {
+            gsap.fromTo('#profile-overview-tab', {opacity: 0, y: 15}, {opacity: 1, y: 0, duration: 0.4, ease: 'power2.out'});
+        }
     } else {
-        viewCard.style.display = 'block';
-        editCard.style.display = 'none';
+        overviewTab.style.display = 'none';
+        editTab.style.display = 'block';
+        overviewBtn.classList.remove('active');
+        editBtn.classList.add('active');
+        
+        if (window.gsap) {
+            gsap.fromTo('#profile-edit-tab', {opacity: 0, y: 15}, {opacity: 1, y: 0, duration: 0.4, ease: 'power2.out'});
+        }
     }
 }
 </script>
