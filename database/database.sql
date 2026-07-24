@@ -322,7 +322,16 @@ INSERT INTO users (id, name, email, username, password, phone, role, status, dep
 (10, 'Frank Thomas (Student)', 'frank@alumni.com', 'frank_std', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 4),
 (11, 'Ravindra Mude', 'ravindramude44@gmail.com', 'ravindra', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9209276332', 'admin', 'approved', 1),
 (14, 'Yashraj Nanaware', 'yashrajnanaware0@gmail.com', 'yashraj', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9325818393', 'admin', 'approved', 1),
-(15, 'Kaif Khan', 'alikaif8585@gmail.com', 'kaif', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9589904746', 'admin', 'approved', 1);
+(15, 'Kaif Khan', 'alikaif8585@gmail.com', 'kaif', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9589904746', 'admin', 'approved', 1),
+(18, 'Namrata Shankar Parab', 'nam20parab@gmail.com', 'nam20parab', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '8308758413', 'alumni', 'approved', 4),
+(19, 'Vaishnavi Valmik Pawar', 'vp171666@gmail.com', 'vp171666', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9175742480', 'alumni', 'approved', 4),
+(20, 'Mayur Ganesh Todkar', 'mayurt2312@gmail.com', 'mayurt2312', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9359724105', 'alumni', 'approved', 4),
+(21, 'Tanaya Khare', 'kharetanaya67@gmail.com', 'kharetanaya67', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7385966019', 'alumni', 'approved', 4),
+(22, 'Supkar Darpan Rajeshree', 'darpan.supkar.12@gmail.com', 'darpan.supkar.12', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '8999375490', 'alumni', 'approved', 4),
+(23, 'Atharv Rahul Taware', 'atharvtaware@gmail.com', 'atharvtaware', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7218945407', 'alumni', 'approved', 4),
+(24, 'More Pratiket Vijaykumar', 'pratiketmore@gmail.com', 'pratiketmore', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '8975025652', 'alumni', 'approved', 4),
+(25, 'Sumeet Nathuji Satpute', 'sumeetsatpute2562@gmail.com', 'sumeetsatpute2562', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9359128011', 'alumni', 'approved', 4),
+(26, 'Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', 'shaktiprasadpatra4', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7028162381', 'alumni', 'approved', 4);
 
 -- Admins Seeding
 INSERT INTO admins (id, user_id, username, name, email, password, role) VALUES
@@ -337,7 +346,16 @@ INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position
 (4, 2020, 'Electronics & Communication', 'Intel', 'Hardware Designer', 'Hardware', 'linkedin.com/in/john', 'john.dev', 'Designing low latency CPU memory micro-controllers.'),
 (6, 2019, 'Information Technology', 'Microsoft', 'Senior Product Engineer', 'Tech', 'linkedin.com/in/bob', 'bob.dev', 'Specializing in Azure cloud developer productivity services.'),
 (8, 2022, 'Computer Science Engineering', 'Meta', 'Production Engineer', 'Tech', 'linkedin.com/in/david', 'david.dev', 'System engineering and site reliability optimization.'),
-(9, 2018, 'Electronics & Communication', 'Tesla', 'Firmware Engineer', 'Tech', 'linkedin.com/in/emily', 'emily.dev', 'Autonomous battery system management integration.');
+(9, 2018, 'Electronics & Communication', 'Tesla', 'Firmware Engineer', 'Tech', 'linkedin.com/in/emily', 'emily.dev', 'Autonomous battery system management integration.'),
+(18, 2023, 'Information Technology', 'ATOS Global', 'Trainee Engineer', 'Tech', NULL, NULL, 'Trainee Engineer at ATOS Global. Specialized in Information Technology, graduated in 2023.'),
+(19, 2023, 'Information Technology', 'TCS', 'Assistant Software Engineer', 'Tech', NULL, NULL, 'Assistant Software Engineer at TCS. Information Technology graduate class of 2023.'),
+(20, 2023, 'Information Technology', 'ATOS', 'Software Trainee', 'Tech', NULL, NULL, 'Software Trainee at ATOS. Graduated in Information Technology, class of 2023.'),
+(21, 2023, 'Information Technology', 'e-Emphasys Pvt. Ltd.', 'Associate System Engineer', 'Tech', NULL, NULL, 'Associate System Engineer at e-Emphasys Pvt. Ltd. Information Technology class of 2023.'),
+(22, 2023, 'Information Technology', 'Intellipaat', 'BDA', 'EdTech', NULL, NULL, 'Business Development Associate (BDA) at Intellipaat. Information Technology class of 2023.'),
+(23, 2023, 'Information Technology', 'ATOS', 'Software Trainee', 'Tech', NULL, NULL, 'Software Trainee at ATOS. Information Technology class of 2023.'),
+(24, 2023, 'Information Technology', 'Academor', 'Academic Counsellor', 'EdTech', NULL, NULL, 'Academic Counsellor at Academor. Information Technology class of 2023.'),
+(25, 2023, 'Information Technology', 'TCS', 'Software Eng. Trainee', 'Tech', NULL, NULL, 'Software Eng. Trainee at TCS. Information Technology class of 2023.'),
+(26, 2023, 'Information Technology', 'Xsymplify', 'BDM', 'Tech', NULL, NULL, 'Business Development Manager (BDM) at Xsymplify. Information Technology class of 2023.');
 
 -- Student Profiles Seeding
 INSERT INTO student_profiles (user_id, current_year, course, bio, linkedin, github) VALUES

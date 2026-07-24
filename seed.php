@@ -61,15 +61,28 @@ try {
         ['Demo Student User', 'user@internship.com', $mock_password_user, 'student', 'approved'],
         ['Charlie Brown', 'charlie@student.com', $mock_password, 'student', 'approved'],
         ['Diana Prince', 'diana@student.com', $mock_password, 'student', 'approved'],
-        ['Peter Parker', 'peter@dailybugle.com', $mock_password, 'student', 'approved']
+        ['Peter Parker', 'peter@dailybugle.com', $mock_password, 'student', 'approved'],
+
+        // New Alumni from registration forms
+        ['Namrata Shankar Parab', 'nam20parab@gmail.com', $mock_password, 'alumni', 'approved', '8308758413', 4],
+        ['Vaishnavi Valmik Pawar', 'vp171666@gmail.com', $mock_password, 'alumni', 'approved', '9175742480', 4],
+        ['Mayur Ganesh Todkar', 'mayurt2312@gmail.com', $mock_password, 'alumni', 'approved', '9359724105', 4],
+        ['Tanaya Khare', 'kharetanaya67@gmail.com', $mock_password, 'alumni', 'approved', '7385966019', 4],
+        ['Supkar Darpan Rajeshree', 'darpan.supkar.12@gmail.com', $mock_password, 'alumni', 'approved', '8999375490', 4],
+        ['Atharv Rahul Taware', 'atharvtaware@gmail.com', $mock_password, 'alumni', 'approved', '7218945407', 4],
+        ['More Pratiket Vijaykumar', 'pratiketmore@gmail.com', $mock_password, 'alumni', 'approved', '8975025652', 4],
+        ['Sumeet Nathuji Satpute', 'sumeetsatpute2562@gmail.com', $mock_password, 'alumni', 'approved', '9359128011', 4],
+        ['Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', $mock_password, 'alumni', 'approved', '7028162381', 4]
     ];
 
-    $insert_user_stmt = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?)");
+    $insert_user_stmt = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status, phone, department_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     
     $userIds = [];
     foreach ($mock_users as $u) {
         $username = explode('@', $u[1])[0];
-        $insert_user_stmt->execute([$u[0], $u[1], $username, $u[2], $u[3], $u[4]]);
+        $phone = $u[5] ?? null;
+        $dept_id = $u[6] ?? null;
+        $insert_user_stmt->execute([$u[0], $u[1], $username, $u[2], $u[3], $u[4], $phone, $dept_id]);
         $userIds[$u[1]] = $pdo->lastInsertId();
     }
 
@@ -161,6 +174,114 @@ try {
             '', 
             'Winter is coming, and so are industrial challenges. Mechanical structures and heavy dynamics.',
             'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&fit=crop&q=80'
+        ],
+        [
+            $userIds['nam20parab@gmail.com'],
+            2023,
+            'Information Technology',
+            'ATOS Global',
+            'Trainee Engineer',
+            'Tech',
+            '',
+            '',
+            'Trainee Engineer at ATOS Global. Specialized in Information Technology, graduated in 2023.',
+            ''
+        ],
+        [
+            $userIds['vp171666@gmail.com'],
+            2023,
+            'Information Technology',
+            'TCS',
+            'Assistant Software Engineer',
+            'Tech',
+            '',
+            '',
+            'Assistant Software Engineer at TCS. Information Technology graduate class of 2023.',
+            ''
+        ],
+        [
+            $userIds['mayurt2312@gmail.com'],
+            2023,
+            'Information Technology',
+            'ATOS',
+            'Software Trainee',
+            'Tech',
+            '',
+            '',
+            'Software Trainee at ATOS. Graduated in Information Technology, class of 2023.',
+            ''
+        ],
+        [
+            $userIds['kharetanaya67@gmail.com'],
+            2023,
+            'Information Technology',
+            'e-Emphasys Pvt. Ltd.',
+            'Associate System Engineer',
+            'Tech',
+            '',
+            '',
+            'Associate System Engineer at e-Emphasys Pvt. Ltd. Information Technology class of 2023.',
+            ''
+        ],
+        [
+            $userIds['darpan.supkar.12@gmail.com'],
+            2023,
+            'Information Technology',
+            'Intellipaat',
+            'BDA',
+            'EdTech',
+            '',
+            '',
+            'Business Development Associate (BDA) at Intellipaat. Information Technology class of 2023.',
+            ''
+        ],
+        [
+            $userIds['atharvtaware@gmail.com'],
+            2023,
+            'Information Technology',
+            'ATOS',
+            'Software Trainee',
+            'Tech',
+            '',
+            '',
+            'Software Trainee at ATOS. Information Technology class of 2023.',
+            ''
+        ],
+        [
+            $userIds['pratiketmore@gmail.com'],
+            2023,
+            'Information Technology',
+            'Academor',
+            'Academic Counsellor',
+            'EdTech',
+            '',
+            '',
+            'Academic Counsellor at Academor. Information Technology class of 2023.',
+            ''
+        ],
+        [
+            $userIds['sumeetsatpute2562@gmail.com'],
+            2023,
+            'Information Technology',
+            'TCS',
+            'Software Eng. Trainee',
+            'Tech',
+            '',
+            '',
+            'Software Eng. Trainee at TCS. Information Technology class of 2023.',
+            ''
+        ],
+        [
+            $userIds['shaktiprasadpatra4@gmail.com'],
+            2023,
+            'Information Technology',
+            'Xsymplify',
+            'BDM',
+            'Tech',
+            '',
+            '',
+            'Business Development Manager (BDM) at Xsymplify. Information Technology class of 2023.',
+            ''
         ]
     ];
 

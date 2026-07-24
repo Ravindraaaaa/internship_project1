@@ -436,93 +436,132 @@
 
     <!-- ==================== PROFESSIONAL SYSTEM FOOTER ==================== -->
     <?php
-    // Admin contact details
-    $fallback_admins = [
-        ['name' => 'Ashwin Pande', 'phone' => '9226830066', 'email' => 'alumninethelp@gmail.com'],
-        ['name' => 'Ravindra Mude', 'phone' => '9209276332', 'email' => 'alumninethelp@gmail.com'],
-        ['name' => 'Yashraj Nanaware', 'phone' => '9325818393', 'email' => 'alumninethelp@gmail.com'],
-        ['name' => 'Kaif Khan', 'phone' => '9589904746', 'email' => 'alumninethelp@gmail.com']
+    $team_members = [
+        ['name' => 'Ashwin Pande', 'role' => 'Administrator', 'phone' => '9226830066', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Ravindra Mude', 'role' => 'Administrator', 'phone' => '9209276332', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Yashraj Nanaware', 'role' => 'Administrator', 'phone' => '9325818393', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Kaif Khan', 'role' => 'Administrator', 'phone' => '9589904746', 'email' => 'alumninethelp@gmail.com'],
+        ['name' => 'Srushti Mokashe', 'role' => 'Team Member', 'phone' => '7821995050', 'email' => 'srushtimokashe4@gmail.com'],
+        ['name' => 'Mahesh Padse', 'role' => 'Team Member', 'phone' => '8237020804', 'email' => 'maheshpadse2005@gmail.com'],
+        ['name' => 'Aishwarya Nirwal', 'role' => 'Team Member', 'phone' => '8087906522', 'email' => 'nirwalaishwarya7@gmail.com'],
+        ['name' => 'Bhagyashree Patil', 'role' => 'Team Member', 'phone' => '7821809886', 'email' => 'vaishnavipatil0942007@gmail.com'],
+        ['name' => 'Gital Patil', 'role' => 'Team Member', 'phone' => '7820803005', 'email' => 'gitalpatil07@gmail.com'],
+        ['name' => 'Ishwari Nikam', 'role' => 'Team Member', 'phone' => '9834922170', 'email' => 'ishwarinikam7930@gmail.com'],
+        ['name' => 'Nakul Waghmare', 'role' => 'Team Member', 'phone' => '8446644436', 'email' => 'nakulwaghmare007@gmail.com']
     ];
 
-    $admin_display_email = 'alumninethelp@gmail.com';
-    $admins_to_show = [];
-
-    if (isset($pdo) && $pdo instanceof PDO) {
-        try {
-            $stmt_admin_fetch = $pdo->query("SELECT name, email, phone FROM users WHERE role = 'admin' AND status = 'approved' AND (phone IS NOT NULL AND phone != '') GROUP BY name ORDER BY id ASC");
-            $admins_to_show = $stmt_admin_fetch->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            // Fallback
-        }
-    }
-
-    if (empty($admins_to_show)) {
-        $admins_to_show = $fallback_admins;
-    }
-
-    $admin_elements = [];
-    foreach ($admins_to_show as $admin) {
-        if (!empty($admin['name'])) {
-            $formatted = htmlspecialchars($admin['name']);
-            if (!empty($admin['phone'])) {
-                $clean_phone = preg_replace('/[^0-9+]/', '', $admin['phone']);
-                $formatted .= ' (<a href="tel:' . $clean_phone . '" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color=\'var(--theme-accent-blue, #38bdf8)\'" onmouseout="this.style.color=\'var(--theme-text, #f8fafc)\'">' . htmlspecialchars($admin['phone']) . '</a>)';
-            }
-            $admin_elements[] = $formatted;
-        }
-    }
-
-    $admins_formatted_str = implode(', ', $admin_elements);
     $path_prefix = $path_prefix ?? '';
     ?>
 
-    <!-- ==================== COMPACT SIDE-BY-SIDE SYSTEM FOOTER ==================== -->
-    <footer class="app-footer <?php echo (isset($GLOBALS['sidebar_rendered']) && $GLOBALS['sidebar_rendered']) ? 'has-sidebar' : ''; ?>" style="background: var(--theme-sidebar, #0f172a); border-top: 1px solid var(--theme-border, rgba(255,255,255,0.1)); padding: 1.25rem 1.5rem; margin-top: auto; color: var(--theme-text-secondary, #94a3b8); font-size: 0.85rem;">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; align-items: flex-start;">
-            
-            <!-- SECTION 1: HELP -->
-            <div style="flex: 1; min-width: 280px;">
-                <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; margin: 0 0 0.5rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
-                    <i class="fa-solid fa-circle-question" style="color: var(--theme-accent-blue, #38bdf8);"></i> 1. Help & Support
-                </h4>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; font-size: 0.82rem; margin-top: 0.3rem;">
-                    <a href="<?php echo $path_prefix; ?>user/help.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
-                        <i class="fa-solid fa-headset" style="color: var(--theme-accent-blue, #38bdf8);"></i> Help Center & FAQs
-                    </a>
-                    <span style="opacity: 0.3;">|</span>
-                    <a href="<?php echo $path_prefix; ?>user/feedback.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
-                        <i class="fa-solid fa-comment-dots" style="color: var(--theme-accent-blue, #38bdf8);"></i> Feedback & Tickets
-                    </a>
+    <!-- ==================== ABOUT & TEAM OVERLAY MODAL ==================== -->
+    <div class="search-modal-overlay" id="about-modal-overlay" onclick="if(event.target===this) toggleAboutModal(false)">
+        <div class="search-modal-card" style="max-width: 780px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="search-modal-header" style="justify-content: space-between; border-bottom: 1px solid var(--theme-border); padding: 1.25rem 1.5rem; background: var(--theme-bg-secondary, #1e293b);">
+                <div style="display: flex; align-items: center; gap: 0.6rem; color: var(--theme-text, #f8fafc);">
+                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8); font-size: 1.3rem;"></i>
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--theme-text, #f8fafc);">About AlumniNet</h3>
+                        <p style="font-size: 0.78rem; color: var(--theme-text-secondary, #94a3b8); margin: 0;">Platform Overview & Project Team Directory</p>
+                    </div>
+                </div>
+                <button onclick="toggleAboutModal(false)" style="background: none; border: none; color: var(--theme-text-secondary); cursor: pointer; font-size: 1.4rem; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="padding: 1.5rem; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Platform Overview -->
+                <div style="background: rgba(129, 140, 248, 0.05); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 8px; padding: 1rem 1.25rem;">
+                    <h4 style="color: var(--theme-accent-purple, #818cf8); font-size: 0.92rem; margin: 0 0 0.4rem 0; font-weight: 700;">
+                        <i class="fa-solid fa-graduation-cap"></i> Enterprise Alumni Engagement & Mentorship Platform
+                    </h4>
+                    <p style="font-size: 0.85rem; color: var(--theme-text-secondary, #94a3b8); line-height: 1.55; margin: 0;">
+                        AlumniNet is designed to seamlessly bridge academic generations by connecting university students with established alumni. Our platform powers real-world mentorship, exclusive job referrals, networking events, and institutional career development.
+                    </p>
+                </div>
+
+                <!-- Team Directory -->
+                <div>
+                    <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; font-weight: 700; margin: 0 0 0.8rem 0; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-users" style="color: var(--theme-accent-blue, #38bdf8);"></i> Project Team & Administration
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem;">
+                        <?php foreach ($team_members as $member): ?>
+                        <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span><?php echo htmlspecialchars($member['name']); ?></span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: <?php echo $member['role'] === 'Administrator' ? 'rgba(129, 140, 248, 0.15)' : 'rgba(56, 189, 248, 0.15)'; ?>; color: <?php echo $member['role'] === 'Administrator' ? 'var(--theme-accent-purple, #818cf8)' : 'var(--theme-accent-blue, #38bdf8)'; ?>; font-weight: 600;">
+                                    <?php echo htmlspecialchars($member['role']); ?>
+                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                <?php if (!empty($member['phone'])): ?>
+                                <a href="tel:<?php echo preg_replace('/[^0-9+]/', '', $member['phone']); ?>" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 <?php echo htmlspecialchars($member['phone']); ?>
+                                </a>
+                                <?php endif; ?>
+                                <?php if (!empty($member['email'])): ?>
+                                <a href="mailto:<?php echo htmlspecialchars($member['email']); ?>" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> <?php echo htmlspecialchars($member['email']); ?>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
 
-            <!-- SECTION 2: ABOUT & ADMIN INFO -->
-            <div style="flex: 1.2; min-width: 320px;">
-                <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; margin: 0 0 0.5rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
-                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8);"></i> 2. <a href="<?php echo $path_prefix; ?>about.php" style="color: inherit; text-decoration: underline;">About Us</a> & Contact
-                </h4>
-                <div style="font-size: 0.82rem; line-height: 1.5; color: var(--theme-text-secondary, #94a3b8);">
-                    <div style="margin-bottom: 0.3rem; color: var(--theme-text, #f8fafc);">
-                        <a href="<?php echo $path_prefix; ?>about.php" style="color: var(--theme-accent-purple, #818cf8); font-weight: 700; text-decoration: underline;">About AlumniNet:</a> Enterprise Alumni Engagement & Mentorship Platform.
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; align-items: center;">
-                        <span><i class="fa-solid fa-user-shield" style="color: var(--theme-accent-purple, #818cf8);"></i> <strong>Admins:</strong> <?php echo $admins_formatted_str; ?></span>
-                        <span style="opacity: 0.3;">|</span>
-                        <span><i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> <strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($admin_display_email); ?>" style="color: var(--theme-text, #f8fafc); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text, #f8fafc)'"><?php echo htmlspecialchars($admin_display_email); ?></a></span>
-                    </div>
-                </div>
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--theme-border); background: var(--theme-bg-secondary, #1e293b); display: flex; justify-content: space-between; align-items: center;">
+                <a href="<?php echo $path_prefix; ?>about.php" class="btn btn-secondary btn-small" style="font-size: 0.82rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Full About Page
+                </a>
+                <button onclick="toggleAboutModal(false)" class="btn btn-primary btn-small" style="font-size: 0.82rem; padding: 0.4rem 1rem;">Close</button>
             </div>
-
         </div>
+    </div>
 
-        <!-- BOTTOM COPYRIGHT BAR -->
-        <div style="max-width: 1200px; margin: 0.8rem auto 0 auto; padding-top: 0.6rem; border-top: 1px solid var(--theme-border, rgba(255,255,255,0.06)); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; font-size: 0.78rem; opacity: 0.85;">
-            <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--theme-text, #f8fafc); font-weight: 600;">
-                <i class="fa-solid fa-graduation-cap" style="color: var(--theme-accent-purple, #818cf8);"></i> AlumniNet Platform
+    <!-- ==================== PROFESSIONAL COMPACT SYSTEM FOOTER ==================== -->
+    <footer class="app-footer <?php echo (isset($GLOBALS['sidebar_rendered']) && $GLOBALS['sidebar_rendered']) ? 'has-sidebar' : ''; ?>" style="background: var(--theme-sidebar, #0f172a); border-top: 1px solid var(--theme-border, rgba(255,255,255,0.08)); padding: 0.85rem 1.5rem; margin-top: auto; color: var(--theme-text-secondary, #94a3b8); font-size: 0.83rem;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding-right: <?php echo (is_logged_in() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'student') ? '4.5rem' : '0'; ?>;">
+            
+            <!-- Left Brand & Copyright -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; color: var(--theme-text, #f8fafc); font-weight: 600;">
+                <i class="fa-solid fa-graduation-cap" style="color: var(--theme-accent-purple, #818cf8); font-size: 1.05rem;"></i>
+                <span>AlumniNet</span>
+                <span style="opacity: 0.4; font-weight: 400;">|</span>
+                <span style="font-weight: 400; color: var(--theme-text-secondary, #94a3b8); font-size: 0.78rem;">&copy; <?php echo date('Y'); ?> All rights reserved.</span>
             </div>
-            <div>&copy; <?php echo date('Y'); ?> AlumniNet. All rights reserved.</div>
+
+            <!-- Right Action Links -->
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; font-size: 0.82rem;">
+                <a href="#" onclick="toggleAboutModal(true); return false;" style="color: var(--theme-text, #f8fafc); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-purple, #818cf8)'" onmouseout="this.style.color='var(--theme-text, #f8fafc)'">
+                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8);"></i> About & Team
+                </a>
+                <a href="<?php echo $path_prefix; ?>user/help.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-headset" style="color: var(--theme-accent-blue, #38bdf8);"></i> Help Center
+                </a>
+                <a href="<?php echo $path_prefix; ?>user/feedback.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-comment-dots" style="color: var(--theme-accent-blue, #38bdf8);"></i> Feedback
+                </a>
+                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> Contact
+                </a>
+            </div>
+
         </div>
     </footer>
+
+    <script>
+        function toggleAboutModal(show) {
+            const overlay = document.getElementById('about-modal-overlay');
+            if (overlay) {
+                if (show) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+    </script>
 
 </body>
 </html>

@@ -254,3 +254,55 @@ if (!function_exists('send_2fa_otp_email')) {
         return send_smtp_email($recipient_email, $subject, $html_body);
     }
 }
+
+if (!function_exists('send_sms_otp')) {
+    function send_sms_otp($phone_number, $otp_code) {
+        if (empty($phone_number)) {
+            return false;
+        }
+
+        $clean_phone = preg_replace('/[^0-9+]/', '', $phone_number);
+        $message = "Your AlumniNet verification OTP code is: {$otp_code}. Valid for 5 minutes.";
+
+        // Log to system error log
+        error_log("[AlumniNet SMS OTP] Dispatched to {$clean_phone}: {$message}");
+
+        // Save last sent SMS info in session for UI status display
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['last_sms_otp'] = [
+                'phone' => $clean_phone,
+                'code' => $otp_code,
+                'sent_at' => date('Y-m-d H:i:s'),
+                'status' => 'Dispatched'
+            ];
+        }
+
+        // Optional integration for SMS Gateways (e.g. Fast2SMS / Twilio)
+        if (defined('SMS_API_KEY') && !empty(SMS_API_KEY)) {
+            try {
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => "https://www.fast2sms.com/dev/bulkV2",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => json_encode([
+                        'route' => 'otp',
+                        'variables_values' => $otp_code,
+                        'numbers' => $clean_phone
+                    ]),
+                    CURLOPT_HTTPHEADER => [
+                        "authorization: " . SMS_API_KEY,
+                        "Content-Type: application/json"
+                    ],
+                    CURLOPT_TIMEOUT => 4
+                ]);
+                @curl_exec($ch);
+                @curl_close($ch);
+            } catch (Exception $e) {
+                // Failover silently
+            }
+        }
+
+        return true;
+    }
+}

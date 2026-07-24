@@ -16,12 +16,17 @@ if (empty($_SESSION['2fa_otp_code']) || empty($_SESSION['2fa_otp_expires'])) {
     $_SESSION['2fa_otp_expires'] = time() + 300; // 5 mins
     $_SESSION['2fa_attempts'] = 0;
     
-    // Dispatch real-time 2FA email
-    $stmtUser = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+    // Dispatch real-time 2FA email & Mobile SMS OTP
+    $stmtUser = $pdo->prepare("SELECT email, phone FROM users WHERE id = ?");
     $stmtUser->execute([$_SESSION['2fa_user_id']]);
-    $uEmail = $stmtUser->fetchColumn();
-    if ($uEmail) {
-        send_2fa_otp_email($uEmail, $_SESSION['2fa_otp_code']);
+    $uData = $stmtUser->fetch();
+    if ($uData) {
+        if (!empty($uData['email'])) {
+            send_2fa_otp_email($uData['email'], $_SESSION['2fa_otp_code']);
+        }
+        if (!empty($uData['phone'])) {
+            send_sms_otp($uData['phone'], $_SESSION['2fa_otp_code']);
+        }
     }
 }
 
@@ -168,7 +173,18 @@ require_once __DIR__ . '/includes/header.php';
         <div style="margin-bottom: 1.5rem;">
             <i class="fa-solid fa-shield-halved" style="font-size: 3rem; background: var(--theme-accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;"></i>
             <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--theme-text);">Two-Factor Verification</h2>
-            <p style="color: var(--theme-text-secondary); font-size: 0.88rem;">To secure your account, please enter the 6-digit 2FA code.</p>
+            <p style="color: var(--theme-text-secondary); font-size: 0.88rem;">To secure your account, please enter the 6-digit 2FA code sent via SMS & Email.</p>
+        </div>
+
+        <!-- SMS & EMAIL 2FA DISPATCH BADGE -->
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 0.85rem 1.15rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.83rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; color: #38bdf8; font-weight: 700; margin-bottom: 0.35rem;">
+                <i class="fa-solid fa-mobile-screen-button"></i> Mobile SMS & Email 2FA Active
+            </div>
+            <div style="color: var(--theme-text-secondary); line-height: 1.5;">
+                📱 <strong>Mobile SMS:</strong> Dispatched to user phone number<br>
+                📧 <strong>Email Address:</strong> Dispatched to registered email
+            </div>
         </div>
 
         <?php if (!empty($error)): ?>

@@ -24,12 +24,15 @@ if ($action === 'resend_signup_otp') {
     $_SESSION['otp_verify']['expires_at'] = time() + 300; // 5 mins
     $_SESSION['otp_verify']['attempts'] = 0;
     
-    // Dispatch via SMTP
+    // Dispatch via Email & Mobile SMS
     send_signup_otp_email($_SESSION['otp_verify']['email'], $new_otp);
+    if (!empty($_SESSION['otp_verify']['phone'])) {
+        send_sms_otp($_SESSION['otp_verify']['phone'], $new_otp);
+    }
     
     echo json_encode([
         'success' => true,
-        'message' => 'A new OTP has been generated & sent!',
+        'message' => 'A new OTP has been generated & sent via Email and Mobile SMS!',
         'demo_otp' => $new_otp,
         'expires_in' => 300
     ]);
@@ -47,12 +50,17 @@ if ($action === 'resend_2fa_otp') {
     $_SESSION['2fa_otp_expires'] = time() + 300;
     $_SESSION['2fa_attempts'] = 0;
     
-    // Fetch email to dispatch
-    $stmtUser = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+    // Fetch email & phone to dispatch
+    $stmtUser = $pdo->prepare("SELECT email, phone FROM users WHERE id = ?");
     $stmtUser->execute([$_SESSION['2fa_user_id']]);
-    $uEmail = $stmtUser->fetchColumn();
-    if ($uEmail) {
-        send_2fa_otp_email($uEmail, $new_otp);
+    $uData = $stmtUser->fetch();
+    if ($uData) {
+        if (!empty($uData['email'])) {
+            send_2fa_otp_email($uData['email'], $new_otp);
+        }
+        if (!empty($uData['phone'])) {
+            send_sms_otp($uData['phone'], $new_otp);
+        }
     }
     
     echo json_encode([

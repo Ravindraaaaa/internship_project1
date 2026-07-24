@@ -2185,3 +2185,36 @@ body.page-loading.theme-light .profile-score-card::after {
 .notif-item:last-child { border-bottom: none; }
 .notif-item-title { font-weight: 600; margin-bottom: 0.2rem; }
 .notif-item-time { font-size: 0.75rem; color: var(--theme-text-secondary); }
+
+/* ==================== GLOBAL AUTHENTICATION CARDS CENTERING ==================== */
+.login-wrapper {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    width: 100%;
+}
+.login-card {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--theme-card);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-soft);
+}
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.login-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--theme-text);
+}
+.login-header p {
+    color: var(--theme-text-secondary);
+    font-size: 0.88rem;
+}

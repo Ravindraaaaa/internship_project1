@@ -122,8 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]
                     ];
 
-                    // Dispatch real-time SMTP Verification Email
+                    // Dispatch real-time Verification Email & Mobile SMS OTP
                     send_signup_otp_email($email, $otp_code);
+                    send_sms_otp($phone_digits, $otp_code);
 
                     // Redirect to OTP Verification Screen
                     header('Location: verify_otp.php');

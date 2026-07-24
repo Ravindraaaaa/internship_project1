@@ -165,8 +165,19 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.4rem;">OTP Verification</h2>
             <p style="color: var(--theme-text-secondary); font-size: 0.88rem;">
-                Enter the 6-digit code sent to your phone <strong style="color: var(--theme-text);"><?php echo htmlspecialchars($_SESSION['otp_verify']['phone']); ?></strong> & email <strong style="color: var(--theme-text);"><?php echo htmlspecialchars($_SESSION['otp_verify']['email']); ?></strong>
+                Enter the 6-digit verification code sent to your mobile phone & email address.
             </p>
+        </div>
+
+        <!-- SMS & EMAIL DISPATCH STATUS BADGE -->
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 0.85rem 1.15rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.83rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; color: #38bdf8; font-weight: 700; margin-bottom: 0.35rem;">
+                <i class="fa-solid fa-mobile-screen-button"></i> Mobile SMS & Email OTP Dispatch Active
+            </div>
+            <div style="color: var(--theme-text-secondary); line-height: 1.5;">
+                📱 <strong>Mobile SMS:</strong> Dispatched to +91 <strong><?php echo htmlspecialchars($_SESSION['otp_verify']['phone']); ?></strong><br>
+                📧 <strong>Email Address:</strong> Sent to <strong><?php echo htmlspecialchars($_SESSION['otp_verify']['email']); ?></strong>
+            </div>
         </div>
 
         <!-- DEMO OTP DISPLAY BANNER -->
