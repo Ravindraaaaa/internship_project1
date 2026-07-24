@@ -307,7 +307,10 @@ require_once __DIR__ . '/includes/header.php';
 
                 <div class="form-group">
                     <label for="password" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Password</label>
-                    <input type="password" name="password" id="password" class="input-glass" placeholder="••••••••" required onkeyup="checkPasswordStrength(this.value)">
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="password" class="input-glass" placeholder="••••••••" required onkeyup="checkPasswordStrength(this.value)" style="padding-right: 2.5rem;">
+                        <i class="fa-solid fa-eye-slash toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--theme-text-secondary); cursor: pointer;" onclick="togglePasswordVisibility('password', this)" title="Toggle Password Visibility"></i>
+                    </div>
                     <div style="margin-top: 0.5rem; display: flex; gap: 0.25rem; align-items: center;" id="password-strength-container">
                         <div style="height: 4px; flex-grow: 1; background: rgba(255,255,255,0.06); border-radius: 2px;" class="strength-bar"></div>
                         <div style="height: 4px; flex-grow: 1; background: rgba(255,255,255,0.06); border-radius: 2px;" class="strength-bar"></div>
@@ -318,7 +321,10 @@ require_once __DIR__ . '/includes/header.php';
 
                 <div class="form-group">
                     <label for="confirm_password" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Confirm Password</label>
-                    <input type="password" name="confirm_password" id="confirm_password" class="input-glass" placeholder="••••••••" required>
+                    <div style="position: relative;">
+                        <input type="password" name="confirm_password" id="confirm_password" class="input-glass" placeholder="••••••••" required style="padding-right: 2.5rem;">
+                        <i class="fa-solid fa-eye-slash toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--theme-text-secondary); cursor: pointer;" onclick="togglePasswordVisibility('confirm_password', this)" title="Toggle Password Visibility"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -441,6 +447,19 @@ require_once __DIR__ . '/includes/header.php';
             bars[2].style.background = '#22c55e';
             text.textContent = 'Strong';
             text.style.color = '#22c55e';
+        }
+    }
+
+    function togglePasswordVisibility(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
         }
     }
 </script>

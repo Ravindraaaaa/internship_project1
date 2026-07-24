@@ -71,6 +71,15 @@ try {
                                    ORDER BY e.event_date ASC");
         $stmtRSVP->execute([$uid]);
         $student_rsvps = $stmtRSVP->fetchAll();
+        
+        $stmtIncoming = $pdo->prepare("SELECT mr.id, mr.message, mr.status, u.name as sender_name, sp.course, sp.profile_pic 
+                                       FROM mentorship_requests mr 
+                                       JOIN users u ON mr.student_id = u.id 
+                                       LEFT JOIN student_profiles sp ON u.id = sp.user_id 
+                                       WHERE mr.alumni_id = ? 
+                                       ORDER BY mr.created_at DESC");
+        $stmtIncoming->execute([$uid]);
+        $student_incoming = $stmtIncoming->fetchAll();
     }
 } catch (Exception $e) {
     set_flash('error', 'Error loading user data: ' . $e->getMessage());
@@ -173,6 +182,39 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
 
+                    <!-- Received Mentorship Requests for Students -->
+                    <div class="card-glass" style="display:flex; flex-direction:column; height: 380px;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-inbox" style="color: var(--theme-accent-purple);"></i> Received Requests</h3>
+                        <div style="display:flex; flex-direction:column; gap: 1rem; overflow-y:auto; flex-grow:1;">
+                            <?php if (!empty($student_incoming)): ?>
+                                <?php foreach ($student_incoming as $req): 
+                                    $sender_pic = get_avatar_url($req['profile_pic'] ?? '');
+                                ?>
+                                    <div style="display:flex; flex-direction:column; gap:0.5rem; border-bottom:1px solid var(--theme-border); padding-bottom: 0.75rem;">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <div style="display:flex; align-items:center; gap: 0.75rem;">
+                                                <img src="<?php echo $sender_pic; ?>" alt="Sender" style="width: 36px; height: 36px; border-radius:50%; object-fit:cover;">
+                                                <div>
+                                                    <h4 style="font-size: 0.88rem;"><?php echo htmlspecialchars($req['sender_name']); ?></h4>
+                                                    <p style="font-size: 0.7rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($req['course']); ?></p>
+                                                </div>
+                                            </div>
+                                            <span class="badge badge-<?php echo $req['status'] === 'accepted' ? 'approved' : ($req['status'] === 'pending' ? 'pending' : 'rejected'); ?>" style="font-size:0.7rem;"><?php echo htmlspecialchars($req['status']); ?></span>
+                                        </div>
+                                        <?php if ($req['status'] === 'pending'): ?>
+                                            <div style="display:flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
+                                                <a href="mentorship.php?action=accept&id=<?php echo $req['id']; ?>" class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;"><i class="fa-solid fa-check"></i> Accept</a>
+                                                <a href="mentorship.php?action=decline&id=<?php echo $req['id']; ?>" class="btn btn-danger btn-small" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;" onclick="return confirm('Decline request?')"><i class="fa-solid fa-xmark"></i> Decline</a>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p style="font-size: 0.82rem; color: var(--theme-text-secondary);">No incoming connection requests received.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
                     <!-- Active Connections -->
                     <div class="card-glass" style="display:flex; flex-direction:column; height: 380px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-handshake-angle" style="color: var(--theme-accent-blue);"></i> Active Mentorships</h3>
@@ -189,7 +231,12 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <p style="font-size: 0.7rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($conn['position']); ?> at <?php echo htmlspecialchars($conn['company']); ?></p>
                                             </div>
                                         </div>
-                                        <span class="badge badge-<?php echo $conn['status'] === 'accepted' ? 'approved' : ($conn['status'] === 'pending' ? 'pending' : 'rejected'); ?>" style="font-size:0.7rem;"><?php echo htmlspecialchars($conn['status']); ?></span>
+                                        <div style="display:flex; align-items:center; gap: 0.5rem;">
+                                            <span class="badge badge-<?php echo $conn['status'] === 'accepted' ? 'approved' : ($conn['status'] === 'pending' ? 'pending' : 'rejected'); ?>" style="font-size:0.7rem;"><?php echo htmlspecialchars($conn['status']); ?></span>
+                                            <?php if ($conn['status'] === 'pending'): ?>
+                                                <a href="mentorship.php?action=cancel&id=<?php echo $conn['id']; ?>" style="font-size: 0.75rem; color: #ef4444; text-decoration: none;" onclick="return confirm('Withdraw request?')" title="Withdraw Request"><i class="fa-solid fa-xmark"></i></a>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>

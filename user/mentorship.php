@@ -63,34 +63,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     $action = $_GET['action'];
     $req_id = intval($_GET['id'] ?? 0);
 
-    if ($req_id > 0 && in_array($action, ['accept', 'decline'])) {
+    if ($req_id > 0 && in_array($action, ['accept', 'decline', 'cancel'])) {
         try {
-            $stmtVerify = $pdo->prepare("SELECT student_id FROM mentorship_requests WHERE id = ? AND alumni_id = ?");
-            $stmtVerify->execute([$req_id, $uid]);
-            $student_id = $stmtVerify->fetchColumn();
-
-            if ($student_id) {
-                $status = ($action === 'accept') ? 'accepted' : 'declined';
-                $stmtUpdate = $pdo->prepare("UPDATE mentorship_requests SET status = ? WHERE id = ?");
-                $stmtUpdate->execute([$status, $req_id]);
-                
-                // Dispatch notification to student with clickable action link
-                $targetLink = ($status === 'accepted') ? "user/chat.php?user_id=" . $uid : "user/mentorship.php";
-                create_notification($student_id, "Mentorship Request " . ucfirst($status) . " 🎓", "Your mentorship connection request with " . $user_name . " was " . $status . ".", ($status === 'accepted' ? 'success' : 'info'), 'high', $targetLink);
-
-                if ($status === 'accepted') {
-                    set_flash('success', 'Connection request accepted!');
+            if ($action === 'cancel') {
+                // Sender can cancel
+                $stmtVerify = $pdo->prepare("SELECT id FROM mentorship_requests WHERE id = ? AND student_id = ?");
+                $stmtVerify->execute([$req_id, $uid]);
+                if ($stmtVerify->fetch()) {
+                    $stmtDelete = $pdo->prepare("DELETE FROM mentorship_requests WHERE id = ?");
+                    $stmtDelete->execute([$req_id]);
+                    set_flash('success', 'Connection request withdrawn.');
                 } else {
-                    set_flash('info', 'Connection request declined.');
+                    set_flash('error', 'Request not found or you do not have permission.');
                 }
             } else {
-                set_flash('error', 'Request not found.');
+                // Receiver can accept/decline
+                $stmtVerify = $pdo->prepare("SELECT student_id FROM mentorship_requests WHERE id = ? AND alumni_id = ?");
+                $stmtVerify->execute([$req_id, $uid]);
+                $student_id = $stmtVerify->fetchColumn();
+
+                if ($student_id) {
+                    $status = ($action === 'accept') ? 'accepted' : 'declined';
+                    $stmtUpdate = $pdo->prepare("UPDATE mentorship_requests SET status = ? WHERE id = ?");
+                    $stmtUpdate->execute([$status, $req_id]);
+                    
+                    // Dispatch notification to student with clickable action link
+                    $targetLink = ($status === 'accepted') ? "user/chat.php?user_id=" . $uid : "user/mentorship.php";
+                    create_notification($student_id, "Mentorship Request " . ucfirst($status) . " 🎓", "Your mentorship connection request with " . $user_name . " was " . $status . ".", ($status === 'accepted' ? 'success' : 'info'), 'high', $targetLink);
+
+                    if ($status === 'accepted') {
+                        set_flash('success', 'Connection request accepted!');
+                    } else {
+                        set_flash('info', 'Connection request declined.');
+                    }
+                } else {
+                    set_flash('error', 'Request not found.');
+                }
             }
         } catch (Exception $e) {
             set_flash('error', 'Action failed: ' . $e->getMessage());
         }
     }
-    header('Location: dashboard.php');
+    header('Location: mentorship.php');
     exit;
 }
 
@@ -234,7 +248,9 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
                                     <span style="font-size:0.75rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-clock"></i> Sent: <?php echo date('M d, Y', strtotime($req['created_at'])); ?></span>
                                     <div style="display:flex; gap:0.5rem;">
-                                        <?php if ($req['status'] === 'accepted'): ?>
+                                        <?php if ($req['status'] === 'pending'): ?>
+                                            <a href="mentorship.php?action=cancel&id=<?php echo $req['id']; ?>" class="btn btn-danger btn-small" onclick="return confirm('Withdraw this connection request?')"><i class="fa-solid fa-xmark"></i> Withdraw</a>
+                                        <?php elseif ($req['status'] === 'accepted'): ?>
                                             <a href="chat.php?peer_id=<?php echo $req['receiver_id']; ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-comment-dots"></i> Chat</a>
                                             <a href="view_profile.php?id=<?php echo $req['receiver_id']; ?>" class="btn btn-secondary btn-small"><i class="fa-solid fa-user"></i> Profile</a>
                                         <?php endif; ?>
