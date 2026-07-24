@@ -30,6 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$uid, $rating, $subject, $message]);
                 
+                // Dispatch automatic notifications
+                create_notification($uid, "Feedback Ticket Received 💬", "Thank you for your ticket ('" . $subject . "')! Our team has received your feedback.", "success", "medium");
+                notify_admins("New Feedback Ticket", "User " . $user_name . " submitted a " . $rating . "-star ticket: '" . $subject . "'.", "info", "high");
+
                 log_activity($uid, 'submitted_feedback', "Rating: $rating - Subject: $subject");
                 set_flash('success', 'Thank you for your valuable feedback!');
                 header('Location: feedback.php');

@@ -28,18 +28,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             if ($op === 'approve') {
                 $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ?")->execute([$target_id]);
+                create_notification($target_id, "Account Approved! 🎉", "Your account registration has been approved by the administrator. You now have full platform access.", "success", "high");
                 log_activity($admin_id, 'approve_user', "Approved user ID: $target_id");
                 set_flash('success', 'User approved successfully!');
             } elseif ($op === 'reject') {
                 $pdo->prepare("UPDATE users SET status = 'rejected' WHERE id = ?")->execute([$target_id]);
+                create_notification($target_id, "Account Registration Update", "Your account registration status was updated to rejected by the administrator.", "warning", "high");
                 log_activity($admin_id, 'reject_user', "Rejected user ID: $target_id");
                 set_flash('warning', 'User registration rejected.');
             } elseif ($op === 'block') {
                 $pdo->prepare("UPDATE users SET status = 'blocked' WHERE id = ?")->execute([$target_id]);
+                create_notification($target_id, "Account Suspended", "Your account access has been suspended by the administrator.", "danger", "high");
                 log_activity($admin_id, 'block_user', "Suspended/Blocked user ID: $target_id");
                 set_flash('error', 'User account suspended.');
             } elseif ($op === 'restore') {
                 $pdo->prepare("UPDATE users SET status = 'approved', failed_attempts = 0, lockout_until = NULL WHERE id = ?")->execute([$target_id]);
+                create_notification($target_id, "Account Restored & Unlocked", "Your account has been restored and unlocked by the administrator.", "success", "high");
                 log_activity($admin_id, 'restore_user', "Restored and unlocked user ID: $target_id");
                 set_flash('success', 'User account restored and unlocked!');
             } elseif ($op === 'delete') {
@@ -51,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($op === 'change_role') {
                 $new_role = $_POST['role'] ?? 'student';
                 $pdo->prepare("UPDATE users SET role = ? WHERE id = ?")->execute([$new_role, $target_id]);
+                create_notification($target_id, "Role Updated", "Your account role has been updated to: " . ucfirst($new_role), "info", "medium");
                 log_activity($admin_id, 'change_role', "Changed user ID $target_id role to $new_role");
                 set_flash('success', 'User role updated.');
             }

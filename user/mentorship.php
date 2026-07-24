@@ -30,6 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     } else {
                         $stmtInsert = $pdo->prepare("INSERT INTO mentorship_requests (student_id, alumni_id, message, status) VALUES (?, ?, ?, 'pending')");
                         $stmtInsert->execute([$uid, $alumni_id, $message]);
+                        
+                        // Dispatch automatic notification to alumni
+                        create_notification($alumni_id, "New Connection Request 🤝", "Student " . $user_name . " sent you a mentorship connection request.", "info", "high");
+                        
                         set_flash('success', 'Connection request sent successfully!');
                     }
                 }
@@ -61,13 +65,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
 
     if ($req_id > 0 && in_array($action, ['accept', 'decline'])) {
         try {
-            $stmtVerify = $pdo->prepare("SELECT id FROM mentorship_requests WHERE id = ? AND alumni_id = ?");
+            $stmtVerify = $pdo->prepare("SELECT student_id FROM mentorship_requests WHERE id = ? AND alumni_id = ?");
             $stmtVerify->execute([$req_id, $uid]);
-            if ($stmtVerify->fetch()) {
+            $student_id = $stmtVerify->fetchColumn();
+
+            if ($student_id) {
                 $status = ($action === 'accept') ? 'accepted' : 'declined';
                 $stmtUpdate = $pdo->prepare("UPDATE mentorship_requests SET status = ? WHERE id = ?");
                 $stmtUpdate->execute([$status, $req_id]);
                 
+                // Dispatch notification to student
+                create_notification($student_id, "Mentorship Request " . ucfirst($status) . " 🎓", "Your mentorship connection request with " . $user_name . " was " . $status . ".", ($status === 'accepted' ? 'success' : 'info'), 'high');
+
                 if ($status === 'accepted') {
                     set_flash('success', 'Connection request accepted!');
                 } else {

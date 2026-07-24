@@ -39,6 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmtInsert = $pdo->prepare("INSERT INTO jobs (posted_by, poster_role, title, company, location, type, salary_range, description, requirements, application_link, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
             $stmtInsert->execute([$posted_by, $poster_role, $title, $company, $location, $type, $salary, $description, $requirements, $app_link]);
             
+            // Dispatch automatic notifications
+            create_notification($posted_by, "Job Published! 💼", "Your job post '" . $title . "' at " . $company . " is now active.", "success", "medium");
+            notify_all_users("New Opportunity: " . $title, "A position (" . $title . " at " . $company . ") has been posted on AlumniNet.", "info", "medium", "student");
+
             set_flash('success', 'Job posting published successfully!');
         } catch (Exception $e) {
             set_flash('error', 'Failed to publish job: ' . $e->getMessage());

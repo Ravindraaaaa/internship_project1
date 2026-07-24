@@ -82,6 +82,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->commit();
                     log_activity($new_user_id, 'registration_otp_verified', 'User verified phone/email OTP and registered successfully as ' . $uData['role']);
 
+                    // Dispatch automatic in-app notifications
+                    create_notification(
+                        $new_user_id,
+                        "Welcome to AlumniNet! 🎉",
+                        "Your account registration has been submitted successfully. Explore platform features, jobs, and networking.",
+                        "success",
+                        "high"
+                    );
+                    notify_admins(
+                        "New User Registration",
+                        "User " . $uData['name'] . " (" . ucfirst($uData['role']) . ") registered with email " . $uData['email'] . ".",
+                        "info",
+                        "medium"
+                    );
+
                     unset($_SESSION['otp_verify']);
 
                     if ($uData['role'] === 'alumni') {

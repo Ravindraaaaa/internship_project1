@@ -46,6 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         try {
             $stmtInsert = $pdo->prepare("INSERT INTO events (title, description, event_date, location, event_type, banner_image, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmtInsert->execute([$title, $description, $date, $location, $type, $banner_url, $uid]);
+            
+            // Dispatch automatic notifications
+            notify_all_users("New Event Scheduled: " . $title, "An event '" . $title . "' is scheduled for " . date('M d, Y', strtotime($date)) . " at " . $location . ".", "info", "medium");
+            
             set_flash('success', 'Event successfully scheduled!');
         } catch (Exception $e) {
             set_flash('error', 'Failed scheduling event: ' . $e->getMessage());
@@ -83,6 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmtInsert = $pdo->prepare("INSERT INTO event_rsvps (event_id, user_id, status) VALUES (?, ?, ?)");
                 $stmtInsert->execute([$event_id, $uid, $status]);
             }
+
+            // Fetch event title for notification
+            $stmtEvt = $pdo->prepare("SELECT title FROM events WHERE id = ?");
+            $stmtEvt->execute([$event_id]);
+            $eTitle = $stmtEvt->fetchColumn() ?: 'Event';
+            create_notification($uid, "Event RSVP Updated 📅", "Your registration status for '" . $eTitle . "' was updated to: " . strtoupper($status), "success", "medium");
+
             set_flash('success', 'RSVP updated to: ' . strtoupper($status));
         } catch (Exception $e) {
             set_flash('error', 'RSVP failed: ' . $e->getMessage());
