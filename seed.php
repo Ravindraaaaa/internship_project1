@@ -47,34 +47,8 @@ try {
         $insert_admin_record->execute([$new_user_id, $oa[2], $oa[0], $oa[1], $oa[3]]);
     }
 
-    // 1. Insert mock users (Alumni and Students)
-    $mock_users = [
-        // Alumni (Roles = 'alumni', Status = 'approved')
-        ['Sarah Jenkins', 'sarah@google.com', $mock_password, 'alumni', 'approved'],
-        ['David Miller', 'david@microsoft.com', $mock_password, 'alumni', 'approved'],
-        ['Emily Chen', 'emily@stripe.com', $mock_password, 'alumni', 'approved'],
-        ['Michael Scott', 'michael@dundermifflin.com', $mock_password, 'alumni', 'approved'],
-        ['Jessica Taylor', 'jessica@netflix.com', $mock_password, 'alumni', 'approved'],
-        ['Marcus Aurelius', 'marcus@stoic.com', $mock_password, 'alumni', 'pending'], // Pending approval!
-        ['Robert Stark', 'robert@winterfell.org', $mock_password, 'alumni', 'rejected'], // Rejected approval!
-        
-        // Students (Roles = 'student', Status = 'approved')
-        ['Demo Student User', 'user@internship.com', $mock_password_user, 'student', 'approved'],
-        ['Charlie Brown', 'charlie@student.com', $mock_password, 'student', 'approved'],
-        ['Diana Prince', 'diana@student.com', $mock_password, 'student', 'approved'],
-        ['Peter Parker', 'peter@dailybugle.com', $mock_password, 'student', 'approved'],
-
-        // New Alumni from registration forms
-        ['Namrata Shankar Parab', 'nam20parab@gmail.com', $mock_password, 'alumni', 'approved', '8308758413', 4],
-        ['Vaishnavi Valmik Pawar', 'vp171666@gmail.com', $mock_password, 'alumni', 'approved', '9175742480', 4],
-        ['Mayur Ganesh Todkar', 'mayurt2312@gmail.com', $mock_password, 'alumni', 'approved', '9359724105', 4],
-        ['Tanaya Khare', 'kharetanaya67@gmail.com', $mock_password, 'alumni', 'approved', '7385966019', 4],
-        ['Supkar Darpan Rajeshree', 'darpan.supkar.12@gmail.com', $mock_password, 'alumni', 'approved', '8999375490', 4],
-        ['Atharv Rahul Taware', 'atharvtaware@gmail.com', $mock_password, 'alumni', 'approved', '7218945407', 4],
-        ['More Pratiket Vijaykumar', 'pratiketmore@gmail.com', $mock_password, 'alumni', 'approved', '8975025652', 4],
-        ['Sumeet Nathuji Satpute', 'sumeetsatpute2562@gmail.com', $mock_password, 'alumni', 'approved', '9359128011', 4],
-        ['Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', $mock_password, 'alumni', 'approved', '7028162381', 4]
-    ];
+    // 1. Insert mock users (Alumni and Students) - Cleaned out to only keep registered users
+    $mock_users = [];
 
     $insert_user_stmt = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status, phone, department_id, is_bot) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
