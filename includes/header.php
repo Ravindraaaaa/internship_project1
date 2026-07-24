@@ -70,10 +70,10 @@ if (is_logged_in()) {
             <i class="fa-solid fa-graduation-cap"></i> AlumniNet
         </a>
         <ul class="nav-public-links">
-            <li><a href="<?php echo $path_prefix; ?>index.php" class="nav-public-link <?php echo $current_script === 'index.php' ? 'active' : ''; ?>">Home</a></li>
-            <li><a href="<?php echo $path_prefix; ?>user/alumni.php" class="nav-public-link <?php echo $current_script === 'alumni.php' ? 'active' : ''; ?>">Alumni</a></li>
-            <li><a href="<?php echo $path_prefix; ?>user/jobs.php" class="nav-public-link <?php echo $current_script === 'jobs.php' ? 'active' : ''; ?>">Jobs</a></li>
-            <li><a href="<?php echo $path_prefix; ?>user/events.php" class="nav-public-link <?php echo $current_script === 'events.php' ? 'active' : ''; ?>">Events</a></li>
+            <li><a href="<?php echo $path_prefix; ?>index.php" class="nav-public-link <?php echo $current_script === 'index.php' ? 'active' : ''; ?>"><i class="fa-solid fa-house" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Home</a></li>
+            <li><a href="<?php echo $path_prefix; ?>user/alumni.php" class="nav-public-link <?php echo $current_script === 'alumni.php' ? 'active' : ''; ?>"><i class="fa-solid fa-users" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Alumni</a></li>
+            <li><a href="<?php echo $path_prefix; ?>user/jobs.php" class="nav-public-link <?php echo $current_script === 'jobs.php' ? 'active' : ''; ?>"><i class="fa-solid fa-briefcase" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Jobs</a></li>
+            <li><a href="<?php echo $path_prefix; ?>user/events.php" class="nav-public-link <?php echo $current_script === 'events.php' ? 'active' : ''; ?>"><i class="fa-solid fa-calendar-days" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Events</a></li>
             <li>
                 <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
                     <i class="fa-solid fa-moon"></i>

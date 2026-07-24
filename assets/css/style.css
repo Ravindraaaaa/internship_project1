@@ -843,10 +843,52 @@ body.theme-glass-white .input-glass:focus {
     letter-spacing: 0.5px;
 }
 
+/* ==================== NAVBAR ROLE BADGE PILLS ==================== */
+.nav-role-badge {
+    display: flex;
+    align-items: center;
+}
+
+.role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.role-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pill-admin {
+    background: rgba(129, 140, 248, 0.15);
+    color: var(--theme-accent-purple, #818cf8);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.pill-alumni {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--theme-accent-blue, #38bdf8);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.pill-student {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .top-nav-actions {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .top-nav-icon-wrapper {

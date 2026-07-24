@@ -94,6 +94,17 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
             </div>
         </div>
 
+        <!-- Visible Role Pill Badge in Top Navbar -->
+        <div class="nav-role-badge">
+            <?php if ($user_role_nav === 'admin'): ?>
+                <span class="role-pill pill-admin" title="Administrator Role Panel"><i class="fa-solid fa-user-shield"></i> Admin</span>
+            <?php elseif ($user_role_nav === 'alumni'): ?>
+                <span class="role-pill pill-alumni" title="Alumni Member Network"><i class="fa-solid fa-user-tie"></i> Alumni</span>
+            <?php else: ?>
+                <span class="role-pill pill-student" title="Student Member Portal"><i class="fa-solid fa-user-graduate"></i> Student</span>
+            <?php endif; ?>
+        </div>
+
         <!-- User profile dropdown -->
         <div style="position: relative;">
             <img src="<?php echo htmlspecialchars($sidebar_avatar ?? 'https://cdn-icons-png.flaticon.com/512/149/149071.png'); ?>" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
