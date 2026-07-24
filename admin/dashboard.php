@@ -145,7 +145,7 @@ require_once __DIR__ . '/../includes/header.php';
             
             <div class="dashboard-title-row">
                 <div>
-                    <h2>Welcome back, Administrator!</h2>
+                    <h2><i class="fa-solid fa-user-shield" style="color: var(--theme-accent-purple); margin-right: 0.5rem;"></i> Welcome back, Administrator!</h2>
                     <p style="color: var(--theme-text-secondary); font-size: 0.9rem;">Portal analytics and approvals center.</p>
                 </div>
             </div>

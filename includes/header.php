@@ -33,6 +33,8 @@ if (is_logged_in()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title . " - AlumniNet" : "AlumniNet - Connecting Generations"; ?></title>
     <meta name="description" content="AlumniNet is a high-fidelity platform designed to bridge the gap between academic generations.">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%23818cf8' d='M256 32L32 144l224 112 224-112L256 32z'/><path fill='%2338bdf8' d='M256 288l-176-88v120c0 44.2 78.8 80 176 80s176-35.8 176-80V200L256 288z'/><path fill='%23a855f7' d='M448 184v168h32V184l-32 0z'/></svg>">
     <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Lucide Icons CDN -->

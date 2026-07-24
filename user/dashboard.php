@@ -95,7 +95,14 @@ require_once __DIR__ . '/../includes/header.php';
             
             <div class="dashboard-title-row">
                 <div>
-                    <h2>Welcome, <?php echo htmlspecialchars($user_name); ?>!</h2>
+                    <h2>
+                        <?php if ($role === 'alumni'): ?>
+                            <i class="fa-solid fa-user-tie" style="color: var(--theme-accent-blue); margin-right: 0.5rem;"></i>
+                        <?php else: ?>
+                            <i class="fa-solid fa-user-graduate" style="color: #10b981; margin-right: 0.5rem;"></i>
+                        <?php endif; ?>
+                        Welcome, <?php echo htmlspecialchars($user_name); ?>!
+                    </h2>
                     <p style="color: var(--theme-text-secondary); font-size: 0.9rem;">Here is your live platforms metrics overview for today.</p>
                 </div>
             </div>

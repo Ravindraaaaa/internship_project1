@@ -100,7 +100,15 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
             <div class="nav-dropdown-menu" id="profile-dropdown-menu">
                 <div class="dropdown-header-info">
                     <h4><?php echo htmlspecialchars($user_name ?? 'User'); ?></h4>
-                    <p><?php echo htmlspecialchars($user_role_nav); ?> portal</p>
+                    <p style="margin-top: 0.25rem;">
+                        <?php if ($user_role_nav === 'admin'): ?>
+                            <span style="font-weight: 600; color: var(--theme-accent-purple); display: inline-flex; align-items: center; gap: 0.35rem;"><i class="fa-solid fa-user-shield"></i> Admin Panel</span>
+                        <?php elseif ($user_role_nav === 'alumni'): ?>
+                            <span style="font-weight: 600; color: var(--theme-accent-blue); display: inline-flex; align-items: center; gap: 0.35rem;"><i class="fa-solid fa-user-tie"></i> Alumni Member</span>
+                        <?php else: ?>
+                            <span style="font-weight: 600; color: #10b981; display: inline-flex; align-items: center; gap: 0.35rem;"><i class="fa-solid fa-user-graduate"></i> Student Member</span>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <?php if ($profile_link !== '#'): ?>
                     <a href="<?php echo $profile_link; ?>" class="dropdown-item"><i data-lucide="user" style="width:16px;height:16px;"></i> My Profile</a>
