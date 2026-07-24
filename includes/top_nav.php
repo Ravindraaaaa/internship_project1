@@ -46,8 +46,9 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
     <div style="display: flex; align-items: center; gap: 1rem;">
         <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
         <div class="top-nav-search">
-            <i data-lucide="search" style="width: 18px; height: 18px; color: var(--theme-text-secondary);"></i>
-            <input type="text" class="input-glass" style="padding-left: 2.5rem;" placeholder="Search entries...">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" class="input-glass" placeholder="Search platform..." title="Click or press Ctrl+K to search">
+            <span class="search-kbd">⌘K</span>
         </div>
     </div>
 

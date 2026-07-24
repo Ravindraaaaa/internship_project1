@@ -249,8 +249,12 @@
                     });
                 }
                 
-                // ESC Key to close search modal
+                // Ctrl+K / Cmd+K to trigger instant search, ESC Key to close
                 document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                        e.preventDefault();
+                        toggleSearchModal(true);
+                    }
                     if (e.key === 'Escape') {
                         toggleSearchModal(false);
                         const win = document.getElementById('ai-chat-window');
