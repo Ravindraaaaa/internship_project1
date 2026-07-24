@@ -399,7 +399,10 @@
                                 
                                 const item = document.createElement('div');
                                 item.className = 'notif-item';
+                                item.style.cursor = 'pointer';
                                 item.style.borderLeft = `3px solid ${iconColor}`;
+                                const redirectUrl = notif.link ? `?read_notif=${notif.id}&redirect_to=${encodeURIComponent(notif.link)}` : `?read_notif=${notif.id}`;
+                                item.onclick = () => { window.location.href = redirectUrl; };
                                 item.innerHTML = `
                                     <div class="notif-item-title"><i class="fa-solid ${icon}" style="color:${iconColor};margin-right:0.35rem;"></i> ${notif.title}</div>
                                     <div style="font-size:0.75rem;color:var(--theme-text-secondary);margin:0.25rem 0 0.25rem 1.25rem;">${notif.message}</div>

@@ -61,6 +61,10 @@ try {
         if (!$checkPhone) {
             $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT NULL");
         }
+        $checkIsBot = $pdo->query("SHOW COLUMNS FROM users LIKE 'is_bot'")->fetch();
+        if (!$checkIsBot) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN is_bot TINYINT(1) DEFAULT 0");
+        }
     }
 
     // 3. Check & create ai_chats table if missing
@@ -76,7 +80,7 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
-    // 4. Check & add type, priority in notifications table if missing
+    // 4. Check & add type, priority, link in notifications table if missing
     $checkNotificationsTable = $pdo->query("SHOW TABLES LIKE 'notifications'")->fetch();
     if ($checkNotificationsTable) {
         $checkType = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'type'")->fetch();
@@ -86,6 +90,10 @@ try {
         $checkPriority = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'priority'")->fetch();
         if (!$checkPriority) {
             $pdo->exec("ALTER TABLE notifications ADD COLUMN priority VARCHAR(50) DEFAULT 'medium'");
+        }
+        $checkLink = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'link'")->fetch();
+        if (!$checkLink) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN link VARCHAR(255) DEFAULT NULL");
         }
     }
 

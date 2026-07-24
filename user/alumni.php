@@ -48,7 +48,7 @@ $query = "SELECT u.id as user_id, u.name, u.email, u.role,
           FROM users u
           LEFT JOIN alumni_profiles ap ON u.id = ap.user_id AND u.role = 'alumni'
           LEFT JOIN student_profiles sp ON u.id = sp.user_id AND u.role = 'student'
-          WHERE u.status = 'approved' AND u.id != ?";
+          WHERE u.status = 'approved' AND u.id != ? AND u.role != 'admin' AND (u.is_bot IS NULL OR u.is_bot = 0)";
 
 $params = [$uid];
 

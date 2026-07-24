@@ -10,7 +10,11 @@ $user_role_nav = $_SESSION['user_role'] ?? (isset($_SESSION['admin_id']) ? 'admi
 if (isset($_GET['read_notif'])) {
     $read_id = intval($_GET['read_notif']);
     $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?")->execute([$read_id, $user_id_nav]);
-    // Redirect back to same page without query param
+    if (!empty($_GET['redirect_to'])) {
+        $target = ltrim($_GET['redirect_to'], '/');
+        header("Location: " . $path_prefix . $target);
+        exit;
+    }
     $current_url = preg_replace('/([&?])read_notif=[0-9]+&?/', '$1', $_SERVER['REQUEST_URI']);
     $current_url = rtrim($current_url, '?&');
     header("Location: $current_url");
@@ -75,7 +79,7 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
                     </div>
                 <?php else: ?>
                     <?php foreach ($notifications as $notif): ?>
-                        <div class="notif-item" style="cursor: pointer;" onclick="window.location.href='?read_notif=<?php echo $notif['id']; ?>'">
+                        <div class="notif-item" style="cursor: pointer;" onclick="window.location.href='?read_notif=<?php echo $notif['id']; ?><?php echo !empty($notif['link']) ? '&redirect_to=' . urlencode($notif['link']) : ''; ?>'">
                             <div class="notif-item-title">
                                 <?php 
                                     $icon = 'fa-info-circle';

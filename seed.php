@@ -9,7 +9,8 @@ try {
     $pdo->exec("TRUNCATE TABLE event_rsvps;");
     $pdo->exec("TRUNCATE TABLE mentorship_requests;");
     $pdo->exec("TRUNCATE TABLE alumni_profiles;");
-    $pdo->exec("DELETE FROM student_profiles WHERE user_id != 1;");
+    $pdo->exec("TRUNCATE TABLE student_profiles;");
+    $pdo->exec("TRUNCATE TABLE admins;");
     $pdo->exec("TRUNCATE TABLE jobs;");
     $pdo->exec("TRUNCATE TABLE events;");
     $pdo->exec("DELETE FROM users WHERE id != 1;");
@@ -75,14 +76,16 @@ try {
         ['Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', $mock_password, 'alumni', 'approved', '7028162381', 4]
     ];
 
-    $insert_user_stmt = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status, phone, department_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $insert_user_stmt = $pdo->prepare("INSERT INTO users (name, email, username, password, role, status, phone, department_id, is_bot) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     $userIds = [];
     foreach ($mock_users as $u) {
         $username = explode('@', $u[1])[0];
         $phone = $u[5] ?? null;
         $dept_id = $u[6] ?? null;
-        $insert_user_stmt->execute([$u[0], $u[1], $username, $u[2], $u[3], $u[4], $phone, $dept_id]);
+        // Flag mock generic accounts as bot users (is_bot = 1), keep real registered accounts as is_bot = 0
+        $is_bot = (in_array($u[1], ['sarah@google.com', 'david@microsoft.com', 'emily@stripe.com', 'michael@dundermifflin.com', 'jessica@netflix.com', 'marcus@stoic.com', 'robert@winterfell.org', 'charlie@student.com', 'diana@student.com', 'peter@dailybugle.com'])) ? 1 : 0;
+        $insert_user_stmt->execute([$u[0], $u[1], $username, $u[2], $u[3], $u[4], $phone, $dept_id, $is_bot]);
         $userIds[$u[1]] = $pdo->lastInsertId();
     }
 

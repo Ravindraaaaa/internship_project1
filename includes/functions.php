@@ -54,13 +54,13 @@ if (!function_exists('create_notification')) {
     /**
      * Creates an in-app notification for a specific target user.
      */
-    function create_notification($user_id, $title, $message, $type = 'info', $priority = 'medium') {
+    function create_notification($user_id, $title, $message, $type = 'info', $priority = 'medium', $link = null) {
         global $pdo;
         if (!$pdo || empty($user_id)) return false;
         
         try {
-            $stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())");
-            return $stmt->execute([$user_id, $title, $message, $type, $priority]);
+            $stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
+            return $stmt->execute([$user_id, $title, $message, $type, $priority, $link]);
         } catch (Exception $e) {
             error_log("Failed to create notification: " . $e->getMessage());
             return false;

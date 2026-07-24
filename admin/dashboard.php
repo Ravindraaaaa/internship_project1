@@ -121,6 +121,12 @@ try {
                              LEFT JOIN users u ON a.created_by = u.id 
                              ORDER BY a.created_at DESC");
         $all_announcements = $stmt->fetchAll();
+    } elseif ($tab === 'notifications') {
+        $stmt = $pdo->query("SELECT n.*, u.name as user_name, u.email as user_email, u.role as user_role 
+                             FROM notifications n 
+                             JOIN users u ON n.user_id = u.id 
+                             ORDER BY n.created_at DESC LIMIT 100");
+        $notif_logs = $stmt->fetchAll();
     }
 } catch (Exception $e) {
     set_flash('error', 'Error loading admin data: ' . $e->getMessage());
@@ -667,6 +673,69 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php endif; ?>
                 </div>
                 
+            <?php elseif ($tab === 'notifications'): ?>
+
+                <!-- TAB: NOTIFICATION AUDIT & READ TRACKER -->
+                <div class="card-glass fade-in" style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 style="margin:0; font-size: 1.25rem;"><i class="fa-solid fa-bell" style="color: var(--theme-accent-purple); margin-right: 0.4rem;"></i> Notification Delivery & Read Tracker</h3>
+                            <p style="margin: 0.25rem 0 0 0; color: var(--theme-text-secondary); font-size: 0.85rem;">Audit log showing target users, alert messages, read statuses, and timestamps.</p>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($notif_logs)): ?>
+                        <div class="table-responsive">
+                            <table class="recent-activities-table">
+                                <thead>
+                                    <tr>
+                                        <th>Target User</th>
+                                        <th>Notification Title</th>
+                                        <th>Message</th>
+                                        <th>Priority</th>
+                                        <th>Read Status</th>
+                                        <th>Sent Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($notif_logs as $nlog): ?>
+                                        <tr>
+                                            <td>
+                                                <strong style="color: var(--theme-text);"><?php echo htmlspecialchars($nlog['user_name']); ?></strong><br>
+                                                <span style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($nlog['user_email']); ?> (<?php echo ucfirst($nlog['user_role']); ?>)</span>
+                                            </td>
+                                            <td><strong style="color: var(--theme-accent-blue);"><?php echo htmlspecialchars($nlog['title']); ?></strong></td>
+                                            <td style="max-width: 250px; font-size: 0.85rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($nlog['message']); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $nlog['priority'] === 'high' ? 'rejected' : 'approved'; ?>">
+                                                    <?php echo ucfirst(htmlspecialchars($nlog['priority'] ?? 'medium')); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($nlog['is_read'] == 1): ?>
+                                                    <span class="badge badge-approved" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                                        <i class="fa-solid fa-eye"></i> READ
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge badge-pending" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">
+                                                        <i class="fa-solid fa-eye-slash"></i> UNREAD
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="font-size: 0.8rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y h:i A', strtotime($nlog['created_at'])); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2.5rem; color: var(--theme-text-secondary);">
+                            <i class="fa-solid fa-bell-slash" style="font-size: 2.5rem; margin-bottom: 0.75rem;"></i>
+                            <p>No notification dispatch logs recorded yet.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
             <?php endif; ?>
 
 
