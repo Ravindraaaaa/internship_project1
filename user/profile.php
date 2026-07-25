@@ -25,18 +25,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
         $pdo->beginTransaction();
 
-        // Common details or profile pic handling
+        // Common details or profile pic & cover pic handling
         $profile_pic_path = '';
+        $cover_pic_path = '';
         
-        // Fetch current profile pic first
+        // Fetch current profile & cover pic first
         if ($role === 'alumni') {
-            $stmtC = $pdo->prepare("SELECT profile_pic FROM alumni_profiles WHERE user_id = ?");
+            $stmtC = $pdo->prepare("SELECT profile_pic, cover_pic FROM alumni_profiles WHERE user_id = ?");
             $stmtC->execute([$uid]);
-            $profile_pic_path = $stmtC->fetchColumn();
+            $rowC = $stmtC->fetch();
+            $profile_pic_path = $rowC['profile_pic'] ?? '';
+            $cover_pic_path = $rowC['cover_pic'] ?? '';
         } else {
-            $stmtC = $pdo->prepare("SELECT profile_pic FROM student_profiles WHERE user_id = ?");
+            $stmtC = $pdo->prepare("SELECT profile_pic, cover_pic FROM student_profiles WHERE user_id = ?");
             $stmtC->execute([$uid]);
-            $profile_pic_path = $stmtC->fetchColumn();
+            $rowC = $stmtC->fetch();
+            $profile_pic_path = $rowC['profile_pic'] ?? '';
+            $cover_pic_path = $rowC['cover_pic'] ?? '';
         }
 
         if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
@@ -45,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $fileNameCmps = explode(".", $fileName);
             $fileExtension = strtolower(end($fileNameCmps));
             
-            $allowedExtensions = ['jpg', 'jpeg', 'png'];
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
             if (in_array($fileExtension, $allowedExtensions)) {
                 $uploadFileDir = '../uploads/profiles/';
                 if (!is_dir($uploadFileDir)) {
@@ -59,10 +64,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     throw new Exception("Failed to save uploaded profile picture.");
                 }
             } else {
-                throw new Exception("Invalid profile picture extension. Only JPG, JPEG, and PNG are allowed.");
+                throw new Exception("Invalid profile picture extension. Only JPG, JPEG, PNG, WEBP allowed.");
             }
-        } elseif (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] !== UPLOAD_ERR_NO_FILE) {
-            throw new Exception("Profile picture upload failed with error code: " . $_FILES['profile_pic']['error']);
+        }
+
+        // Handle cover picture upload / preset
+        if (isset($_FILES['cover_pic']) && $_FILES['cover_pic']['error'] === UPLOAD_ERR_OK) {
+            $fileTmpPath = $_FILES['cover_pic']['tmp_name'];
+            $fileName = $_FILES['cover_pic']['name'];
+            $fileNameCmps = explode(".", $fileName);
+            $fileExtension = strtolower(end($fileNameCmps));
+            
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $uploadFileDir = '../uploads/covers/';
+                if (!is_dir($uploadFileDir)) {
+                    mkdir($uploadFileDir, 0755, true);
+                }
+                $newFileName = md5(time() . '_cover_' . $uid) . '.' . $fileExtension;
+                $dest_path = $uploadFileDir . $newFileName;
+                if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                    $cover_pic_path = 'uploads/covers/' . $newFileName;
+                }
+            }
+        } elseif (!empty($_POST['cover_preset']) && $_POST['cover_preset'] !== 'keep') {
+            $cover_pic_path = trim($_POST['cover_preset']);
         }
 
         if ($profile_pic_path === false) {
@@ -81,13 +107,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmtCheck->execute([$uid]);
             if ($stmtCheck->fetchColumn() > 0) {
                 $stmtUp = $pdo->prepare("UPDATE alumni_profiles 
-                                         SET graduation_year = ?, course = ?, company = ?, position = ?, industry = ?, linkedin = ?, website = ?, bio = ?, profile_pic = ? 
+                                         SET graduation_year = ?, course = ?, company = ?, position = ?, industry = ?, linkedin = ?, website = ?, bio = ?, profile_pic = ?, cover_pic = ? 
                                          WHERE user_id = ?");
-                $stmtUp->execute([$grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path, $uid]);
+                $stmtUp->execute([$grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path, $cover_pic_path, $uid]);
             } else {
-                $stmtUp = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, linkedin, website, bio, profile_pic) 
-                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmtUp->execute([$uid, $grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path]);
+                $stmtUp = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, linkedin, website, bio, profile_pic, cover_pic) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmtUp->execute([$uid, $grad_year, $course, $company, $position, $industry, $linkedin, $website, $bio, $profile_pic_path, $cover_pic_path]);
             }
         } else {
             $curr_yr = intval($_POST['current_year'] ?? 1);
@@ -99,13 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmtCheck->execute([$uid]);
             if ($stmtCheck->fetchColumn() > 0) {
                 $stmtUp = $pdo->prepare("UPDATE student_profiles 
-                                         SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? 
+                                         SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ?, cover_pic = ? 
                                          WHERE user_id = ?");
-                $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $uid]);
+                $stmtUp->execute([$curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $cover_pic_path, $uid]);
             } else {
-                $stmtUp = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa) 
-                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmtUp->execute([$uid, $curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa]);
+                $stmtUp = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa, cover_pic) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmtUp->execute([$uid, $curr_yr, $course, $linkedin, $github, $bio, $profile_pic_path, $cgpa, $cover_pic_path]);
             }
         }
 
@@ -299,17 +325,47 @@ require_once __DIR__ . '/../includes/header.php';
 
         <main class="dashboard-workspace">
             
-            <!-- Cover Header -->
+            <?php
+            $cover_bg_style = '';
+            if (!empty($profile['cover_pic'])) {
+                $c_path = $profile['cover_pic'];
+                if (strpos($c_path, 'linear-gradient') === 0) {
+                    $cover_bg_style = "background: {$c_path} !important;";
+                } else {
+                    $cover_url = (strpos($c_path, 'http') === 0) ? $c_path : '../' . $c_path;
+                    $cover_bg_style = "background-image: url('" . htmlspecialchars($cover_url) . "') !important; background-size: cover !important; background-position: center !important;";
+                }
+            }
+            ?>
+            <!-- Cover Header (AlumniNet Professional Banner) -->
             <div class="profile-cover-wrapper">
-                <div class="profile-cover-photo"></div>
+                <div class="profile-cover-photo" style="<?php echo $cover_bg_style; ?>">
+                    <div style="position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(129, 140, 248, 0.4); color: #c7d2fe; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700;">
+                            <i class="fa-solid fa-graduation-cap" style="margin-right: 0.35rem; color: #818cf8;"></i> AlumniNet Pro
+                        </span>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700;">
+                            <i class="fa-solid fa-circle-check" style="margin-right: 0.35rem; color: #10b981;"></i> Verified Network
+                        </span>
+                    </div>
+                </div>
                 <div class="profile-avatar-row">
-                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" class="profile-avatar-main">
+                    <div class="profile-avatar-wrapper">
+                        <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" class="profile-avatar-main">
+                        <span class="profile-avatar-status-ring" title="Active Member"></span>
+                    </div>
                     <div class="profile-header-info">
-                        <h2><?php echo htmlspecialchars($user_name); ?></h2>
-                        <p><?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
-                        <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.82rem; font-weight: 700; margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple);">
-                            <i class="fa-solid fa-circle-nodes"></i> <?php echo count($connected_users); ?> Connections
-                        </a>
+                        <h2>
+                            <?php echo htmlspecialchars($user_name); ?>
+                            <i class="fa-solid fa-circle-check" style="color: #38bdf8; font-size: 1.1rem;" title="Verified Member"></i>
+                        </h2>
+                        <p><i class="fa-solid fa-graduation-cap" style="margin-right:0.35rem; color:var(--theme-accent-purple);"></i> <?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; flex-wrap: wrap;">
+                            <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple); background: rgba(139, 92, 246, 0.1); padding: 0.3rem 0.75rem; border-radius: 50px; border: 1px solid rgba(139, 92, 246, 0.25);">
+                                <i class="fa-solid fa-circle-nodes"></i> <?php echo count($connected_users); ?> Connections
+                            </a>
+                            <span class="badge badge-alumni" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;"><i class="fa-solid fa-user-shield" style="margin-right:0.3rem;"></i> <?php echo ucfirst($role); ?></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -583,10 +639,27 @@ require_once __DIR__ . '/../includes/header.php';
                                         <input type="url" name="linkedin" class="input-glass" placeholder="https://linkedin.com/in/myname" value="<?php echo htmlspecialchars($profile['linkedin'] ?? ''); ?>">
                                     </div>
 
-                                    <div class="form-group" style="grid-column: span 2;">
-                                        <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Upload Avatar Picture</label>
-                                        <input type="file" name="profile_pic" accept="image/*" class="input-glass">
-                                    </div>
+                                     <div class="form-group">
+                                         <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);"><i class="fa-solid fa-image" style="color:var(--theme-accent-purple);"></i> Custom Cover Banner Upload</label>
+                                         <input type="file" name="cover_pic" accept="image/*" class="input-glass">
+                                     </div>
+
+                                     <div class="form-group">
+                                         <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);"><i class="fa-solid fa-palette" style="color:var(--theme-accent-blue);"></i> Choose Cover Background Theme</label>
+                                         <select name="cover_preset" class="input-glass">
+                                             <option value="keep">Keep Current Cover</option>
+                                             <option value="linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311b92 100%)">Deep Indigo Nebula</option>
+                                             <option value="linear-gradient(135deg, #064e3b 0%, #022c22 50%, #0f172a 100%)">Emerald Cyber Tech</option>
+                                             <option value="linear-gradient(135deg, #4c1d95 0%, #831843 50%, #0f172a 100%)">Sunset Violet Mesh</option>
+                                             <option value="linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #111827 100%)">Executive Dark Slate</option>
+                                             <option value="linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #6366f1 100%)">AlumniNet Royal Blue</option>
+                                         </select>
+                                     </div>
+
+                                     <div class="form-group" style="grid-column: span 2;">
+                                         <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);"><i class="fa-solid fa-user-circle" style="color:var(--theme-accent-purple);"></i> Upload Avatar Picture</label>
+                                         <input type="file" name="profile_pic" accept="image/*" class="input-glass">
+                                     </div>
 
                                     <div class="form-group" style="grid-column: span 2;">
                                         <label class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block; color: var(--theme-text);">Short Biography</label>

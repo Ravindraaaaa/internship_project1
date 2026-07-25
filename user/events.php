@@ -11,6 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $date = trim($_POST['event_date'] ?? '');
+    $end_date = trim($_POST['end_date'] ?? '');
+    $end_date_val = !empty($end_date) ? $end_date : null;
     $location = trim($_POST['location'] ?? '');
     $type = trim($_POST['event_type'] ?? 'in-person');
     
@@ -44,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         set_flash('error', 'All event creation fields are required.');
     } else {
         try {
-            $stmtInsert = $pdo->prepare("INSERT INTO events (title, description, event_date, location, event_type, banner_image, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$title, $description, $date, $location, $type, $banner_url, $uid]);
+            $stmtInsert = $pdo->prepare("INSERT INTO events (title, description, event_date, end_date, location, event_type, banner_image, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmtInsert->execute([$title, $description, $date, $end_date_val, $location, $type, $banner_url, $uid]);
             
             // Dispatch automatic notifications
             notify_all_users("New Event Scheduled: " . $title, "An event '" . $title . "' is scheduled for " . date('M d, Y', strtotime($date)) . " at " . $location . ".", "info", "medium");
@@ -85,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmtUpdate->execute([$status, $event_id, $uid]);
             } else {
                 $stmtInsert = $pdo->prepare("INSERT INTO event_rsvps (event_id, user_id, status) VALUES (?, ?, ?)");
-                $stmtInsert->execute([$event_id, $uid, $status]);
+                $stmtInsert->execute([$status, $event_id, $uid]);
             }
 
             // Fetch event title for notification
@@ -104,16 +106,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // 3. Load events data
+$running_events = [];
 $upcoming_events = [];
 $past_events = [];
 $rsvp_counts = [];
 $my_rsvps = [];
 
 try {
-    $stmtUp = $pdo->query("SELECT * FROM events WHERE event_date >= NOW() ORDER BY event_date ASC");
+    // Live Running Events
+    $stmtRun = $pdo->query("SELECT * FROM events WHERE NOW() >= event_date AND NOW() <= COALESCE(end_date, DATE_ADD(event_date, INTERVAL 4 HOUR)) ORDER BY event_date ASC");
+    $running_events = $stmtRun->fetchAll();
+
+    // Upcoming Events
+    $stmtUp = $pdo->query("SELECT * FROM events WHERE event_date > NOW() ORDER BY event_date ASC");
     $upcoming_events = $stmtUp->fetchAll();
 
-    $stmtPast = $pdo->query("SELECT * FROM events WHERE event_date < NOW() ORDER BY event_date DESC");
+    // Past Events
+    $stmtPast = $pdo->query("SELECT * FROM events WHERE NOW() > COALESCE(end_date, DATE_ADD(event_date, INTERVAL 4 HOUR)) ORDER BY event_date DESC");
     $past_events = $stmtPast->fetchAll();
 
     // Fetch RSVP totals for calculations
@@ -165,9 +174,76 @@ require_once __DIR__ . '/../includes/header.php';
 
         <main class="dashboard-workspace">
             
-            <!-- UPCOMING EVENTS Grid -->
+            <!-- 1. LIVE RUNNING EVENTS Section -->
+            <?php if (!empty($running_events)): ?>
+                <section style="margin-bottom: 3.5rem;">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
+                        <h3 style="font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem; color: #10b981;">
+                            <span class="pulse-live-dot" style="width: 12px; height: 12px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulseGreen 1.5s infinite; box-shadow: 0 0 10px #10b981;"></span>
+                            Live & Running Events Now
+                        </h3>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 0.75rem; font-weight:700; padding: 0.2rem 0.6rem;">
+                            <?php echo count($running_events); ?> Active
+                        </span>
+                    </div>
+
+                    <div class="cards-catalog">
+                        <?php foreach ($running_events as $event): 
+                            $banner = $event['banner_image'] ? htmlspecialchars($event['banner_image']) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop&q=80';
+                            $ev_id = $event['id'];
+                            $going_count = $rsvp_counts[$ev_id]['going'] ?? 0;
+                            $interested_count = $rsvp_counts[$ev_id]['interested'] ?? 0;
+                        ?>
+                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 24px rgba(16, 185, 129, 0.15);">
+                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 180px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit;">
+                                <div style="padding: 1.75rem; display: flex; flex-direction: column; flex-grow:1;">
+                                    <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
+                                    
+                                    <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--theme-text);"><?php echo htmlspecialchars($event['title']); ?></h3>
+                                    <div style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.25rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> <?php echo htmlspecialchars($event['location']); ?></div>
+                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Going: <strong><?php echo $going_count; ?></strong> | Interested: <strong><?php echo $interested_count; ?></strong></div>
+                                    
+                                    <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1;">
+                                        <?php echo htmlspecialchars($event['description']); ?>
+                                    </p>
+
+                                    <!-- RSVP Form -->
+                                    <?php if (is_logged_in()): 
+                                        $my_status = $my_rsvps[$ev_id] ?? '';
+                                        $eligibility = check_user_eligibility($uid, $ev_id, 'event');
+                                    ?>
+                                        <div style="border-top:1px solid var(--theme-border); padding-top: 1.25rem; margin-top: auto;">
+                                            <?php if (!$eligibility['eligible']): ?>
+                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); width:100%;">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible to RSVP:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <form action="events.php" method="POST" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                                    <input type="hidden" name="action" value="rsvp">
+                                                    <input type="hidden" name="event_id" value="<?php echo $ev_id; ?>">
+                                                    
+                                                    <div style="display:flex; gap: 0.35rem;">
+                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Going</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Decline</button>
+                                                    </div>
+                                                    <?php if (!empty($my_status)): ?>
+                                                        <span style="font-size: 0.7rem; color: #10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
+                                                    <?php endif; ?>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <!-- 2. UPCOMING EVENTS Grid -->
             <section style="margin-bottom: 4rem;">
-                <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-circle-play" style="color: var(--theme-accent-purple);"></i> Upcoming Networking Events</h3>
+                <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-calendar-days" style="color: var(--theme-accent-purple);"></i> Scheduled & Upcoming Events</h3>
                 
                 <?php if (!empty($upcoming_events)): ?>
                     <div class="cards-catalog">
@@ -179,8 +255,9 @@ require_once __DIR__ . '/../includes/header.php';
                         ?>
                             <div class="card-glass" style="padding:0; display:flex; flex-direction:column;">
                                 <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 180px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit;">
-                                <div style="padding: 2rem; display: flex; flex-direction: column; flex-grow:1;">
-                                    <span class="badge badge-alumni" style="align-self: flex-start; margin-bottom: 0.75rem;"><?php echo date('M d, Y - h:i A', strtotime($event['event_date'])); ?></span>
+                                <div style="padding: 1.75rem; display: flex; flex-direction: column; flex-grow:1;">
+                                    <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
+                                    
                                     <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($event['title']); ?></h3>
                                     <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 0.25rem;"><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($event['location']); ?></div>
                                     <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Going: <strong><?php echo $going_count; ?></strong> | Interested: <strong><?php echo $interested_count; ?></strong></div>
@@ -225,7 +302,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php endif; ?>
             </section>
 
-            <!-- PAST EVENTS Grid -->
+            <!-- 3. PAST EVENTS Grid -->
             <section>
                 <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-text-secondary);"></i> Past Campus Gatherings</h3>
                 <?php if (!empty($past_events)): ?>
@@ -233,10 +310,10 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php foreach ($past_events as $event): 
                             $banner = $event['banner_image'] ? htmlspecialchars($event['banner_image']) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop&q=80';
                         ?>
-                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; opacity: 0.75;">
-                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 150px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit; filter: grayscale(40%);">
+                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; opacity: 0.85;">
+                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 150px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit; filter: grayscale(30%);">
                                 <div style="padding: 1.5rem; display: flex; flex-direction: column; flex-grow:1;">
-                                    <span class="badge badge-student" style="align-self: flex-start; margin-bottom: 0.5rem;"><?php echo date('M d, Y', strtotime($event['event_date'])); ?></span>
+                                    <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
                                     <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($event['title']); ?></h3>
                                     <p style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem; flex-grow:1;">
                                         <?php echo htmlspecialchars(substr($event['description'], 0, 140)) . '...'; ?>
@@ -255,17 +332,17 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- CREATE EVENT MODAL (ADMIN ONLY) -->
 <div class="modal" id="createEventModal">
-    <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-content" style="max-width: 580px;">
         <button class="modal-close" onclick="closeModal('createEventModal')">&times;</button>
         <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-calendar-plus" style="color: var(--theme-accent-purple);"></i> Schedule Network Event</h2>
-        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Configure meeting timelines and links for verified users.</p>
+        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Configure meeting timelines, start & end dates, and links for verified users.</p>
         
         <form action="events.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="create_event">
             
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Event Title</label>
-                <input type="text" name="title" class="input-glass" placeholder="Grand Homecoming 2026" required>
+                <input type="text" name="title" class="input-glass" placeholder="Grand Homecoming & Tech Conference 2026" required>
             </div>
             
             <div class="form-group" style="margin-bottom: 1rem;">
@@ -275,21 +352,27 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div class="form-group">
-                    <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Date & Time</label>
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;"><i class="fa-solid fa-play" style="color:#10b981;"></i> Start Date & Time</label>
                     <input type="datetime-local" name="event_date" class="input-glass" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;"><i class="fa-solid fa-clock" style="color:#ef4444;"></i> End Date & Time (Red Highlight)</label>
+                    <input type="datetime-local" name="end_date" class="input-glass">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Location / URL Link</label>
+                    <input type="text" name="location" class="input-glass" placeholder="Campus Auditorium, or Zoom link" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Event Type</label>
                     <select name="event_type" class="input-glass">
                         <option value="in-person">In-Person</option>
-                        <option value="online">Online webinar</option>
+                        <option value="online">Online Webinar</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Location / URL Link</label>
-                <input type="text" name="location" class="input-glass" placeholder="Campus Auditorium, or Zoom Webinar link" required>
             </div>
 
             <div class="form-group" style="margin-bottom: 1.5rem;">

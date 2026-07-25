@@ -64,11 +64,11 @@ try {
         $stmtMent->execute([$uid]);
         $student_mentorships = $stmtMent->fetchAll();
         
-        $stmtRSVP = $pdo->prepare("SELECT e.id as event_id, e.title, e.event_date, e.location, r.status as rsvp_status 
+        $stmtRSVP = $pdo->prepare("SELECT e.id as event_id, e.title, e.event_date, e.end_date, e.location, r.status as rsvp_status 
                                    FROM event_rsvps r 
                                    JOIN events e ON r.event_id = e.id 
-                                   WHERE r.user_id = ? AND e.event_date >= NOW() 
-                                   ORDER BY e.event_date ASC");
+                                   WHERE r.user_id = ? 
+                                   ORDER BY e.event_date DESC");
         $stmtRSVP->execute([$uid]);
         $student_rsvps = $stmtRSVP->fetchAll();
         
@@ -257,24 +257,24 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <!-- RSVPs Timelines -->
                 <div class="card-glass">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> Your Upcoming RSVPs</h3>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> Your Event RSVPs & Timelines</h3>
                     <?php if (!empty($student_rsvps)): ?>
                         <div class="table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
                                         <th>Event Title</th>
-                                        <th>Date & Time</th>
+                                        <th>Event Timeline & Status</th>
                                         <th>Location</th>
-                                        <th style="text-align: right;">Status</th>
+                                        <th style="text-align: right;">Registration</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($student_rsvps as $rsvp): ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($rsvp['title']); ?></strong></td>
-                                            <td><?php echo date('M d, Y - h:i A', strtotime($rsvp['event_date'])); ?></td>
-                                            <td><?php echo htmlspecialchars($rsvp['location']); ?></td>
+                                            <td><?php echo render_event_status_badge($rsvp['event_date'], $rsvp['end_date'] ?? null); ?></td>
+                                            <td><i class="fa-solid fa-location-dot" style="color:var(--theme-accent-purple);"></i> <?php echo htmlspecialchars($rsvp['location']); ?></td>
                                             <td style="text-align: right;"><span class="badge badge-student" style="text-transform: uppercase;"><?php echo str_replace('_', ' ', $rsvp['rsvp_status']); ?></span></td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -282,7 +282,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </table>
                         </div>
                     <?php else: ?>
-                        <p style="font-size: 0.85rem; color: var(--theme-text-secondary);">You have not RSVP'd to any upcoming campus events yet.</p>
+                        <p style="font-size: 0.85rem; color: var(--theme-text-secondary);">You have not RSVP'd to any campus events yet.</p>
                     <?php endif; ?>
                 </div>
 

@@ -300,9 +300,20 @@ require_once __DIR__ . '/includes/header.php';
                     <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1;">
                         <?php echo htmlspecialchars(substr($job['description'], 0, 160)) . '...'; ?>
                     </p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--theme-border); padding-top: 1rem; margin-top: auto;">
-                        <span style="font-size: 0.78rem; color: var(--theme-text-secondary);"><i class="fa-solid fa-calendar-day"></i> <?php echo date('M d, Y', strtotime($job['created_at'])); ?></span>
-                        <a href="user/jobs.php" class="btn btn-secondary btn-small" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Details</a>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--theme-border); padding-top: 1rem; margin-top: auto; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <span style="font-size: 0.75rem; color: #34d399;"><i class="fa-solid fa-play" style="font-size:0.68rem;"></i> Start: <?php echo date('M d, Y', !empty($job['start_date']) ? strtotime($job['start_date']) : strtotime($job['created_at'])); ?></span>
+                            <?php if (!empty($job['end_date'])): ?>
+                                <span class="date-badge date-end-red" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; width: fit-content;">
+                                    <i class="fa-solid fa-clock" style="color: #ef4444; font-size: 0.68rem;"></i> End: <?php echo date('M d, Y', strtotime($job['end_date'])); ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="date-badge date-end-red" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; width: fit-content;">
+                                    <i class="fa-solid fa-clock" style="color: #ef4444; font-size: 0.68rem;"></i> End: Active Hiring
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <a href="user/jobs.php" class="btn btn-secondary btn-small" style="white-space: nowrap !important; padding: 0.45rem 0.9rem; font-size: 0.8rem;">Details</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -331,7 +342,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="card-glass gsap-reveal" style="padding: 0; display:flex; flex-direction: column;">
                     <img src="<?php echo $banner; ?>" alt="Event banner" style="height: 180px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit;">
                     <div style="padding: 2rem; display: flex; flex-direction: column; flex-grow:1;">
-                        <span class="badge badge-alumni" style="align-self: flex-start; margin-bottom: 0.75rem;"><?php echo date('M d, Y - h:i A', strtotime($event['event_date'])); ?></span>
+                        <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
                         <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($event['title']); ?></h3>
                         <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 0.25rem;"><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($event['location']); ?></div>
                         <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin: 1rem 0; flex-grow: 1;">

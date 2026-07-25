@@ -34,7 +34,7 @@ if (!function_exists('check_csrf')) {
 
 // Self-healing schema check for missing columns across database tables
 try {
-    // 1. Check & add cgpa in student_profiles
+    // 1. Check & add cgpa and cover_pic in student_profiles and alumni_profiles
     $checkStudentTable = $pdo->query("SHOW TABLES LIKE 'student_profiles'")->fetch();
     if ($checkStudentTable) {
         $checkCgpa = $pdo->query("SHOW COLUMNS FROM student_profiles LIKE 'cgpa'")->fetch();
@@ -43,6 +43,18 @@ try {
         } else {
             // Ensure it's DECIMAL(4,2) so 10.00 doesn't crash
             $pdo->exec("ALTER TABLE student_profiles MODIFY COLUMN cgpa DECIMAL(4,2) DEFAULT 0.00");
+        }
+        $checkStudentCover = $pdo->query("SHOW COLUMNS FROM student_profiles LIKE 'cover_pic'")->fetch();
+        if (!$checkStudentCover) {
+            $pdo->exec("ALTER TABLE student_profiles ADD COLUMN cover_pic VARCHAR(255) NULL DEFAULT NULL");
+        }
+    }
+
+    $checkAlumniTable = $pdo->query("SHOW TABLES LIKE 'alumni_profiles'")->fetch();
+    if ($checkAlumniTable) {
+        $checkAlumniCover = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE 'cover_pic'")->fetch();
+        if (!$checkAlumniCover) {
+            $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN cover_pic VARCHAR(255) NULL DEFAULT NULL");
         }
     }
 
@@ -263,13 +275,35 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
-    // 13. Check & add progress in user_skills if missing
-    $checkUserSkillsTable = $pdo->query("SHOW TABLES LIKE 'user_skills'")->fetch();
-    if ($checkUserSkillsTable) {
-        $checkProgress = $pdo->query("SHOW COLUMNS FROM user_skills LIKE 'progress'")->fetch();
-        if (!$checkProgress) {
-            $pdo->exec("ALTER TABLE user_skills ADD COLUMN progress INT DEFAULT 0");
+    // 14. Check & add end_date in events table
+    $checkEventsTable = $pdo->query("SHOW TABLES LIKE 'events'")->fetch();
+    if ($checkEventsTable) {
+        $checkEndDate = $pdo->query("SHOW COLUMNS FROM events LIKE 'end_date'")->fetch();
+        if (!$checkEndDate) {
+            $pdo->exec("ALTER TABLE events ADD COLUMN end_date DATETIME NULL DEFAULT NULL AFTER event_date");
         }
+    }
+
+    // 15. Check & add start_date and end_date in jobs table
+    $checkJobsTable = $pdo->query("SHOW TABLES LIKE 'jobs'")->fetch();
+    if ($checkJobsTable) {
+        $checkJobStartDate = $pdo->query("SHOW COLUMNS FROM jobs LIKE 'start_date'")->fetch();
+        if (!$checkJobStartDate) {
+            $pdo->exec("ALTER TABLE jobs ADD COLUMN start_date DATETIME NULL DEFAULT NULL AFTER status");
+        }
+        $checkJobEndDate = $pdo->query("SHOW COLUMNS FROM jobs LIKE 'end_date'")->fetch();
+        if (!$checkJobEndDate) {
+            $pdo->exec("ALTER TABLE jobs ADD COLUMN end_date DATETIME NULL DEFAULT NULL AFTER start_date");
+        }
+    }
+
+    // 16. Populate default start_date & end_date for existing events & jobs if NULL
+    try {
+        $pdo->exec("UPDATE events SET end_date = DATE_ADD(event_date, INTERVAL 4 HOUR) WHERE end_date IS NULL");
+        $pdo->exec("UPDATE jobs SET start_date = created_at WHERE start_date IS NULL");
+        $pdo->exec("UPDATE jobs SET end_date = DATE_ADD(created_at, INTERVAL 30 DAY) WHERE end_date IS NULL");
+    } catch (Exception $ex) {
+        // fail-silent
     }
 } catch (Exception $e) {
     // fail-silent during uninitialized database setup

@@ -120,28 +120,55 @@ require_once __DIR__ . '/../includes/header.php';
 
         <main class="dashboard-workspace">
             
-            <!-- Cover Header -->
+            <?php
+            $target_cover_style = '';
+            if (!empty($profile['cover_pic'])) {
+                $c_path = $profile['cover_pic'];
+                if (strpos($c_path, 'linear-gradient') === 0) {
+                    $target_cover_style = "background: {$c_path} !important;";
+                } else {
+                    $cover_url = (strpos($c_path, 'http') === 0) ? $c_path : '../' . $c_path;
+                    $target_cover_style = "background-image: url('" . htmlspecialchars($cover_url) . "') !important; background-size: cover !important; background-position: center !important;";
+                }
+            }
+            ?>
+            <!-- Cover Header (AlumniNet Professional Banner) -->
             <div class="profile-cover-wrapper">
-                <div class="profile-cover-photo"></div>
+                <div class="profile-cover-photo" style="<?php echo $target_cover_style; ?>">
+                    <div style="position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(129, 140, 248, 0.4); color: #c7d2fe; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700;">
+                            <i class="fa-solid fa-graduation-cap" style="margin-right: 0.35rem; color: #818cf8;"></i> AlumniNet Pro
+                        </span>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700;">
+                            <i class="fa-solid fa-circle-check" style="margin-right: 0.35rem; color: #10b981;"></i> Verified Network
+                        </span>
+                    </div>
+                </div>
                 <div class="profile-avatar-row">
-                    <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" class="profile-avatar-main">
+                    <div class="profile-avatar-wrapper">
+                        <img src="<?php echo htmlspecialchars($sidebar_avatar); ?>" alt="Avatar" class="profile-avatar-main">
+                        <span class="profile-avatar-status-ring" title="Active Member"></span>
+                    </div>
                     <div class="profile-header-info">
-                        <h2><?php echo htmlspecialchars($target_user['name']); ?></h2>
-                        <p><?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
-                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                            <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple);">
+                        <h2>
+                            <?php echo htmlspecialchars($target_user['name']); ?>
+                            <i class="fa-solid fa-circle-check" style="color: #38bdf8; font-size: 1.1rem;" title="Verified Member"></i>
+                        </h2>
+                        <p><i class="fa-solid fa-graduation-cap" style="margin-right:0.35rem; color:var(--theme-accent-purple);"></i> <?php echo htmlspecialchars($profile['course'] ?? 'No stream configured'); ?></p>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; flex-wrap: wrap;">
+                            <a href="javascript:void(0)" onclick="openConnectionsModal()" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--theme-accent-purple); background: rgba(139, 92, 246, 0.1); padding: 0.3rem 0.75rem; border-radius: 50px; border: 1px solid rgba(139, 92, 246, 0.25);">
                                 <i class="fa-solid fa-circle-nodes"></i> <?php echo count($connected_users); ?> Connections
                             </a>
                             <?php if ($target_role === 'student'): ?>
-                                <span class="badge" style="background: var(--theme-accent-purple); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.6rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
+                                <span class="badge" style="background: var(--theme-accent-purple); color: #fff; font-size: 0.75rem; padding: 0.3rem 0.75rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
                             <?php else: ?>
-                                <span class="badge badge-alumni" style="font-size: 0.68rem; padding: 0.2rem 0.6rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
+                                <span class="badge badge-alumni" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;"><?php echo htmlspecialchars($target_display_id); ?></span>
                             <?php endif; ?>
                         </div>
                     </div>
                     
                     <!-- Connect / Message Actions in cover header -->
-                    <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 25px;">
+                    <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 15px;">
                         <?php if ($conn_status): ?>
                             <?php if ($conn_status === 'accepted'): ?>
                                 <button class="btn btn-secondary btn-small" style="pointer-events:none; opacity:0.85; padding: 0.6rem 1rem;" disabled><i class="fa-solid fa-circle-check"></i> Connected</button>
