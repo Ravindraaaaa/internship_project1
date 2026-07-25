@@ -41,11 +41,26 @@ if (is_logged_in()) {
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Custom Style System CSS -->
     <link rel="stylesheet" href="<?php echo $path_prefix; ?>assets/css/style.css?v=<?php echo time(); ?>">
+    <!-- Modern Real-Time Notification CSS & JS -->
+    <link rel="stylesheet" href="<?php echo $path_prefix; ?>assets/css/notifications.css?v=<?php echo time(); ?>">
     <!-- GSAP CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <!-- Lenis Smooth Scroll (Loaded locally to prevent Tracking Prevention warnings) -->
+    <!-- Lenis Smooth Scroll -->
     <script src="<?php echo $path_prefix; ?>assets/js/lenis.min.js"></script>
+    <script>
+        (function() {
+            var mode = localStorage.getItem('theme_mode') || 'dark';
+            if (mode === 'light' || mode === 'theme-light') {
+                document.documentElement.className = 'theme-light';
+            } else {
+                document.documentElement.className = 'theme-dark';
+            }
+        })();
+    </script>
+    <?php if (is_logged_in()): ?>
+    <script src="<?php echo $path_prefix; ?>assets/js/notifications.js?v=<?php echo time(); ?>" defer></script>
+    <?php endif; ?>
 </head>
 <body <?php echo is_logged_in() ? 'class="page-loading"' : ''; ?>>
 

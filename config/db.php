@@ -80,24 +80,190 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
-    // 4. Check & add type, priority, link in notifications table if missing
+    // 4. Check & add columns to notifications table if missing
     $checkNotificationsTable = $pdo->query("SHOW TABLES LIKE 'notifications'")->fetch();
     if ($checkNotificationsTable) {
-        $checkType = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'type'")->fetch();
-        if (!$checkType) {
-            $pdo->exec("ALTER TABLE notifications ADD COLUMN type VARCHAR(50) DEFAULT 'info'");
+        $cols = [
+            'sender_id' => "INT DEFAULT NULL",
+            'receiver_id' => "INT DEFAULT NULL",
+            'receiver_role' => "VARCHAR(50) DEFAULT NULL",
+            'type' => "VARCHAR(50) DEFAULT 'info'",
+            'category' => "VARCHAR(50) DEFAULT 'system'",
+            'icon' => "VARCHAR(50) DEFAULT 'bell'",
+            'color' => "VARCHAR(30) DEFAULT 'indigo'",
+            'url' => "VARCHAR(255) DEFAULT NULL",
+            'link' => "VARCHAR(255) DEFAULT NULL",
+            'priority' => "VARCHAR(50) DEFAULT 'medium'",
+            'updated_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+        ];
+        foreach ($cols as $col => $definition) {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM notifications LIKE '$col'")->fetch();
+            if (!$checkCol) {
+                $pdo->exec("ALTER TABLE notifications ADD COLUMN $col $definition");
+            }
         }
-        $checkPriority = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'priority'")->fetch();
-        if (!$checkPriority) {
-            $pdo->exec("ALTER TABLE notifications ADD COLUMN priority VARCHAR(50) DEFAULT 'medium'");
-        }
-        $checkLink = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'link'")->fetch();
-        if (!$checkLink) {
-            $pdo->exec("ALTER TABLE notifications ADD COLUMN link VARCHAR(255) DEFAULT NULL");
-        }
+    } else {
+        $pdo->exec("CREATE TABLE notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT DEFAULT NULL,
+            sender_id INT DEFAULT NULL,
+            receiver_id INT DEFAULT NULL,
+            receiver_role VARCHAR(50) DEFAULT NULL,
+            type VARCHAR(50) DEFAULT 'info',
+            category VARCHAR(50) DEFAULT 'system',
+            title VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            icon VARCHAR(50) DEFAULT 'bell',
+            color VARCHAR(30) DEFAULT 'indigo',
+            url VARCHAR(255) DEFAULT NULL,
+            link VARCHAR(255) DEFAULT NULL,
+            priority VARCHAR(50) DEFAULT 'medium',
+            is_read TINYINT(1) DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_user_read (user_id, is_read),
+            INDEX idx_receiver (receiver_id, receiver_role),
+            INDEX idx_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
-    // 5. Check & add progress in user_skills if missing
+    // 5. Check & create notification_reads table
+    $checkNotifReads = $pdo->query("SHOW TABLES LIKE 'notification_reads'")->fetch();
+    if (!$checkNotifReads) {
+        $pdo->exec("CREATE TABLE notification_reads (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            notification_id INT NOT NULL,
+            user_id INT NOT NULL,
+            read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_notif_user (notification_id, user_id),
+            INDEX idx_user_read (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 6. Check & create notification_preferences table
+    $checkNotifPref = $pdo->query("SHOW TABLES LIKE 'notification_preferences'")->fetch();
+    if (!$checkNotifPref) {
+        $pdo->exec("CREATE TABLE notification_preferences (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL UNIQUE,
+            chat_notif TINYINT(1) DEFAULT 1,
+            announcement_notif TINYINT(1) DEFAULT 1,
+            job_notif TINYINT(1) DEFAULT 1,
+            mentorship_notif TINYINT(1) DEFAULT 1,
+            application_notif TINYINT(1) DEFAULT 1,
+            security_notif TINYINT(1) DEFAULT 1,
+            email_notif TINYINT(1) DEFAULT 1,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 7. Check & create notification_delivery_log table
+    $checkDeliveryLog = $pdo->query("SHOW TABLES LIKE 'notification_delivery_log'")->fetch();
+    if (!$checkDeliveryLog) {
+        $pdo->exec("CREATE TABLE notification_delivery_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            notification_id INT NOT NULL,
+            user_id INT NOT NULL,
+            channel VARCHAR(50) DEFAULT 'in_app',
+            status VARCHAR(50) DEFAULT 'delivered',
+            delivered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 8. Check & create announcement_views table
+    $checkAnncViews = $pdo->query("SHOW TABLES LIKE 'announcement_views'")->fetch();
+    if (!$checkAnncViews) {
+        $pdo->exec("CREATE TABLE announcement_views (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            announcement_id INT NOT NULL,
+            user_id INT NOT NULL,
+            device VARCHAR(100) DEFAULT NULL,
+            browser VARCHAR(100) DEFAULT NULL,
+            ip_address VARCHAR(45) DEFAULT NULL,
+            status VARCHAR(50) DEFAULT 'seen',
+            viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            read_duration INT DEFAULT 0,
+            INDEX idx_annc_user (announcement_id, user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 9. Check & create announcement_history table
+    $checkAnncHist = $pdo->query("SHOW TABLES LIKE 'announcement_history'")->fetch();
+    if (!$checkAnncHist) {
+        $pdo->exec("CREATE TABLE announcement_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            announcement_id INT NOT NULL,
+            admin_id INT DEFAULT NULL,
+            action VARCHAR(50) NOT NULL,
+            details TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 10. Check & create activity_logs table
+    $checkActLogs = $pdo->query("SHOW TABLES LIKE 'activity_logs'")->fetch();
+    if ($checkActLogs) {
+        $checkCategory = $pdo->query("SHOW COLUMNS FROM activity_logs LIKE 'category'")->fetch();
+        if (!$checkCategory) {
+            $pdo->exec("ALTER TABLE activity_logs ADD COLUMN category VARCHAR(50) DEFAULT 'general'");
+        }
+        $checkIp = $pdo->query("SHOW COLUMNS FROM activity_logs LIKE 'ip_address'")->fetch();
+        if (!$checkIp) {
+            $pdo->exec("ALTER TABLE activity_logs ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL");
+        }
+        $checkBrowser = $pdo->query("SHOW COLUMNS FROM activity_logs LIKE 'browser'")->fetch();
+        if (!$checkBrowser) {
+            $pdo->exec("ALTER TABLE activity_logs ADD COLUMN browser VARCHAR(100) DEFAULT NULL");
+        }
+    } else {
+        $pdo->exec("CREATE TABLE activity_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT DEFAULT NULL,
+            action VARCHAR(255) NOT NULL,
+            category VARCHAR(50) DEFAULT 'general',
+            details TEXT DEFAULT NULL,
+            ip_address VARCHAR(45) DEFAULT NULL,
+            browser VARCHAR(100) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_act (user_id),
+            INDEX idx_act_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 11. Check & create admin_audit_logs table
+    $checkAuditLogs = $pdo->query("SHOW TABLES LIKE 'admin_audit_logs'")->fetch();
+    if (!$checkAuditLogs) {
+        $pdo->exec("CREATE TABLE admin_audit_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            admin_id INT NOT NULL,
+            action VARCHAR(255) NOT NULL,
+            affected_user_id INT DEFAULT NULL,
+            ip_address VARCHAR(45) DEFAULT NULL,
+            browser VARCHAR(100) DEFAULT NULL,
+            old_value TEXT DEFAULT NULL,
+            new_value TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_admin_audit (admin_id),
+            INDEX idx_audit_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 12. Check & create notification_templates table
+    $checkTemplates = $pdo->query("SHOW TABLES LIKE 'notification_templates'")->fetch();
+    if (!$checkTemplates) {
+        $pdo->exec("CREATE TABLE notification_templates (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            event_type VARCHAR(100) NOT NULL UNIQUE,
+            title_template VARCHAR(255) NOT NULL,
+            message_template TEXT NOT NULL,
+            category VARCHAR(50) DEFAULT 'system',
+            icon VARCHAR(50) DEFAULT 'bell',
+            color VARCHAR(30) DEFAULT 'indigo',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // 13. Check & add progress in user_skills if missing
     $checkUserSkillsTable = $pdo->query("SHOW TABLES LIKE 'user_skills'")->fetch();
     if ($checkUserSkillsTable) {
         $checkProgress = $pdo->query("SHOW COLUMNS FROM user_skills LIKE 'progress'")->fetch();

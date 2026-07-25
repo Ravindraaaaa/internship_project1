@@ -1,130 +1,129 @@
 <?php
 require_once __DIR__ . '/../includes/auth_helper.php';
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/security_helper.php';
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/notification_helper.php';
+require_once __DIR__ . '/../includes/activity_logger.php';
 
 header('Content-Type: application/json');
 
 if (!is_logged_in()) {
-    echo json_encode(['error' => 'Unauthorized access.']);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access']);
     exit;
 }
 
 $user_id = get_user_id();
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$role = get_user_role();
+$action = $_GET['action'] ?? $_POST['action'] ?? 'fetch';
 
 try {
-    if ($action === 'count') {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-        $stmt->execute([$user_id]);
-        $count = $stmt->fetchColumn();
-        echo json_encode(['status' => 'success', 'count' => (int)$count]);
-        exit;
-    } 
-    
-    elseif ($action === 'list') {
-        $filter_read = $_GET['status'] ?? 'all'; // 'all', 'read', 'unread'
-        $filter_type = $_GET['type'] ?? 'all'; // 'all', 'success', 'error', 'warning', 'info'
-        $search = trim($_GET['search'] ?? '');
-        
-        $query = "SELECT * FROM notifications WHERE user_id = ?";
-        $params = [$user_id];
-        
-        if ($filter_read === 'unread') {
-            $query .= " AND is_read = 0";
-        } elseif ($filter_read === 'read') {
-            $query .= " AND is_read = 1";
-        }
-        
-        if ($filter_type !== 'all') {
-            $query .= " AND type = ?";
-            $params[] = $filter_type;
-        }
-        
-        if ($search !== '') {
-            $query .= " AND (title LIKE ? OR message LIKE ?)";
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-        }
-        
-        $query .= " ORDER BY created_at DESC LIMIT 50";
-        
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        $notifications = $stmt->fetchAll();
-        
-        echo json_encode(['status' => 'success', 'notifications' => $notifications]);
-        exit;
-    } 
-    
-    elseif ($action === 'mark_read') {
-        $id = intval($_POST['id'] ?? 0);
-        if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?");
-            $stmt->execute([$id, $user_id]);
-        } else {
-            // Mark all read
-            $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?");
+    switch ($action) {
+        case 'fetch':
+            $category = $_GET['category'] ?? 'all';
+            $unread_only = isset($_GET['unread_only']) ? (bool)$_GET['unread_only'] : false;
+            $search = $_GET['search'] ?? '';
+            $sort = $_GET['sort'] ?? 'newest';
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+            $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+
+            $data = NotificationEngine::getUserNotifications($user_id, $role, [
+                'category' => $category,
+                'unread_only' => $unread_only,
+                'search' => $search,
+                'sort' => $sort,
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
+
+            echo json_encode([
+                'status' => 'success',
+                'unread_count' => $data['unread'],
+                'total' => $data['total'],
+                'items' => $data['items']
+            ]);
+            break;
+
+        case 'mark_read':
+            $notif_id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($notif_id > 0) {
+                NotificationEngine::markAsRead($notif_id, $user_id);
+                echo json_encode(['status' => 'success', 'message' => 'Marked as read']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid notification ID']);
+            }
+            break;
+
+        case 'mark_all_read':
+            NotificationEngine::markAllAsRead($user_id, $role);
+            echo json_encode(['status' => 'success', 'message' => 'All notifications marked as read']);
+            break;
+
+        case 'clear_all':
+            $stmtClear = $pdo->prepare("DELETE FROM notifications WHERE user_id = ?");
+            $stmtClear->execute([$user_id]);
+            ActivityLogger::log($user_id, "Cleared all notifications", "notification");
+            echo json_encode(['status' => 'success', 'message' => 'All notifications cleared']);
+            break;
+
+        case 'delete':
+            $notif_id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($notif_id > 0) {
+                NotificationEngine::deleteNotification($notif_id, $user_id);
+                echo json_encode(['status' => 'success', 'message' => 'Notification deleted']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid notification ID']);
+            }
+            break;
+
+        case 'get_preferences':
+            $stmt = $pdo->prepare("SELECT * FROM notification_preferences WHERE user_id = ?");
             $stmt->execute([$user_id]);
-        }
-        echo json_encode(['status' => 'success']);
-        exit;
-    } 
-    
-    elseif ($action === 'delete') {
-        $id = intval($_POST['id'] ?? 0);
-        if ($id > 0) {
-            $stmt = $pdo->prepare("DELETE FROM notifications WHERE id = ? AND user_id = ?");
-            $stmt->execute([$id, $user_id]);
-        } else {
-            $stmt = $pdo->prepare("DELETE FROM notifications WHERE user_id = ?");
-            $stmt->execute([$user_id]);
-        }
-        echo json_encode(['status' => 'success']);
-        exit;
-    } 
-    
-    elseif ($action === 'broadcast') {
-        if (!is_admin()) {
-            echo json_encode(['error' => 'Forbidden: Admins only.']);
-            exit;
-        }
-        
-        $title = trim($_POST['title'] ?? '');
-        $message = trim($_POST['message'] ?? '');
-        $audience = $_POST['audience'] ?? 'all'; // 'all', 'student', 'alumni'
-        $type = $_POST['type'] ?? 'info'; // 'success', 'error', 'warning', 'info'
-        $priority = $_POST['priority'] ?? 'medium'; // 'low', 'medium', 'high'
-        
-        if (empty($title) || empty($message)) {
-            echo json_encode(['error' => 'Title and message are required.']);
-            exit;
-        }
-        
-        // Fetch matching users
-        if ($audience === 'all') {
-            $stmt = $pdo->query("SELECT id FROM users");
-            $target_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        } else {
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE role = ?");
-            $stmt->execute([$audience]);
-            $target_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        }
-        
-        // Insert notifications for all targeted users
-        $pdo->beginTransaction();
-        $stmtInsert = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority, is_read) VALUES (?, ?, ?, ?, ?, 0)");
-        foreach ($target_users as $target_user_id) {
-            $stmtInsert->execute([$target_user_id, $title, $message, $type, $priority]);
-        }
-        $pdo->commit();
-        
-        log_activity(get_user_id(), 'broadcast_notification', "Broadcasted: '$title' to audience '$audience'");
-        echo json_encode(['status' => 'success', 'message' => 'Broadcasted to ' . count($target_users) . ' users.']);
-        exit;
+            $prefs = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$prefs) {
+                $prefs = [
+                    'user_id' => $user_id,
+                    'chat_notif' => 1,
+                    'announcement_notif' => 1,
+                    'job_notif' => 1,
+                    'mentorship_notif' => 1,
+                    'application_notif' => 1,
+                    'security_notif' => 1,
+                    'email_notif' => 1
+                ];
+            }
+
+            echo json_encode(['status' => 'success', 'preferences' => $prefs]);
+            break;
+
+        case 'save_preferences':
+            $chat = !empty($_POST['chat_notif']) ? 1 : 0;
+            $annc = !empty($_POST['announcement_notif']) ? 1 : 0;
+            $job  = !empty($_POST['job_notif']) ? 1 : 0;
+            $ment = !empty($_POST['mentorship_notif']) ? 1 : 0;
+            $app  = !empty($_POST['application_notif']) ? 1 : 0;
+            $sec  = !empty($_POST['security_notif']) ? 1 : 0;
+            $email = !empty($_POST['email_notif']) ? 1 : 0;
+
+            $stmt = $pdo->prepare("INSERT INTO notification_preferences 
+                (user_id, chat_notif, announcement_notif, job_notif, mentorship_notif, application_notif, security_notif, email_notif)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                chat_notif=?, announcement_notif=?, job_notif=?, mentorship_notif=?, application_notif=?, security_notif=?, email_notif=?");
+
+            $stmt->execute([
+                $user_id, $chat, $annc, $job, $ment, $app, $sec, $email,
+                $chat, $annc, $job, $ment, $app, $sec, $email
+            ]);
+
+            ActivityLogger::log($user_id, "Updated notification preferences", "settings");
+            echo json_encode(['status' => 'success', 'message' => 'Preferences updated successfully']);
+            break;
+
+        default:
+            echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+            break;
     }
-    
-    echo json_encode(['error' => 'Invalid notification action.']);
 } catch (Exception $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+?>

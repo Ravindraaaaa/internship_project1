@@ -59,6 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     set_remember_me_cookie($adminUser['id']);
                 }
                 
+                // Activity logging & security alert
+                log_user_activity($admin['user_id'], "Logged into admin account", "security");
+                create_notification($admin['user_id'], "Security Alert 🔒", "Successful login to your administrator account.", "info", "low", "admin/dashboard.php", "security");
+
                 set_flash('success', 'Logged in successfully as Super Admin!');
                 header('Location: dashboard.php');
                 exit;

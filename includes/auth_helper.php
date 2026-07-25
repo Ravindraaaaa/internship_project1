@@ -350,7 +350,7 @@ if (!function_exists('render_sidebar')) {
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=feedback"><i class="fa-solid fa-comments"></i> <span class="link-text">User Feedback</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'notifications' ? 'active' : ''; ?>">
-                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=notifications"><i class="fa-solid fa-bell"></i> <span class="link-text">Notification Tracker</span></a>
+                            <a href="<?php echo $admin_prefix; ?>announcement_analytics.php"><i class="fa-solid fa-chart-pie"></i> <span class="link-text">Notification Analytics</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'chat' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Live Support Chat</span></a>

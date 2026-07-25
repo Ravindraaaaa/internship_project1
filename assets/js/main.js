@@ -99,6 +99,48 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGlobalDropdown('notif-bell-toggle', 'notif-dropdown-menu');
     setupGlobalDropdown('profile-avatar-toggle', 'profile-dropdown-menu');
 
+    // Global Table CSV Export Helper
+    window.exportTableToCSV = function(tableId, filename = 'export.csv') {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        let csv = [];
+        const rows = table.querySelectorAll("tr");
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                let text = cols[j].innerText.replace(/"/g, '""').trim();
+                row.push('"' + text + '"');
+            }
+            csv.push(row.join(","));
+        }
+
+        const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+        const downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        downloadLink.remove();
+    };
+
+    // Global Table Print / Export to PDF Helper
+    window.printTable = function(tableId, title = 'Document') {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const win = window.open('', '', 'height=700,width=900');
+        win.document.write('<html><head><title>' + title + '</title>');
+        win.document.write('<style>table { width: 100%; border-collapse: collapse; font-family: sans-serif; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; }</style>');
+        win.document.write('</head><body>');
+        win.document.write('<h2>' + title + '</h2>');
+        win.document.write(table.outerHTML);
+        win.document.write('</body></html>');
+        win.document.close();
+        win.print();
+    };
+
     document.addEventListener('click', function() {
         document.querySelectorAll('.nav-dropdown-menu').forEach(menu => {
             menu.classList.remove('show');
@@ -171,15 +213,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ==================== 5. SIMPLE DARK / BRIGHT (LIGHT) MODE ENGINE ====================
     window.toggleThemeMode = function() {
-        const isLight = document.body.classList.contains('theme-light');
+        const isLight = document.body.classList.contains('theme-light') || document.documentElement.classList.contains('theme-light');
         if (isLight) {
             document.body.classList.remove('theme-light');
             document.body.classList.add('theme-dark');
+            document.documentElement.classList.remove('theme-light');
+            document.documentElement.classList.add('theme-dark');
             localStorage.setItem('theme_mode', 'dark');
             updateThemeIcon('dark');
         } else {
             document.body.classList.remove('theme-dark');
             document.body.classList.add('theme-light');
+            document.documentElement.classList.remove('theme-dark');
+            document.documentElement.classList.add('theme-light');
             localStorage.setItem('theme_mode', 'light');
             updateThemeIcon('light');
         }
@@ -200,13 +246,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Restore saved theme on load
     const savedMode = localStorage.getItem('theme_mode') || 'dark';
-    if (savedMode === 'light') {
+    if (savedMode === 'light' || savedMode === 'theme-light') {
         document.body.classList.remove('theme-dark');
         document.body.classList.add('theme-light');
+        document.documentElement.classList.remove('theme-dark');
+        document.documentElement.classList.add('theme-light');
         updateThemeIcon('light');
     } else {
         document.body.classList.remove('theme-light');
         document.body.classList.add('theme-dark');
+        document.documentElement.classList.remove('theme-light');
+        document.documentElement.classList.add('theme-dark');
         updateThemeIcon('dark');
     }
 

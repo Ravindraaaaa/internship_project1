@@ -61,42 +61,20 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
             <i class="fa-solid fa-moon"></i>
         </button>
         
+        <!-- Direct Messages Shortcut -->
+        <?php if ($user_role_nav !== 'admin'): ?>
+        <a href="<?php echo (basename(dirname($_SERVER['PHP_SELF'])) === 'user') ? 'chat.php' : 'user/chat.php'; ?>" class="notif-bell-btn" title="Direct Chat & Messages" style="text-decoration: none;">
+            <i class="fa-regular fa-comment-dots" style="font-size: 18px;"></i>
+        </a>
+        <?php endif; ?>
+
         <!-- Notification Bell -->
-        <div class="top-nav-icon-wrapper" id="notif-bell-toggle">
-            <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-            <?php if ($unread_count > 0): ?>
-                <span class="top-nav-badge"><?php echo $unread_count; ?></span>
-            <?php endif; ?>
-            <div class="nav-dropdown-menu" id="notif-dropdown-menu" style="max-height: 400px; overflow-y: auto;">
-                <div class="dropdown-header-info">
-                    <h4>Recent Alerts</h4>
-                    <p>You have <?php echo $unread_count; ?> new notice<?php echo $unread_count != 1 ? 's' : ''; ?></p>
-                </div>
-                
-                <?php if ($unread_count == 0): ?>
-                    <div class="notif-item">
-                        <div class="notif-item-title" style="text-align: center; color: var(--theme-text-secondary);">No new notifications</div>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($notifications as $notif): ?>
-                        <div class="notif-item" style="cursor: pointer;" onclick="window.location.href='?read_notif=<?php echo $notif['id']; ?><?php echo !empty($notif['link']) ? '&redirect_to=' . urlencode($notif['link']) : ''; ?>'">
-                            <div class="notif-item-title">
-                                <?php 
-                                    $icon = 'fa-info-circle';
-                                    $color = 'var(--theme-accent-blue)';
-                                    if ($notif['type'] == 'success') { $icon = 'fa-check-circle'; $color = 'var(--accent-success)'; }
-                                    if ($notif['type'] == 'warning') { $icon = 'fa-exclamation-triangle'; $color = 'var(--accent-warning)'; }
-                                ?>
-                                <i class="fa-solid <?php echo $icon; ?>" style="color: <?php echo $color; ?>;"></i> 
-                                <strong><?php echo htmlspecialchars($notif['title']); ?></strong><br>
-                                <span style="font-size: 0.85rem; font-weight: normal;"><?php echo htmlspecialchars($notif['message']); ?></span>
-                            </div>
-                            <div class="notif-item-time"><?php echo date('M d, H:i', strtotime($notif['created_at'])); ?></div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
+        <button class="notif-bell-btn" id="notifBellBtn" title="Notification Center">
+            <i class="fa-regular fa-bell" style="font-size: 18px;"></i>
+            <span class="notif-badge" id="notifBadge" style="<?php echo ($unread_count > 0) ? 'display:flex;' : 'display:none;'; ?>">
+                <?php echo ($unread_count > 99) ? '99+' : $unread_count; ?>
+            </span>
+        </button>
 
         <!-- Visible Role Pill Badge in Top Navbar -->
         <div class="nav-role-badge">
