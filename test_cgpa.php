@@ -1,1 +1,10 @@
-﻿<?php require 'includes/db.php'; try { $pdo->exec('INSERT INTO users (id, name, email, password, role) VALUES (999, ''test'', ''test@test.com'', ''pwd'', ''student'')'); $pdo->exec('INSERT INTO student_profiles (user_id, current_year, course, cgpa) VALUES (999, 1, ''course'', 10.00)'); echo 'Success'; } catch(Exception $e) { echo $e->getMessage(); }
+<?php
+require_once __DIR__ . '/includes/db.php';
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = 'test@test.com'");
+    $stmt->execute();
+    echo "DB connection test success";
+} catch(Exception $e) {
+    echo $e->getMessage();
+}
+?>

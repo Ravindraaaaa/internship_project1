@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('student', 'alumni', 'admin') NOT NULL DEFAULT 'student',
     status ENUM('pending', 'approved', 'rejected', 'blocked') NOT NULL DEFAULT 'pending',
     department_id INT,
+    remember_token VARCHAR(255) DEFAULT NULL,
     two_factor_secret VARCHAR(255) DEFAULT NULL,
+    last_active TIMESTAMP NULL DEFAULT NULL,
+    is_bot TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
@@ -50,6 +53,7 @@ CREATE TABLE IF NOT EXISTS alumni_profiles (
     website VARCHAR(255),
     bio TEXT,
     profile_pic VARCHAR(255),
+    cover_pic VARCHAR(255) DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -60,9 +64,10 @@ CREATE TABLE IF NOT EXISTS student_profiles (
     course VARCHAR(255) NOT NULL,
     bio TEXT,
     profile_pic VARCHAR(255),
+    cover_pic VARCHAR(255) DEFAULT NULL,
     linkedin VARCHAR(255),
     github VARCHAR(255),
-    cgpa DECIMAL(3,2) DEFAULT 0.00,
+    cgpa DECIMAL(4,2) DEFAULT 0.00,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -90,6 +95,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     posted_by INT NOT NULL,
     poster_role ENUM('admin', 'user') DEFAULT 'user',
     status ENUM('active', 'filled', 'inactive') DEFAULT 'active',
+    start_date DATETIME NULL DEFAULT NULL,
+    end_date DATETIME NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
     FOREIGN KEY (posted_by) REFERENCES users(id) ON DELETE CASCADE
@@ -113,6 +120,7 @@ CREATE TABLE IF NOT EXISTS events (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     event_date DATETIME NOT NULL,
+    end_date DATETIME NULL DEFAULT NULL,
     location VARCHAR(255) NOT NULL,
     event_type ENUM('in-person', 'online') NOT NULL DEFAULT 'in-person',
     banner_image VARCHAR(255),
@@ -149,15 +157,115 @@ CREATE TABLE IF NOT EXISTS announcements (
 -- 13. Notifications Table
 CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    sender_id INT DEFAULT NULL,
+    receiver_id INT DEFAULT NULL,
+    receiver_role VARCHAR(50) DEFAULT NULL,
+    type VARCHAR(50) DEFAULT 'info',
+    category VARCHAR(50) DEFAULT 'system',
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
+    icon VARCHAR(50) DEFAULT 'bell',
+    color VARCHAR(30) DEFAULT 'indigo',
+    url VARCHAR(255) DEFAULT NULL,
+    link VARCHAR(255) DEFAULT NULL,
+    priority VARCHAR(50) DEFAULT 'medium',
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_read (user_id, is_read),
+    INDEX idx_receiver (receiver_id, receiver_role),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 14. Notification Reads Table
+CREATE TABLE IF NOT EXISTS notification_reads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    notification_id INT NOT NULL,
+    user_id INT NOT NULL,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_notif_user (notification_id, user_id),
+    INDEX idx_user_read (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 15. Notification Preferences Table
+CREATE TABLE IF NOT EXISTS notification_preferences (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    chat_notif TINYINT(1) DEFAULT 1,
+    announcement_notif TINYINT(1) DEFAULT 1,
+    job_notif TINYINT(1) DEFAULT 1,
+    mentorship_notif TINYINT(1) DEFAULT 1,
+    application_notif TINYINT(1) DEFAULT 1,
+    security_notif TINYINT(1) DEFAULT 1,
+    email_notif TINYINT(1) DEFAULT 1,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 16. Announcement Reads / Views Table
+CREATE TABLE IF NOT EXISTS announcement_reads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id INT NOT NULL,
+    user_id INT NOT NULL,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_annc_user (announcement_id, user_id),
+    FOREIGN KEY (announcement_id) REFERENCES announcements(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS announcement_views (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id INT NOT NULL,
+    user_id INT NOT NULL,
+    device VARCHAR(100) DEFAULT NULL,
+    browser VARCHAR(100) DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'seen',
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    read_duration INT DEFAULT 0,
+    INDEX idx_annc_user (announcement_id, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 17. Audit Logs & Activity Logs
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT DEFAULT NULL,
+    action VARCHAR(255) NOT NULL,
+    category VARCHAR(50) DEFAULT 'general',
+    details TEXT DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    browser VARCHAR(100) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_act (user_id),
+    INDEX idx_act_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    action VARCHAR(255) NOT NULL,
+    affected_user_id INT DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    browser VARCHAR(100) DEFAULT NULL,
+    old_value TEXT DEFAULT NULL,
+    new_value TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_admin_audit (admin_id),
+    INDEX idx_audit_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 18. Two Factor OTPs Table
+CREATE TABLE IF NOT EXISTS two_factor_otps (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    otp_code VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 14. Conversations Table
+-- 19. Conversations & Messages Table
 CREATE TABLE IF NOT EXISTS conversations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sender_id INT NOT NULL,
@@ -167,7 +275,6 @@ CREATE TABLE IF NOT EXISTS conversations (
     FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 15. Messages Table
 CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     conversation_id INT NOT NULL,
@@ -179,13 +286,12 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 16. Skills Table
+-- 20. Skills Table
 CREATE TABLE IF NOT EXISTS skills (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 17. User Skills Mapping Table
 CREATE TABLE IF NOT EXISTS user_skills (
     user_id INT NOT NULL,
     skill_id INT NOT NULL,
@@ -195,32 +301,7 @@ CREATE TABLE IF NOT EXISTS user_skills (
     FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 18. Education Table
-CREATE TABLE IF NOT EXISTS education (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    school VARCHAR(255) NOT NULL,
-    degree VARCHAR(255),
-    field_of_study VARCHAR(255),
-    start_year INT,
-    end_year INT,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 19. Experience Table
-CREATE TABLE IF NOT EXISTS experience (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    company VARCHAR(255) NOT NULL,
-    position VARCHAR(255) NOT NULL,
-    location VARCHAR(255),
-    start_date DATE,
-    end_date DATE,
-    description TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 20. Resumes Table
+-- 21. Resumes & Certificates Table
 CREATE TABLE IF NOT EXISTS resumes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
@@ -229,61 +310,49 @@ CREATE TABLE IF NOT EXISTS resumes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 21. Resume (Alias View)
 CREATE OR REPLACE VIEW resume AS SELECT * FROM resumes;
 
--- 22. Activity Logs Table
-CREATE TABLE IF NOT EXISTS activity_logs (
+CREATE TABLE IF NOT EXISTS user_certificates (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    action VARCHAR(255) NOT NULL,
-    details TEXT,
-    ip_address VARCHAR(45),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issue_date DATE NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 23. Settings Table
-CREATE TABLE IF NOT EXISTS settings (
-    `key` VARCHAR(100) PRIMARY KEY,
-    `value` TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 24. Themes Table
-CREATE TABLE IF NOT EXISTS themes (
+-- 22. Requirements & Mapping Tables
+CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    class_name VARCHAR(100) NOT NULL UNIQUE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 25. Backgrounds Table
-CREATE TABLE IF NOT EXISTS backgrounds (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    value VARCHAR(100) NOT NULL UNIQUE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 26. Password Resets Table
-CREATE TABLE IF NOT EXISTS password_resets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    expires_at DATETIME NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    type ENUM('internship', 'placement') NOT NULL,
+    min_cgpa DECIMAL(4,2) DEFAULT 0.00,
+    allowed_departments VARCHAR(255) DEFAULT '',
+    skills_required TEXT DEFAULT NULL,
+    deadline DATETIME DEFAULT NULL,
+    required_documents TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 27. Login History Table
-CREATE TABLE IF NOT EXISTS login_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    email VARCHAR(255) NOT NULL,
-    ip_address VARCHAR(45),
-    status ENUM('success', 'failed') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+CREATE TABLE IF NOT EXISTS job_requirements (
+    job_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    PRIMARY KEY (job_id, requirement_id),
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 28. Mentorship Requests Table (Core connection feature)
+CREATE TABLE IF NOT EXISTS event_requirements (
+    event_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    PRIMARY KEY (event_id, requirement_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 23. Mentorship Requests Table
 CREATE TABLE IF NOT EXISTS mentorship_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
@@ -295,6 +364,75 @@ CREATE TABLE IF NOT EXISTS mentorship_requests (
     FOREIGN KEY (alumni_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 24. Feedback & Achievements Table
+CREATE TABLE IF NOT EXISTS feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    rating INT NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    date_achieved DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 25. Password Resets & Login History
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS login_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45),
+    status ENUM('success', 'failed') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 26. AI Chats History Table
+CREATE TABLE IF NOT EXISTS ai_chats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    query TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 27. Bookmarked Jobs & Saved Events Table
+CREATE TABLE IF NOT EXISTS bookmarked_jobs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    job_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS saved_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    event_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ====================================================
 -- SEED DATA
 -- ====================================================
@@ -304,11 +442,10 @@ INSERT INTO departments (id, name, code) VALUES
 (1, 'Computer Science and Engineering', 'CSE'),
 (2, 'Electronics and Communication', 'ECE'),
 (3, 'Mechanical Engineering', 'ME'),
-(4, 'Information Technology', 'IT');
+(4, 'Information Technology', 'IT')
+ON DUPLICATE KEY UPDATE name=VALUES(name), code=VALUES(code);
 
 -- Users Seeding
--- Admin Password hash for Admin@123 -> $2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla
--- User Password hash for User@123 -> $2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6
 INSERT INTO users (id, name, email, username, password, phone, role, status, department_id) VALUES
 (1, 'Ashwin Pande', 'admin@internship.com', 'admin', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', '9226830066', 'admin', 'approved', 1),
 (2, 'Demo Student User', 'user@internship.com', 'user', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', NULL, 'student', 'approved', 1),
@@ -331,14 +468,16 @@ INSERT INTO users (id, name, email, username, password, phone, role, status, dep
 (23, 'Atharv Rahul Taware', 'atharvtaware@gmail.com', 'atharvtaware', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7218945407', 'alumni', 'approved', 4),
 (24, 'More Pratiket Vijaykumar', 'pratiketmore@gmail.com', 'pratiketmore', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '8975025652', 'alumni', 'approved', 4),
 (25, 'Sumeet Nathuji Satpute', 'sumeetsatpute2562@gmail.com', 'sumeetsatpute2562', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '9359128011', 'alumni', 'approved', 4),
-(26, 'Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', 'shaktiprasadpatra4', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7028162381', 'alumni', 'approved', 4);
+(26, 'Shaktiprasad Sadanand Patra', 'shaktiprasadpatra4@gmail.com', 'shaktiprasadpatra4', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', '7028162381', 'alumni', 'approved', 4)
+ON DUPLICATE KEY UPDATE name=VALUES(name), email=VALUES(email), role=VALUES(role), status=VALUES(status);
 
 -- Admins Seeding
 INSERT INTO admins (id, user_id, username, name, email, password, role) VALUES
 (1, 1, 'admin', 'Ashwin Pande', 'admin@internship.com', '$2y$10$Nhr7x4dbWSYTv24IweLQ/exOFoHzfkQtnZAec.ATnodInY.PN0zla', 'superadmin'),
 (2, 11, 'ravindra', 'Ravindra Mude', 'ravindramude44@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin'),
 (3, 14, 'yashraj', 'Yashraj Nanaware', 'yashrajnanaware0@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin'),
-(4, 15, 'kaif', 'Kaif Khan', 'alikaif8585@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin');
+(4, 15, 'kaif', 'Kaif Khan', 'alikaif8585@gmail.com', '$2y$10$PVbiinkikEIi8EXrAuHsFuPfk/BtLHQu4RBjT32IbELTZKcv3SsQ6', 'superadmin')
+ON DUPLICATE KEY UPDATE name=VALUES(name), email=VALUES(email), role=VALUES(role);
 
 -- Alumni Profiles Seeding
 INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position, industry, linkedin, website, bio) VALUES
@@ -355,14 +494,16 @@ INSERT INTO alumni_profiles (user_id, graduation_year, course, company, position
 (23, 2023, 'Information Technology', 'ATOS', 'Software Trainee', 'Tech', NULL, NULL, 'Software Trainee at ATOS. Information Technology class of 2023.'),
 (24, 2023, 'Information Technology', 'Academor', 'Academic Counsellor', 'EdTech', NULL, NULL, 'Academic Counsellor at Academor. Information Technology class of 2023.'),
 (25, 2023, 'Information Technology', 'TCS', 'Software Eng. Trainee', 'Tech', NULL, NULL, 'Software Eng. Trainee at TCS. Information Technology class of 2023.'),
-(26, 2023, 'Information Technology', 'Xsymplify', 'BDM', 'Tech', NULL, NULL, 'Business Development Manager (BDM) at Xsymplify. Information Technology class of 2023.');
+(26, 2023, 'Information Technology', 'Xsymplify', 'BDM', 'Tech', NULL, NULL, 'Business Development Manager (BDM) at Xsymplify. Information Technology class of 2023.')
+ON DUPLICATE KEY UPDATE company=VALUES(company), position=VALUES(position);
 
 -- Student Profiles Seeding
-INSERT INTO student_profiles (user_id, current_year, course, bio, linkedin, github) VALUES
-(2, 3, 'Computer Science Engineering', 'Passionate full stack developer learning cloud native app architectures.', 'linkedin.com/in/demostudent', 'github.com/demostudent'),
-(5, 4, 'Mechanical Engineering', 'Robotics explorer focused on CAD automation and manufacturing loops.', 'linkedin.com/in/alice', 'github.com/alice'),
-(7, 2, 'Computer Science Engineering', 'Algorithm developer and competitive programmer with a passion for web assembly.', 'linkedin.com/in/charlie', 'github.com/charlie'),
-(10, 3, 'Information Technology', 'Security analyst interested in network penetration testing and IAM policies.', 'linkedin.com/in/frank', 'github.com/frank');
+INSERT INTO student_profiles (user_id, current_year, course, bio, linkedin, github, cgpa) VALUES
+(2, 3, 'Computer Science Engineering', 'Passionate full stack developer learning cloud native app architectures.', 'linkedin.com/in/demostudent', 'github.com/demostudent', 8.50),
+(5, 4, 'Mechanical Engineering', 'Robotics explorer focused on CAD automation and manufacturing loops.', 'linkedin.com/in/alice', 'github.com/alice', 9.10),
+(7, 2, 'Computer Science Engineering', 'Algorithm developer and competitive programmer with a passion for web assembly.', 'linkedin.com/in/charlie', 'github.com/charlie', 8.90),
+(10, 3, 'Information Technology', 'Security analyst interested in network penetration testing and IAM policies.', 'linkedin.com/in/frank', 'github.com/frank', 8.20)
+ON DUPLICATE KEY UPDATE current_year=VALUES(current_year), course=VALUES(course), cgpa=VALUES(cgpa);
 
 -- Companies Seeding
 INSERT INTO companies (id, name, website, location) VALUES
@@ -370,7 +511,8 @@ INSERT INTO companies (id, name, website, location) VALUES
 (2, 'Intel', 'intel.com', 'Santa Clara, CA'),
 (3, 'Microsoft', 'microsoft.com', 'Redmond, WA'),
 (4, 'Meta', 'meta.com', 'Menlo Park, CA'),
-(5, 'Tesla', 'tesla.com', 'Austin, TX');
+(5, 'Tesla', 'tesla.com', 'Austin, TX')
+ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- Jobs Seeding
 INSERT INTO jobs (id, title, company_id, company, location, type, salary_range, description, requirements, application_link, status, posted_by, poster_role) VALUES
@@ -383,35 +525,24 @@ INSERT INTO jobs (id, title, company_id, company, location, type, salary_range, 
 (7, 'Security Analyst', 3, 'Microsoft', 'Remote', 'full-time', '$105,000 - $130,000', 'Audit system architectures, set firewall rules, and track activity loops.', 'OWASP, Kali Linux, Networking, Wireshark', 'https://careers.microsoft.com', 'active', 6, 'user'),
 (8, 'Site Reliability Engineer', 4, 'Meta', 'Seattle, WA', 'full-time', '$145,000 - $180,000', 'Maintain high availability levels and monitor network packet routing logs.', 'Prometheus, Grafana, Ansible', 'https://meta.com/jobs', 'active', 1, 'admin'),
 (9, 'Data Coordinator', 2, 'Intel', 'Fremont, CA', 'full-time', '$95,000 - $120,000', 'Structure high fidelity database logs and execute complex SQL aggregations.', 'SQL, Postgres, Python, Pandas', 'https://intel.com/jobs', 'active', 4, 'user'),
-(10, 'Product Lead', 5, 'Tesla', 'Palo Alto, CA', 'full-time', '$130,000 - $160,000', 'Define product specifications for next-generation charging grid controllers.', 'Scrum, Agile, JIRA, Technical Writing', 'https://tesla.com/jobs', 'active', 1, 'admin');
+(10, 'Product Lead', 5, 'Tesla', 'Palo Alto, CA', 'full-time', '$130,000 - $160,000', 'Define product specifications for next-generation charging grid controllers.', 'Scrum, Agile, JIRA, Technical Writing', 'https://tesla.com/jobs', 'active', 1, 'admin')
+ON DUPLICATE KEY UPDATE title=VALUES(title);
 
 -- Events Seeding
-INSERT INTO events (id, title, description, event_date, location, event_type, banner_image, created_by) VALUES
-(1, 'Tech Reunion & Networking Evening', 'Reunite with computing graduates and explore mentorship programs and referrals.', '2026-10-15 18:00:00', 'Campus Auditorium', 'in-person', '', 1),
-(2, 'Careers in Autonomy & Embedded Systems', 'Fireside panel with alumni working in hardware and electrical automation circles.', '2026-11-20 14:00:00', 'Zoom Webinar Link', 'online', '', 1),
-(3, 'Alumni Mentorship Roundtable', 'Interactive matching session connecting student members with industry experts.', '2026-08-05 10:00:00', 'Seminar Hall C', 'in-person', '', 1),
-(4, 'Cloud Native Architecture Trends', 'Technical deep-dive on microservices patterns and site reliability metrics.', '2026-09-12 17:00:00', 'MS Teams Link', 'online', '', 1),
-(5, 'Robotics and Manufacturing Expo', 'Showcase of automation loops, mechanical designs, and embedded firmware designs.', '2026-12-05 09:30:00', 'Main Exhibition Arena', 'in-person', '', 1);
+INSERT INTO events (id, title, description, event_date, end_date, location, event_type, banner_image, created_by) VALUES
+(1, 'Tech Reunion & Networking Evening', 'Reunite with computing graduates and explore mentorship programs and referrals.', '2026-10-15 18:00:00', '2026-10-15 22:00:00', 'Campus Auditorium', 'in-person', '', 1),
+(2, 'Careers in Autonomy & Embedded Systems', 'Fireside panel with alumni working in hardware and electrical automation circles.', '2026-11-20 14:00:00', '2026-11-20 18:00:00', 'Zoom Webinar Link', 'online', '', 1),
+(3, 'Alumni Mentorship Roundtable', 'Interactive matching session connecting student members with industry experts.', '2026-08-05 10:00:00', '2026-08-05 14:00:00', 'Seminar Hall C', 'in-person', '', 1),
+(4, 'Cloud Native Architecture Trends', 'Technical deep-dive on microservices patterns and site reliability metrics.', '2026-09-12 17:00:00', '2026-09-12 21:00:00', 'MS Teams Link', 'online', '', 1),
+(5, 'Robotics and Manufacturing Expo', 'Showcase of automation loops, mechanical designs, and embedded firmware designs.', '2026-12-05 09:30:00', '2026-12-05 17:30:00', 'Main Exhibition Arena', 'in-person', '', 1)
+ON DUPLICATE KEY UPDATE title=VALUES(title);
 
 -- Announcements Seeding
 INSERT INTO announcements (id, title, content, audience, created_by) VALUES
 (1, 'System Maintenance Notice', 'The AlumniNet server will undergo standard database indexes optimization tonight.', 'all', 1),
 (2, 'Mentorship Program Active', 'Verify your profile statistics to match with experienced alumni mentors today.', 'students', 1),
-(3, 'Call for Job Referral Posts', 'Alumni members are requested to post open tech and hardware career roles.', 'alumni', 1);
-
--- Notifications Seeding
-INSERT INTO notifications (user_id, title, message) VALUES
-(2, 'Welcome to AlumniNet', 'Your student member account is fully configured and ready!'),
-(3, 'Registration Approved', 'Your alumnus account has been approved by the admin team.'),
-(5, 'Event RSVP Confirmed', 'You have registered successfully for the Tech Reunion & Networking Evening.');
-
--- Conversations & Messages Seeding
-INSERT INTO conversations (id, sender_id, receiver_id) VALUES
-(1, 2, 3); -- Student (2) to Alumni (3)
-
-INSERT INTO messages (conversation_id, sender_id, message) VALUES
-(1, 2, 'Hi Jane, I saw your Google profile and would love to ask for a referral!'),
-(1, 3, 'Hi! Sure, please share your resume path and I will look into it.');
+(3, 'Call for Job Referral Posts', 'Alumni members are requested to post open tech and hardware career roles.', 'alumni', 1)
+ON DUPLICATE KEY UPDATE title=VALUES(title);
 
 -- Skills Seeding
 INSERT INTO skills (id, name) VALUES
@@ -422,115 +553,5 @@ INSERT INTO skills (id, name) VALUES
 (5, 'CSS3'),
 (6, 'Embedded Systems'),
 (7, 'Robotics'),
-(8, 'Kubernetes');
-
--- 29. Feedback Table
-CREATE TABLE IF NOT EXISTS feedback (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    rating INT NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 30. Achievements Table
-CREATE TABLE IF NOT EXISTS achievements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    date_achieved DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 31. Add Remember Me Token column to users
-ALTER TABLE users ADD COLUMN remember_token VARCHAR(255) DEFAULT NULL;
-
--- 32. Requirements Table
-CREATE TABLE IF NOT EXISTS requirements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    type ENUM('internship', 'placement') NOT NULL,
-    min_cgpa DECIMAL(3,2) DEFAULT 0.00,
-    allowed_departments VARCHAR(255) DEFAULT '',
-    skills_required TEXT DEFAULT NULL,
-    deadline DATETIME DEFAULT NULL,
-    required_documents TEXT DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 33. Job Requirements Mapping Table
-CREATE TABLE IF NOT EXISTS job_requirements (
-    job_id INT NOT NULL,
-    requirement_id INT NOT NULL,
-    PRIMARY KEY (job_id, requirement_id),
-    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 34. Event Requirements Mapping Table
-CREATE TABLE IF NOT EXISTS event_requirements (
-    event_id INT NOT NULL,
-    requirement_id INT NOT NULL,
-    PRIMARY KEY (event_id, requirement_id),
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 35. User Certificates Table
-CREATE TABLE IF NOT EXISTS user_certificates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    issuer VARCHAR(255) NOT NULL,
-    issue_date DATE NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 36. AI Chats History Table
-CREATE TABLE IF NOT EXISTS ai_chats (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    query TEXT NOT NULL,
-    response TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 37. Bookmarked Jobs Table
-CREATE TABLE IF NOT EXISTS bookmarked_jobs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    job_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 38. Saved Events Table
-CREATE TABLE IF NOT EXISTS saved_events (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    event_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 39. User Certificates Table
-CREATE TABLE IF NOT EXISTS user_certificates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    issuer VARCHAR(255) NOT NULL,
-    issue_date DATE NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
+(8, 'Kubernetes')
+ON DUPLICATE KEY UPDATE name=VALUES(name);

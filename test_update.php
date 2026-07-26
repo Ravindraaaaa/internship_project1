@@ -1,40 +1,42 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
-session_start();
-\['user_id'] = 2; // Demo Student User
-\['role'] = 'student';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$_SESSION['user_id'] = 2; // Demo Student User
+$_SESSION['role'] = 'student';
 
-\['action'] = 'update_profile';
-\['bio'] = 'Test bio update';
-\['linkedin'] = 'https://linkedin.com/in/test';
-\['current_year'] = '2';
-\['course'] = 'Information Technology';
-\['github'] = 'https://github.com/test';
-\['cgpa'] = '8.50';
-\['name'] = 'Demo Student User Updated';
+$_POST['action'] = 'update_profile';
+$_POST['bio'] = 'Test bio update';
+$_POST['linkedin'] = 'https://linkedin.com/in/test';
+$_POST['current_year'] = '2';
+$_POST['course'] = 'Information Technology';
+$_POST['github'] = 'https://github.com/test';
+$_POST['cgpa'] = '8.50';
+$_POST['name'] = 'Demo Student User Updated';
 
 // mock the logic
 try {
-    \ = 2;
-    \ = intval(\['current_year']);
-    \ = trim(\['course']);
-    \ = trim(\['linkedin']);
-    \ = trim(\['github']);
-    \ = trim(\['bio']);
-    \ = floatval(\['cgpa']);
+    $uid = 2;
+    $current_year = intval($_POST['current_year']);
+    $course = trim($_POST['course']);
+    $linkedin = trim($_POST['linkedin']);
+    $github = trim($_POST['github']);
+    $bio = trim($_POST['bio']);
+    $cgpa = floatval($_POST['cgpa']);
     
-    \ = \->prepare("SELECT COUNT(*) FROM student_profiles WHERE user_id = ?");
-    \->execute([\]);
-    if (\->fetchColumn() > 0) {
-        \ = \->prepare("UPDATE student_profiles SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? WHERE user_id = ?");
-        \->execute([\, \, \, \, \, null, \, \]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM student_profiles WHERE user_id = ?");
+    $stmt->execute([$uid]);
+    if ($stmt->fetchColumn() > 0) {
+        $stmtUp = $pdo->prepare("UPDATE student_profiles SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? WHERE user_id = ?");
+        $stmtUp->execute([$current_year, $course, $linkedin, $github, $bio, null, $cgpa, $uid]);
         echo "Update successful\n";
     } else {
-        \ = \->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        \->execute([\, \, \, \, \, \, null, \]);
+        $stmtIns = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmtIns->execute([$uid, $current_year, $course, $linkedin, $github, $bio, null, $cgpa]);
         echo "Insert successful\n";
     }
-} catch (Exception \) {
-    echo "Error: " . \->getMessage() . "\n";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }
 ?>

@@ -64,7 +64,7 @@ try {
     }
 
     // Add references
-    $userIds['ravindramude44@gmail.com'] = $userIds['user@internship.com'];
+    $userIds['ravindramude44@gmail.com'] = $userIds['user@internship.com'] ?? 1;
 
     // 2. Insert Alumni Profiles
     $alumni_profiles = [
