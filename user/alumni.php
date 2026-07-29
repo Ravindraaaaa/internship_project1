@@ -248,37 +248,37 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
 
                         <!-- Alumni Cards Grid -->
-                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
                             <?php foreach ($members as $alum): ?>
-                            <div class="card-glass" style="padding: 1.25rem; border-radius: 14px; position: relative; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                            <div class="card-glass alumni-member-card" style="padding: 1.35rem; border-radius: 16px; position: relative; transition: transform 0.25s ease, box-shadow 0.25s ease;">
                                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                                    <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #818cf8;">
+                                    <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" style="width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 2.5px solid #818cf8; flex-shrink: 0;">
                                     <div style="flex: 1; min-width: 0;">
-                                        <h4 style="font-size: 1rem; font-weight: 700; color: var(--theme-text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             <?php echo htmlspecialchars($alum['name']); ?>
                                         </h4>
-                                        <div style="font-size: 0.8rem; color: #818cf8; font-weight: 600; margin-top: 0.15rem;">
+                                        <div style="font-size: 0.82rem; color: #818cf8; font-weight: 700; margin-top: 0.2rem;">
                                             <?php echo htmlspecialchars($alum['designation'] ?: 'Alumnus'); ?>
                                         </div>
-                                        <div style="font-size: 0.8rem; color: var(--theme-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <div style="font-size: 0.82rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.1rem;">
                                             <?php echo htmlspecialchars($alum['company'] ?: 'Independent'); ?>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;">
-                                    <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
+                                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--theme-border); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+                                    <span style="color: var(--theme-text-secondary);"><i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
                                     <?php if ($alum['mentorship_available']): ?>
-                                    <span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-handshake"></i> Mentor</span>
+                                    <span style="color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 0.2rem 0.6rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);"><i class="fa-solid fa-handshake"></i> Mentor</span>
                                     <?php endif; ?>
                                 </div>
 
-                                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                                    <button type="button" class="btn btn-secondary" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.8rem; padding: 0.45rem 0.5rem; border-radius: 8px; justify-content: center; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                <div style="margin-top: 1.1rem; display: flex; gap: 0.5rem;">
+                                    <button type="button" class="btn btn-secondary" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.82rem; font-weight: 600; padding: 0.5rem 0.6rem; border-radius: 10px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem;">
                                         <i class="fa-solid fa-folder-open" style="color: #a855f7;"></i> Digital Archive
                                     </button>
                                     <?php if (!empty($alum['linkedin'])): ?>
-                                    <a href="<?php echo htmlspecialchars($alum['linkedin']); ?>" target="_blank" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.65rem; border-radius: 8px; color: #0077b5;">
+                                    <a href="<?php echo htmlspecialchars($alum['linkedin']); ?>" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 10px; color: #0077b5;">
                                         <i class="fa-brands fa-linkedin"></i>
                                     </a>
                                     <?php endif; ?>

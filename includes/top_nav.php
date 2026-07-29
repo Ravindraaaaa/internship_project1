@@ -76,9 +76,9 @@ if (!$is_admin_portal) {
         $annStmt = $pdo->query("SELECT id, title FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 4");
         while ($ann = $annStmt->fetch(PDO::FETCH_ASSOC)) {
             $marquee_items[] = [
-                'badge' => '📢 NOTICE',
+                'badge' => '📢 ANNOUNCEMENT',
                 'badge_color' => '#fbbf24',
-                'title' => $ann['title'],
+                'title' => $ann['title'] . ' — Check Notifications tab for details!',
                 'url' => $sub_prefix_nav . 'dashboard.php'
             ];
         }
@@ -110,6 +110,14 @@ if (!$is_admin_portal) {
             ];
         }
     } catch (Exception $e) {}
+
+    // 4. Feedback Acknowledgement Broadcast
+    $marquee_items[] = [
+        'badge' => '✨ THANK YOU',
+        'badge_color' => '#a855f7',
+        'title' => 'Thank you for your feedback & support tickets! Our moderation team reviews every submission.',
+        'url' => $sub_prefix_nav . 'feedback.php'
+    ];
 }
 
 ?>
@@ -118,13 +126,13 @@ if (!$is_admin_portal) {
 <!-- Top Moving Announcement Marquee Banner (Student/Alumni Only) -->
 <div class="announcement-marquee-bar" id="announcementMarqueeBar">
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.15); padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3); flex-shrink: 0;">
-        <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE UPDATES
+        <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE BROADCAST
     </div>
     <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px;">
-        <div id="marqueeTrack" style="display: inline-block; white-space: nowrap; font-weight: 500; animation: marqueeScroll 30s linear infinite; cursor: pointer;">
+        <div id="marqueeTrack" style="display: inline-block; white-space: nowrap; font-weight: 500; animation: marqueeScroll 55s linear infinite; cursor: pointer;">
             <?php if (!empty($marquee_items)): ?>
                 <?php foreach ($marquee_items as $item): ?>
-                    <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 45px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                    <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
                         <span style="font-weight: 700; color: <?php echo $item['badge_color']; ?>; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
                             <?php echo htmlspecialchars($item['badge']); ?>
                         </span>
@@ -134,10 +142,10 @@ if (!$is_admin_portal) {
                     </a>
                 <?php endforeach; ?>
             <?php else: ?>
-                <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 40px; color: inherit; text-decoration: none;">
+                <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
                     📢 Alumni Meet & Campus Placement Drive Registrations Open! Click to view Job Board.
                 </a>
-                <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 40px; color: inherit; text-decoration: none;">
+                <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
                     🎉 New Mentorship & Career Guidance Sessions Available. Click to view Events.
                 </a>
             <?php endif; ?>
