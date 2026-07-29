@@ -187,23 +187,29 @@ require_once __DIR__ . '/../includes/header.php';
                         </span>
                     </div>
 
-                    <div class="cards-catalog">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
                         <?php foreach ($running_events as $event): 
                             $banner = $event['banner_image'] ? htmlspecialchars($event['banner_image']) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop&q=80';
                             $ev_id = $event['id'];
                             $going_count = $rsvp_counts[$ev_id]['going'] ?? 0;
                             $interested_count = $rsvp_counts[$ev_id]['interested'] ?? 0;
                         ?>
-                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 24px rgba(16, 185, 129, 0.15);">
-                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 180px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit;">
-                                <div style="padding: 1.75rem; display: flex; flex-direction: column; flex-grow:1;">
+                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 24px rgba(16, 185, 129, 0.15); border-radius: 16px; overflow: hidden;">
+                                <div style="position: relative; height: 195px; width: 100%; overflow: hidden; background: #0f172a;">
+                                    <img src="<?php echo $banner; ?>" alt="Event Banner" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;">
+                                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(15,23,42,0.85) 100%);"></div>
+                                    <div style="position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(10px); color: #10b981; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                        <i class="fa-solid <?php echo ($event['event_type'] ?? '') === 'online' ? 'fa-video' : 'fa-building-columns'; ?>"></i> <?php echo ucfirst($event['event_type'] ?? 'In-Person'); ?>
+                                    </div>
+                                </div>
+                                <div style="padding: 1.5rem; display: flex; flex-direction: column; flex-grow:1;">
                                     <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
                                     
-                                    <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--theme-text);"><?php echo htmlspecialchars($event['title']); ?></h3>
-                                    <div style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.25rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> <?php echo htmlspecialchars($event['location']); ?></div>
-                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Going: <strong><?php echo $going_count; ?></strong> | Interested: <strong><?php echo $interested_count; ?></strong></div>
+                                    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--theme-text); line-height: 1.4;"><?php echo htmlspecialchars($event['title']); ?></h3>
+                                    <div style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> <?php echo htmlspecialchars($event['location']); ?></div>
+                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.4rem;"><i class="fa-solid fa-users" style="color:#6366f1;"></i> Going: <strong style="color:var(--theme-text);"><?php echo $going_count; ?></strong> | Interested: <strong style="color:var(--theme-text);"><?php echo $interested_count; ?></strong></div>
                                     
-                                    <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1;">
+                                    <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1; line-height: 1.55;">
                                         <?php echo htmlspecialchars($event['description']); ?>
                                     </p>
 
@@ -214,21 +220,21 @@ require_once __DIR__ . '/../includes/header.php';
                                     ?>
                                         <div style="border-top:1px solid var(--theme-border); padding-top: 1.25rem; margin-top: auto;">
                                             <?php if (!$eligibility['eligible']): ?>
-                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); width:100%;">
-                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible to RSVP:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
+                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:6px; border:1px solid rgba(239,68,68,0.2); width:100%;">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
                                                 </div>
                                             <?php else: ?>
                                                 <form action="events.php" method="POST" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:0.5rem;">
                                                     <input type="hidden" name="action" value="rsvp">
                                                     <input type="hidden" name="event_id" value="<?php echo $ev_id; ?>">
                                                     
-                                                    <div style="display:flex; gap: 0.35rem; flex-wrap:wrap; flex:1 1 auto;">
-                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Going</button>
-                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Interested</button>
-                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Decline</button>
+                                                    <div style="display:flex; gap: 0.45rem; flex-wrap:wrap; flex:1 1 auto;">
+                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Going</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Decline</button>
                                                     </div>
                                                     <?php if (!empty($my_status)): ?>
-                                                        <span style="font-size: 0.7rem; color: #10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
+                                                        <span style="font-size: 0.75rem; color: #10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
                                                     <?php endif; ?>
                                                 </form>
                                             <?php endif; ?>
@@ -246,22 +252,28 @@ require_once __DIR__ . '/../includes/header.php';
                 <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-calendar-days" style="color: var(--theme-accent-purple);"></i> Scheduled & Upcoming Events</h3>
                 
                 <?php if (!empty($upcoming_events)): ?>
-                    <div class="cards-catalog">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
                         <?php foreach ($upcoming_events as $event): 
                             $banner = $event['banner_image'] ? htmlspecialchars($event['banner_image']) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop&q=80';
                             $ev_id = $event['id'];
                             $going_count = $rsvp_counts[$ev_id]['going'] ?? 0;
                             $interested_count = $rsvp_counts[$ev_id]['interested'] ?? 0;
                         ?>
-                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column;">
-                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 180px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit;">
-                                <div style="padding: 1.75rem; display: flex; flex-direction: column; flex-grow:1;">
+                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; border-radius: 16px; overflow: hidden;">
+                                <div style="position: relative; height: 195px; width: 100%; overflow: hidden; background: #0f172a;">
+                                    <img src="<?php echo $banner; ?>" alt="Event Banner" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;">
+                                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(15,23,42,0.85) 100%);"></div>
+                                    <div style="position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(10px); color: #60a5fa; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(96, 165, 250, 0.3);">
+                                        <i class="fa-solid <?php echo ($event['event_type'] ?? '') === 'online' ? 'fa-video' : 'fa-building-columns'; ?>"></i> <?php echo ucfirst($event['event_type'] ?? 'In-Person'); ?>
+                                    </div>
+                                </div>
+                                <div style="padding: 1.5rem; display: flex; flex-direction: column; flex-grow:1;">
                                     <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
-                                    <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($event['title']); ?></h3>
-                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 0.25rem;"><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($event['location']); ?></div>
-                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Going: <strong><?php echo $going_count; ?></strong> | Interested: <strong><?php echo $interested_count; ?></strong></div>
+                                    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--theme-text); line-height: 1.4;"><?php echo htmlspecialchars($event['title']); ?></h3>
+                                    <div style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;"><i class="fa-solid fa-location-dot" style="color:#38bdf8;"></i> <?php echo htmlspecialchars($event['location']); ?></div>
+                                    <div style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.4rem;"><i class="fa-solid fa-users" style="color:#a855f7;"></i> Going: <strong style="color:var(--theme-text);"><?php echo $going_count; ?></strong> | Interested: <strong style="color:var(--theme-text);"><?php echo $interested_count; ?></strong></div>
                                     
-                                    <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1;">
+                                    <p style="font-size: 0.88rem; color: var(--theme-text-secondary); margin-bottom: 1.5rem; flex-grow: 1; line-height: 1.55;">
                                         <?php echo htmlspecialchars($event['description']); ?>
                                     </p>
 
@@ -272,21 +284,21 @@ require_once __DIR__ . '/../includes/header.php';
                                     ?>
                                         <div style="border-top:1px solid var(--theme-border); padding-top: 1.25rem; margin-top: auto;">
                                             <?php if (!$eligibility['eligible']): ?>
-                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:4px; border:1px solid rgba(239,68,68,0.2); width:100%;">
-                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible to RSVP:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
+                                                <div style="font-size:0.75rem; color:#f87171; background:rgba(239, 68, 68, 0.08); padding:0.55rem; border-radius:6px; border:1px solid rgba(239,68,68,0.2); width:100%;">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Ineligible:</strong> <?php echo htmlspecialchars($eligibility['reason']); ?>
                                                 </div>
                                             <?php else: ?>
                                                 <form action="events.php" method="POST" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:0.5rem;">
                                                     <input type="hidden" name="action" value="rsvp">
                                                     <input type="hidden" name="event_id" value="<?php echo $ev_id; ?>">
                                                     
-                                                    <div style="display:flex; gap: 0.35rem; flex-wrap:wrap; flex:1 1 auto;">
-                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Going</button>
-                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Interested</button>
-                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">Decline</button>
+                                                    <div style="display:flex; gap: 0.45rem; flex-wrap:wrap; flex:1 1 auto;">
+                                                        <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Going</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Decline</button>
                                                     </div>
                                                     <?php if (!empty($my_status)): ?>
-                                                        <span style="font-size: 0.7rem; color: var(--theme-accent-purple); font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
+                                                        <span style="font-size: 0.75rem; color: var(--theme-accent-purple); font-weight:700;"><i class="fa-solid fa-circle-check"></i> Registered</span>
                                                     <?php endif; ?>
                                                 </form>
                                             <?php endif; ?>
@@ -305,16 +317,19 @@ require_once __DIR__ . '/../includes/header.php';
             <section>
                 <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-text-secondary);"></i> Past Campus Gatherings</h3>
                 <?php if (!empty($past_events)): ?>
-                    <div class="cards-catalog">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
                         <?php foreach ($past_events as $event): 
                             $banner = $event['banner_image'] ? htmlspecialchars($event['banner_image']) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop&q=80';
                         ?>
-                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; opacity: 0.85;">
-                                <img src="<?php echo $banner; ?>" alt="Event Banner" style="height: 150px; width: 100%; object-fit: cover; border-top-left-radius: inherit; border-top-right-radius: inherit; filter: grayscale(30%);">
+                            <div class="card-glass" style="padding:0; display:flex; flex-direction:column; opacity: 0.85; border-radius: 16px; overflow: hidden;">
+                                <div style="position: relative; height: 160px; width: 100%; overflow: hidden; background: #0f172a;">
+                                    <img src="<?php echo $banner; ?>" alt="Event Banner" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(25%);">
+                                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(15,23,42,0.85) 100%);"></div>
+                                </div>
                                 <div style="padding: 1.5rem; display: flex; flex-direction: column; flex-grow:1;">
                                     <?php echo render_event_status_badge($event['event_date'], $event['end_date'] ?? null); ?>
-                                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($event['title']); ?></h3>
-                                    <p style="font-size: 0.82rem; color: var(--theme-text-secondary); margin-bottom: 1rem; flex-grow:1;">
+                                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--theme-text);"><?php echo htmlspecialchars($event['title']); ?></h3>
+                                    <p style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 1rem; flex-grow:1; line-height: 1.55;">
                                         <?php echo htmlspecialchars(substr($event['description'], 0, 140)) . '...'; ?>
                                     </p>
                                 </div>

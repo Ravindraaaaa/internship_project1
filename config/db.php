@@ -65,6 +65,7 @@ try {
             'current_address' => "TEXT NULL DEFAULT NULL",
             'permanent_address' => "TEXT NULL DEFAULT NULL",
             'city' => "VARCHAR(100) NULL DEFAULT NULL",
+            'location' => "VARCHAR(255) NULL DEFAULT NULL",
             'state' => "VARCHAR(100) NULL DEFAULT NULL",
             'country' => "VARCHAR(100) NULL DEFAULT NULL",
             'receipt_no' => "VARCHAR(100) NULL DEFAULT NULL",
