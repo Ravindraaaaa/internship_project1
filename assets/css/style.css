@@ -17,6 +17,11 @@
     --theme-accent-glow: rgba(99, 102, 241, 0.35);
     --shadow-soft: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     
+    /* Global Status / Alert Accent Colors */
+    --accent-success: #10b981;
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    
     /* Common definitions */
     --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --sidebar-width: 265px;
@@ -1062,12 +1067,18 @@ body.theme-glass-white .input-glass:focus {
     position: absolute;
     top: -5px;
     right: -6px;
-    background: var(--accent-danger);
+    background: var(--accent-danger, #ef4444);
     color: #ffffff;
     font-size: 0.68rem;
     padding: 0.15rem 0.35rem;
     border-radius: 50px;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    min-width: 15px;
+    height: 15px;
 }
 
 .nav-user-avatar {
