@@ -9,13 +9,24 @@ $user_role_nav = $_SESSION['user_role'] ?? (isset($_SESSION['admin_id']) ? 'admi
 // Handle Mark as Read
 if (isset($_GET['read_notif'])) {
     $read_id = intval($_GET['read_notif']);
-    $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?")->execute([$read_id, $user_id_nav]);
+    $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?")->execute([$read_id, $user_id_nav]);
     if (!empty($_GET['redirect_to'])) {
         $target = ltrim($_GET['redirect_to'], '/');
-        header("Location: " . $path_prefix . $target);
+        // Handle subfolder pathing gracefully
+        $dest = (strpos($target, 'user/') === 0 && basename(dirname($_SERVER['PHP_SELF'])) === 'user') ? substr($target, 5) : $target;
+        header("Location: " . $path_prefix . $dest);
         exit;
     }
     $current_url = preg_replace('/([&?])read_notif=[0-9]+&?/', '$1', $_SERVER['REQUEST_URI']);
+    $current_url = rtrim($current_url, '?&');
+    header("Location: $current_url");
+    exit;
+}
+
+// Handle Mark All as Read
+if (isset($_GET['mark_all_read'])) {
+    $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0")->execute([$user_id_nav]);
+    $current_url = preg_replace('/([&?])mark_all_read=1&?/', '$1', $_SERVER['REQUEST_URI']);
     $current_url = rtrim($current_url, '?&');
     header("Location: $current_url");
     exit;
@@ -25,7 +36,11 @@ $unread_count = 0;
 $notifications = [];
 
 if ($user_id_nav > 0) {
-    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5");
+    $stmt = $pdo->prepare("SELECT n.*, s.name as sender_name, s.role as sender_role 
+                           FROM notifications n 
+                           LEFT JOIN users s ON n.sender_id = s.id 
+                           WHERE n.user_id = ? AND n.is_read = 0 
+                           ORDER BY n.created_at DESC LIMIT 10");
     $stmt->execute([$user_id_nav]);
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -35,13 +50,16 @@ if ($user_id_nav > 0) {
 }
 
 $profile_link = ($user_role_nav === 'admin') ? '#' : 'profile.php';
-$logout_link = ($user_role_nav === 'admin') ? '../logout.php' : '../logout.php';
+$change_pass_link = 'user/change_password.php';
+$logout_link = '../logout.php';
 // if we are in admin, profile_link doesn't exist, we just put #
 if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
     $profile_link = '#';
+    $change_pass_link = '../user/change_password.php';
     $logout_link = '../logout.php';
 } else if (basename(dirname($_SERVER['PHP_SELF'])) === 'user') {
     $profile_link = 'profile.php';
+    $change_pass_link = 'change_password.php';
     $logout_link = '../logout.php';
 }
 
@@ -51,7 +69,8 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
         <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
         <div class="top-nav-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="input-glass" placeholder="Search platform..." title="Click or press Ctrl+K to search">
+            <label for="global-nav-search-input" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Search platform</label>
+            <input type="text" id="global-nav-search-input" name="global_search" class="input-glass" placeholder="Search platform..." autocomplete="off" aria-label="Search platform" title="Click or press Ctrl+K to search">
             <span class="search-kbd">⌘K</span>
         </div>
     </div>
@@ -106,6 +125,7 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
                 <?php if ($profile_link !== '#'): ?>
                     <a href="<?php echo $profile_link; ?>" class="dropdown-item"><i data-lucide="user" style="width:16px;height:16px;"></i> My Profile</a>
                 <?php endif; ?>
+                <a href="<?php echo $change_pass_link; ?>" class="dropdown-item"><i data-lucide="key" style="width:16px;height:16px;"></i> Change Password</a>
                 <div style="border-top: 1px solid var(--theme-border); margin: 0.25rem 0;"></div>
                 <a href="<?php echo $logout_link; ?>" class="dropdown-item" style="color: var(--accent-danger);"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign Out</a>
             </div>

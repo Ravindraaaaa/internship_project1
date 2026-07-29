@@ -57,7 +57,7 @@ if (!function_exists('create_notification')) {
     /**
      * Creates an in-app notification for a specific target user using NotificationEngine.
      */
-    function create_notification($user_id, $title, $message, $type = 'info', $priority = 'medium', $link = null, $category = 'system') {
+    function create_notification($user_id, $title, $message, $type = 'info', $priority = 'medium', $link = null, $category = 'system', $sender_id = null) {
         global $pdo;
         if (!$pdo || empty($user_id)) return false;
 
@@ -75,6 +75,7 @@ if (!function_exists('create_notification')) {
         return NotificationEngine::send([
             'user_id' => $user_id,
             'receiver_id' => $user_id,
+            'sender_id' => $sender_id,
             'title' => $title,
             'message' => $message,
             'type' => $type,
@@ -89,14 +90,15 @@ if (!function_exists('notify_admins')) {
     /**
      * Dispatches a high-priority notification to all system administrators.
      */
-    function notify_admins($title, $message, $type = 'info', $priority = 'high', $link = null) {
+    function notify_admins($title, $message, $type = 'info', $priority = 'high', $link = null, $sender_id = null) {
         return NotificationEngine::sendToRole('admin', [
             'title' => $title,
             'message' => $message,
             'type' => $type,
             'category' => 'system',
             'priority' => $priority,
-            'url' => $link
+            'url' => $link,
+            'sender_id' => $sender_id
         ]);
     }
 }
@@ -105,7 +107,7 @@ if (!function_exists('notify_all_users')) {
     /**
      * Dispatches a broadcast notification to all users (or filtered by role).
      */
-    function notify_all_users($title, $message, $type = 'info', $priority = 'medium', $role_filter = null, $link = null) {
+    function notify_all_users($title, $message, $type = 'info', $priority = 'medium', $role_filter = null, $link = null, $sender_id = null) {
         $targetRole = $role_filter ?: 'all';
         return NotificationEngine::sendToRole($targetRole, [
             'title' => $title,
@@ -113,7 +115,8 @@ if (!function_exists('notify_all_users')) {
             'type' => $type,
             'category' => 'announcements',
             'priority' => $priority,
-            'url' => $link
+            'url' => $link,
+            'sender_id' => $sender_id
         ]);
     }
 }
@@ -213,6 +216,71 @@ if (!function_exists('render_event_status_badge')) {
 
         $html .= '</div>';
         return $html;
+    }
+}
+
+if (!function_exists('generate_ai_support_reply')) {
+    /**
+     * Generates a professional AI support email response based on topic/query.
+     */
+    function generate_ai_support_reply($user_name, $user_email, $subject, $message, $category = 'Support Ticket') {
+        global $pdo;
+        
+        $gemini_api_key = '';
+        if ($pdo) {
+            try {
+                $stmtKey = $pdo->prepare("SELECT value FROM settings WHERE `key` = 'gemini_api_key'");
+                $stmtKey->execute();
+                $gemini_api_key = $stmtKey->fetchColumn() ?: '';
+            } catch (Exception $e) {}
+        }
+        
+        $ai_response = '';
+        
+        // 1. Try Gemini API if key is present
+        if (!empty($gemini_api_key)) {
+            $prompt = "You are the AlumniNet Senior Technical Support AI Agent. A member named {$user_name} ({$user_email}) submitted a {$category} with Subject: '{$subject}' and Message: '{$message}'. Provide an extremely polite, highly professional, step-by-step resolution and official response email. Keep it empathetic, well-formatted, and concise (under 200 words).";
+            
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $gemini_api_key;
+            $data = ['contents' => [['parts' => [['text' => $prompt]]]]];
+            
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            $result = curl_exec($ch);
+            curl_close($ch);
+            
+            if ($result) {
+                $json = json_decode($result, true);
+                if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
+                    $ai_response = trim($json['candidates'][0]['content']['parts'][0]['text']);
+                }
+            }
+        }
+        
+        // 2. Intelligent Rule Engine Fallback if API Key not present or API call fails
+        if (empty($ai_response)) {
+            $msg_lower = strtolower($subject . ' ' . $message);
+            
+            if (strpos($msg_lower, 'job') !== false || strpos($msg_lower, 'career') !== false || strpos($msg_lower, 'referral') !== false) {
+                $solution = "Regarding your inquiry about career opportunities and referrals, our placement algorithm updates active job postings every hour. You can filter opportunities by full-time or internship criteria directly on the Jobs portal and connect with relevant alumni for internal recommendations.";
+            } elseif (strpos($msg_lower, 'event') !== false || strpos($msg_lower, 'webinar') !== false || strpos($msg_lower, 'session') !== false) {
+                $solution = "Thank you for your question regarding campus events and workshops. Active event dates are color-coded in green in your Events Hub. Make sure to click 'RSVP Now' to secure your seat and receive automated reminders.";
+            } elseif (strpos($msg_lower, 'connect') !== false || strpos($msg_lower, 'mentor') !== false || strpos($msg_lower, 'chat') !== false) {
+                $solution = "For connection and mentorship inquiries, ensure your profile CGPA, technical skills, and resume are updated. Once you send a connection request, the alumnus receives an instant high-priority alert and can initiate a 1-on-1 chat session upon acceptance.";
+            } elseif (strpos($msg_lower, 'resume') !== false || strpos($msg_lower, 'score') !== false || strpos($msg_lower, 'ats') !== false) {
+                $solution = "Our AI Resume Builder rates your document out of 100 based on modern ATS screening standards. Use the '✨ AI Generate Bio' button to craft a high-impact summary and complete your experience section to maximize your score.";
+            } else {
+                $solution = "Our technical operations team has logged your submission regarding '{$subject}'. We have initiated a review of your request to ensure optimal platform experience.";
+            }
+            
+            $ai_response = "Dear {$user_name},\n\nThank you for contacting the AlumniNet Intelligent Support Center regarding '{$subject}'.\n\n{$solution}\n\nOur system will monitor your ticket status. If you require further immediate assistance, feel free to submit additional details.\n\nBest regards,\nAlumniNet Intelligent Support Team";
+        }
+        
+        return $ai_response;
     }
 }
 ?>

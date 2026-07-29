@@ -34,30 +34,62 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ==================== 0. SIDEBAR & DROPDOWNS GLOBAL ====================
     const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarToggles = document.querySelectorAll('#sidebar-toggle, .sidebar-toggle-btn');
+    const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
     
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('show');
-            } else {
-                sidebar.classList.toggle('collapsed');
-                document.body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed'));
-                const icon = sidebarToggle.querySelector('i');
-                if (icon) {
-                    if (sidebar.classList.contains('collapsed')) {
-                        icon.className = 'fa-solid fa-chevron-right';
-                    } else {
-                        icon.className = 'fa-solid fa-chevron-left';
-                    }
+    function updateSidebarToggleIcon() {
+        if (!sidebar) return;
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        sidebarToggles.forEach(btn => {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                if (isCollapsed) {
+                    icon.className = 'fa-solid fa-chevron-right';
+                } else {
+                    icon.className = 'fa-solid fa-chevron-left';
                 }
             }
-            setTimeout(() => {
-                window.dispatchEvent(new Event('resize'));
-            }, 300);
         });
     }
+
+    if (sidebarToggles.length > 0 && sidebar) {
+        sidebarToggles.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.toggle('show');
+                    sidebar.classList.toggle('active');
+                } else {
+                    sidebar.classList.toggle('collapsed');
+                    document.body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+                    updateSidebarToggleIcon();
+                }
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 300);
+            });
+        });
+
+        // Initialize toggle icon on load
+        updateSidebarToggleIcon();
+    }
+
+    if (mobileSidebarToggle && sidebar) {
+        mobileSidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('show');
+            sidebar.classList.toggle('active');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 992 && sidebar && (sidebar.classList.contains('show') || sidebar.classList.contains('active'))) {
+            if (!sidebar.contains(e.target) && (!mobileSidebarToggle || !mobileSidebarToggle.contains(e.target))) {
+                sidebar.classList.remove('show');
+                sidebar.classList.remove('active');
+            }
+        }
+    });
 
     const mobileSidebarBtn = document.getElementById('mobile-sidebar-toggle');
     if (mobileSidebarBtn && sidebar) {
@@ -67,19 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (sidebar) {
-        sidebar.addEventListener('click', function(e) {
-            // Prevent closing when clicking inside the sidebar
-            e.stopPropagation();
-        });
 
-        document.addEventListener('click', function(e) {
-            // Close mobile sidebar when clicking anywhere outside of it
-            if (window.innerWidth <= 768 && sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
-            }
-        });
-    }
 
     function setupGlobalDropdown(toggleId, menuId) {
         const toggle = document.getElementById(toggleId);
@@ -176,11 +196,41 @@ document.addEventListener('DOMContentLoaded', function() {
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             direction: 'vertical',
             gestureDirection: 'vertical',
-            smooth: true,
+            smoothWheel: true,
+            syncTouch: false, // Preserve smooth native touch momentum scrolling on mobile devices
             mouseMultiplier: 1,
-            touchMultiplier: 2,
-            infinite: false
+            touchMultiplier: 1,
+            infinite: false,
+            prevent: (node) => {
+                if (!node || !(node instanceof HTMLElement)) return false;
+                return node.hasAttribute('data-lenis-prevent') ||
+                       node.hasAttribute('data-lenis-prevent-wheel') ||
+                       node.hasAttribute('data-lenis-prevent-touch') ||
+                       node.classList.contains('ai-chat-body') ||
+                       node.classList.contains('ai-chat-window') ||
+                       node.classList.contains('sidebar-menu') ||
+                       node.classList.contains('sidebar') ||
+                       node.classList.contains('notif-drawer-body') ||
+                       node.classList.contains('modal-content') ||
+                       node.classList.contains('messenger-grid') ||
+                       node.classList.contains('conversations-pane') ||
+                       node.classList.contains('thread-pane') ||
+                       node.classList.contains('conversations-list-container') ||
+                       node.classList.contains('chat-messages-stream') ||
+                       (node.closest && (
+                           node.closest('#ai-chat-window') !== null ||
+                           node.closest('.ai-chat-window') !== null ||
+                           node.closest('#sidebar') !== null ||
+                           node.closest('.sidebar') !== null ||
+                           node.closest('.modal') !== null ||
+                           node.closest('.nav-dropdown-menu') !== null ||
+                           node.closest('.messenger-grid') !== null ||
+                           node.closest('[data-lenis-prevent]') !== null
+                       ));
+            }
         });
+
+        window.lenis = lenis;
 
         lenis.on('scroll', () => {
             if (typeof ScrollTrigger !== 'undefined') {
@@ -195,7 +245,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         gsap.ticker.lagSmoothing(0);
+
+        // Keep Lenis dimensions updated when content dynamically resizes or loads
+        if (typeof ResizeObserver !== 'undefined' && document.body) {
+            const bodyResizeObserver = new ResizeObserver(() => {
+                if (lenis) lenis.resize();
+            });
+            bodyResizeObserver.observe(document.body);
+        }
     }
+
+    // Modal Scroll Lock Helpers (Pauses Lenis and locks body background scroll cleanly)
+    let openModalCount = 0;
+
+    window.lockBackgroundScroll = function() {
+        openModalCount++;
+        if (window.lenis) window.lenis.stop();
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    };
+
+    window.unlockBackgroundScroll = function() {
+        openModalCount = Math.max(0, openModalCount - 1);
+        if (openModalCount === 0) {
+            if (window.lenis) window.lenis.start();
+            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
+        }
+    };
+
+    window.forceResetScrollLock = function() {
+        openModalCount = 0;
+        if (window.lenis) window.lenis.start();
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+    };
+
+    // Force reset scroll locks on page load
+    forceResetScrollLock();
 
     // ==================== 3. CLEAN STANDARD CURSOR ====================
     // Standard professional system cursor used without animated dot overlays
@@ -1015,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     content.style.opacity = '1';
                 }
             }
-            document.body.style.overflow = 'hidden';
+            lockBackgroundScroll();
         }
     };
 
@@ -1031,19 +1118,45 @@ document.addEventListener('DOMContentLoaded', function() {
                         duration: 0.3,
                         onComplete: () => {
                             modal.style.display = 'none';
-                            document.body.style.overflow = 'auto';
+                            unlockBackgroundScroll();
                         }
                     });
                 } catch (err) {
                     modal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
+                    unlockBackgroundScroll();
                 }
             } else {
                 modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
+                unlockBackgroundScroll();
             }
         }
     };
+
+    // Backdrop click listener to close modals and restore scrolling
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList && e.target.classList.contains('modal')) {
+            const modalId = e.target.id;
+            if (modalId) {
+                closeModal(modalId);
+            } else {
+                e.target.style.display = 'none';
+                unlockBackgroundScroll();
+            }
+        }
+    });
+
+    // ESC key listener to close active modals & overlays and unlock scrolling
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(m => {
+                if (m.style.display === 'flex' || m.style.display === 'block' || getComputedStyle(m).display !== 'none') {
+                    closeModal(m.id);
+                }
+            });
+            if (typeof window.closeSettingsDrawer === 'function') window.closeSettingsDrawer();
+            if (typeof window.toggleSearchModal === 'function') window.toggleSearchModal(false);
+        }
+    });
 
     // ==================== 10. GLOBAL PAGE LOADER INTERACTIVITY ====================
     const pageLoader = document.getElementById('page-loader');

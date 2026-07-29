@@ -27,15 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash('error', 'Please fill in all feedback form fields.');
         } else {
             try {
-                $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$uid, $rating, $subject, $message]);
+                $user_email = $_SESSION['user_email'] ?? '';
+                $ai_reply = generate_ai_support_reply($user_name, $user_email, $subject, $message, "Feedback ({$rating} Stars)");
                 
-                // Dispatch automatic notifications
-                create_notification($uid, "Feedback Ticket Received 💬", "Thank you for your ticket ('" . $subject . "')! Our team has received your feedback.", "success", "medium");
+                $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message, ai_reply) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$uid, $rating, $subject, $message, $ai_reply]);
+                
+                // Dispatch automatic notifications with AI response
+                create_notification($uid, "AI Support Response: " . $subject, "Our AI Support system analyzed your ticket and dispatched an intelligent resolution email response.", "success", "medium", "user/feedback.php");
                 notify_admins("New Feedback Ticket", "User " . $user_name . " submitted a " . $rating . "-star ticket: '" . $subject . "'.", "info", "high");
 
                 log_activity($uid, 'submitted_feedback', "Rating: $rating - Subject: $subject");
-                set_flash('success', 'Thank you for your valuable feedback!');
+                set_flash('success', 'Thank you! Our AI Support Agent has generated and dispatched an automated resolution email response.');
                 header('Location: feedback.php');
                 exit;
             } catch (Exception $e) {
@@ -93,6 +96,45 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </form>
             </div>
+
+            <?php
+                $stmtMyFeed = $pdo->prepare("SELECT * FROM feedback WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+                $stmtMyFeed->execute([$uid]);
+                $my_tickets = $stmtMyFeed->fetchAll();
+            ?>
+
+            <?php if ($my_tickets): ?>
+                <div class="card-glass" style="margin-top: 2rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-robot" style="color: var(--theme-accent-purple);"></i> Your AI Support Email Responses
+                    </h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <?php foreach ($my_tickets as $t): ?>
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($t['subject']); ?></h4>
+                                    <span style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y H:i', strtotime($t['created_at'])); ?></span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.85rem; line-height: 1.4;">
+                                    <strong>Your Request:</strong> <?php echo htmlspecialchars($t['message']); ?>
+                                </p>
+
+                                <?php if (!empty($t['ai_reply'])): ?>
+                                    <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid var(--theme-accent-purple); padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem;">
+                                        <div style="font-weight: 700; color: var(--theme-accent-purple); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                                            <i class="fa-solid fa-paper-plane"></i> AI Support Email Response Dispatched:
+                                        </div>
+                                        <div style="color: var(--theme-text); white-space: pre-line; line-height: 1.5; font-size: 0.82rem;">
+                                            <?php echo htmlspecialchars($t['ai_reply']); ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
 
         </main>
     </div>

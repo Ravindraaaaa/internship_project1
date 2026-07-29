@@ -282,6 +282,14 @@ try {
         if (!$checkEndDate) {
             $pdo->exec("ALTER TABLE events ADD COLUMN end_date DATETIME NULL DEFAULT NULL AFTER event_date");
         }
+        $checkSender = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'sender_id'")->fetch();
+        if (!$checkSender) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN sender_id INT DEFAULT NULL");
+        }
+        $checkReadAt = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'read_at'")->fetch();
+        if (!$checkReadAt) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN read_at TIMESTAMP NULL DEFAULT NULL");
+        }
     }
 
     // 15. Check & add start_date and end_date in jobs table
@@ -304,6 +312,24 @@ try {
         $pdo->exec("UPDATE jobs SET end_date = DATE_ADD(created_at, INTERVAL 30 DAY) WHERE end_date IS NULL");
     } catch (Exception $ex) {
         // fail-silent
+    }
+
+    // 6. Check & add deadline in jobs table if missing
+    $checkJobsTable = $pdo->query("SHOW TABLES LIKE 'jobs'")->fetch();
+    if ($checkJobsTable) {
+        $checkDeadline = $pdo->query("SHOW COLUMNS FROM jobs LIKE 'deadline'")->fetch();
+        if (!$checkDeadline) {
+            $pdo->exec("ALTER TABLE jobs ADD COLUMN deadline DATE NULL DEFAULT NULL");
+        }
+    }
+
+    // 7. Check & add ai_reply in feedback table if missing
+    $checkFeedbackTable = $pdo->query("SHOW TABLES LIKE 'feedback'")->fetch();
+    if ($checkFeedbackTable) {
+        $checkAiReply = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'ai_reply'")->fetch();
+        if (!$checkAiReply) {
+            $pdo->exec("ALTER TABLE feedback ADD COLUMN ai_reply TEXT NULL DEFAULT NULL");
+        }
     }
 } catch (Exception $e) {
     // fail-silent during uninitialized database setup

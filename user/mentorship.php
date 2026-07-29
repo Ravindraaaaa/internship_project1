@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         $stmtInsert = $pdo->prepare("INSERT INTO mentorship_requests (student_id, alumni_id, message, status) VALUES (?, ?, ?, 'pending')");
                         $stmtInsert->execute([$uid, $alumni_id, $message]);
                         
-                        // Dispatch automatic notification with clickable action link
-                        create_notification($alumni_id, "New Connection Request 🤝", "Student " . $user_name . " sent you a mentorship connection request.", "info", "high", "user/mentorship.php");
+                        // Dispatch automatic notification with clickable action link and sender tracking
+                        create_notification($alumni_id, "New Connection Request 🤝", $user_name . " sent you a mentorship connection request.", "info", "high", "user/mentorship.php", $uid);
                         
                         set_flash('success', 'Connection request sent successfully!');
                     }
@@ -87,9 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                     $stmtUpdate = $pdo->prepare("UPDATE mentorship_requests SET status = ? WHERE id = ?");
                     $stmtUpdate->execute([$status, $req_id]);
                     
-                    // Dispatch notification to student with clickable action link
+                    // Dispatch notification to student with clickable action link & sender_id
                     $targetLink = ($status === 'accepted') ? "user/chat.php?user_id=" . $uid : "user/mentorship.php";
-                    create_notification($student_id, "Mentorship Request " . ucfirst($status) . " 🎓", "Your mentorship connection request with " . $user_name . " was " . $status . ".", ($status === 'accepted' ? 'success' : 'info'), 'high', $targetLink);
+                    create_notification($student_id, "Mentorship Request " . ucfirst($status) . " 🎓", $user_name . " " . $status . " your mentorship connection request.", ($status === 'accepted' ? 'success' : 'info'), 'high', $targetLink, $uid);
 
                     if ($status === 'accepted') {
                         set_flash('success', 'Connection request accepted!');

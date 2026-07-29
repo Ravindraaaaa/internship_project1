@@ -16,6 +16,26 @@ $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png'; // 
 
 $tab = $_GET['tab'] ?? 'overview';
 
+// Handle AJAX Read Receipts Log for Notification Audit Modal
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'get_notif_audit') {
+    header('Content-Type: application/json');
+    $title = trim($_GET['title'] ?? '');
+    
+    try {
+        $stmt = $pdo->prepare("SELECT n.id, n.is_read, n.read_at, n.created_at, u.name as user_name, u.email as user_email, u.role as user_role 
+                               FROM notifications n 
+                               JOIN users u ON n.user_id = u.id 
+                               WHERE n.title = ? 
+                               ORDER BY n.is_read DESC, u.name ASC");
+        $stmt->execute([$title]);
+        $receipts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['status' => 'success', 'data' => $receipts]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
 // Handle Announcement Creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_announcement') {
     $title = trim($_POST['title'] ?? '');
@@ -38,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             
             // Bulk insert notifications
             if (count($users) > 0) {
-                $notif_stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, 'info')");
+                $notif_stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority, link, sender_id) VALUES (?, ?, ?, 'info', 'medium', 'user/dashboard.php', ?)");
                 foreach ($users as $user_id) {
-                    $notif_stmt->execute([$user_id, 'New Announcement: ' . $title, substr($content, 0, 100) . '...']);
+                    $notif_stmt->execute([$user_id, 'New Announcement: ' . $title, substr($content, 0, 100) . '...', $uid]);
                 }
             }
             $pdo->commit();
@@ -122,9 +142,10 @@ try {
                              ORDER BY a.created_at DESC");
         $all_announcements = $stmt->fetchAll();
     } elseif ($tab === 'notifications') {
-        $stmt = $pdo->query("SELECT n.*, u.name as user_name, u.email as user_email, u.role as user_role 
+        $stmt = $pdo->query("SELECT n.*, u.name as user_name, u.email as user_email, u.role as user_role, s.name as sender_name 
                              FROM notifications n 
                              JOIN users u ON n.user_id = u.id 
+                             LEFT JOIN users s ON n.sender_id = s.id 
                              ORDER BY n.created_at DESC LIMIT 100");
         $notif_logs = $stmt->fetchAll();
     }
@@ -676,58 +697,81 @@ require_once __DIR__ . '/../includes/header.php';
             <?php elseif ($tab === 'notifications'): ?>
 
                 <!-- TAB: NOTIFICATION AUDIT & READ TRACKER -->
-                <div class="card-glass fade-in" style="margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div class="card-glass fade-in" style="margin-bottom: 2rem; padding: 1.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <h3 style="margin:0; font-size: 1.25rem;"><i class="fa-solid fa-bell" style="color: var(--theme-accent-purple); margin-right: 0.4rem;"></i> Notification Delivery & Read Tracker</h3>
-                            <p style="margin: 0.25rem 0 0 0; color: var(--theme-text-secondary); font-size: 0.85rem;">Audit log showing target users, alert messages, read statuses, and timestamps.</p>
+                            <p style="margin: 0.25rem 0 0 0; color: var(--theme-text-secondary); font-size: 0.85rem;">Audit log showing target users, alert messages, read statuses, and timestamps. Click any row to inspect full audit details.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="notif-search-input" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Search notifications</label>
+                            <input type="text" id="notif-search-input" name="notif_search" class="input-glass" style="padding: 0.45rem 0.85rem; font-size: 0.82rem; width: 220px;" placeholder="Search user or notification..." autocomplete="off" aria-label="Search notifications" onkeyup="filterNotifTable()">
                         </div>
                     </div>
 
                     <?php if (!empty($notif_logs)): ?>
-                        <div class="table-responsive">
-                            <table class="recent-activities-table">
+                        <div class="table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+                            <table class="recent-activities-table" id="notif-tracker-table" style="width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0 0.4rem;">
                                 <thead>
-                                    <tr>
-                                        <th>Target User</th>
-                                        <th>Notification Title</th>
-                                        <th>Message</th>
-                                        <th>Priority</th>
-                                        <th>Read Status</th>
-                                        <th>Sent Time</th>
+                                    <tr style="background: rgba(255,255,255,0.03);">
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Target User</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Notification Title</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Sender / Source</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Message</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Priority</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Read Status</th>
+                                        <th style="padding: 0.85rem 1rem; font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">Sent Time</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($notif_logs as $nlog): ?>
-                                        <tr>
-                                            <td>
-                                                <strong style="color: var(--theme-text);"><?php echo htmlspecialchars($nlog['user_name']); ?></strong><br>
+                                        <tr class="notif-row" style="cursor: pointer; background: rgba(255,255,255,0.015); border: 1px solid var(--theme-border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.015)'" onclick="showAuditDetailModal('<?php echo htmlspecialchars(addslashes($nlog['title'])); ?>', '<?php echo htmlspecialchars(addslashes($nlog['message'])); ?>', '<?php echo htmlspecialchars(addslashes($nlog['user_name'])); ?>', '<?php echo htmlspecialchars(addslashes($nlog['sender_name'] ?? 'System Admin')); ?>', '<?php echo $nlog['is_read']; ?>', '<?php echo $nlog['read_at']; ?>', '<?php echo date('M d, Y h:i A', strtotime($nlog['created_at'])); ?>')">
+                                            <td style="padding: 1rem; white-space: nowrap;">
+                                                <strong style="color: var(--theme-text); display:inline-flex; align-items:center; gap:0.35rem;"><i class="fa-solid fa-user-circle" style="color:var(--theme-accent-purple);"></i> <?php echo htmlspecialchars($nlog['user_name']); ?></strong><br>
                                                 <span style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($nlog['user_email']); ?> (<?php echo ucfirst($nlog['user_role']); ?>)</span>
                                             </td>
-                                            <td><strong style="color: var(--theme-accent-blue);"><?php echo htmlspecialchars($nlog['title']); ?></strong></td>
-                                            <td style="max-width: 250px; font-size: 0.85rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($nlog['message']); ?></td>
-                                            <td>
-                                                <span class="badge badge-<?php echo $nlog['priority'] === 'high' ? 'rejected' : 'approved'; ?>">
+                                            <td style="padding: 1rem; white-space: nowrap;">
+                                                <strong style="color: var(--theme-accent-blue); display:inline-flex; align-items:center; gap:0.3rem;">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i> <?php echo htmlspecialchars($nlog['title']); ?>
+                                                </strong>
+                                            </td>
+                                            <td style="padding: 1rem; white-space: nowrap;">
+                                                <span style="font-size:0.8rem; color: var(--theme-text-secondary); display:inline-flex; align-items:center; gap:0.3rem;">
+                                                    <i class="fa-solid fa-paper-plane" style="font-size:0.75rem; color:var(--theme-accent-purple);"></i> <?php echo htmlspecialchars($nlog['sender_name'] ?? 'System Broadcast'); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 1rem; max-width: 220px; font-size: 0.85rem; color: var(--theme-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($nlog['message']); ?></td>
+                                            <td style="padding: 1rem; white-space: nowrap;">
+                                                <span class="badge badge-<?php echo $nlog['priority'] === 'high' ? 'rejected' : 'approved'; ?>" style="padding: 0.3rem 0.65rem;">
                                                     <?php echo ucfirst(htmlspecialchars($nlog['priority'] ?? 'medium')); ?>
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td style="padding: 1rem; white-space: nowrap;">
                                                 <?php if ($nlog['is_read'] == 1): ?>
-                                                    <span class="badge badge-approved" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
-                                                        <i class="fa-solid fa-eye"></i> READ
+                                                    <span class="badge badge-approved" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 0.3rem;" title="Read at: <?php echo $nlog['read_at']; ?>">
+                                                        <i class="fa-solid fa-circle-check"></i> READ <?php echo !empty($nlog['read_at']) ? ' (' . date('h:i A', strtotime($nlog['read_at'])) . ')' : ''; ?>
                                                     </span>
                                                 <?php else: ?>
-                                                    <span class="badge badge-pending" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">
-                                                        <i class="fa-solid fa-eye-slash"></i> UNREAD
+                                                    <span class="badge badge-pending" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                                        <i class="fa-solid fa-clock"></i> UNREAD
                                                     </span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td style="font-size: 0.8rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y h:i A', strtotime($nlog['created_at'])); ?></td>
+                                            <td style="padding: 1rem; font-size: 0.8rem; color: var(--theme-text-secondary); white-space: nowrap;"><?php echo date('M d, Y h:i A', strtotime($nlog['created_at'])); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
+                        <script>
+                        function filterNotifTable() {
+                            const val = document.getElementById('notif-search-input').value.toLowerCase();
+                            const rows = document.querySelectorAll('.notif-row');
+                            rows.forEach(r => {
+                                r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none';
+                            });
+                        }
+                        </script>
                     <?php else: ?>
                         <div style="text-align: center; padding: 2.5rem; color: var(--theme-text-secondary);">
                             <i class="fa-solid fa-bell-slash" style="font-size: 2.5rem; margin-bottom: 0.75rem;"></i>
@@ -735,6 +779,129 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- AUDIT DETAIL MODAL -->
+                <div id="auditDetailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:1.5rem; overflow-y:auto;">
+                    <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; max-width:640px; width:95%; max-height:88vh; overflow-y:auto; padding:1.75rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); color:#f8fafc;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                            <h3 style="font-size:1.15rem; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:0.5rem; margin:0;">
+                                <i class="fa-solid fa-users-viewfinder"></i> Notification Audit & Recipient Read Log
+                            </h3>
+                            <button type="button" onclick="closeAuditModal()" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:0.85rem; font-size:0.9rem;">
+                            <div style="background:#0f172a; padding:0.85rem 1rem; border-radius:8px; border:1px solid #1e293b;">
+                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:0.2rem;">Notification Title</span>
+                                <strong id="modal-notif-title" style="font-size:1.05rem; color:#f8fafc;"></strong>
+                            </div>
+
+                            <div style="background:#0f172a; padding:0.85rem 1rem; border-radius:8px; border:1px solid #1e293b;">
+                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:0.2rem;">Message Content</span>
+                                <p id="modal-notif-msg" style="margin:0; color:#cbd5e1; line-height:1.4; white-space:pre-line; font-size:0.85rem;"></p>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                                <div style="background:#0f172a; padding:0.75rem 0.85rem; border-radius:8px; border:1px solid #1e293b;">
+                                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:600; text-transform:uppercase; display:block;">Sender / Source</span>
+                                    <strong id="modal-notif-sender" style="color:#c084fc; font-size:0.85rem;"></strong>
+                                </div>
+                                <div style="background:#0f172a; padding:0.75rem 0.85rem; border-radius:8px; border:1px solid #1e293b;">
+                                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:600; text-transform:uppercase; display:block;">Sent Timestamp</span>
+                                    <span id="modal-notif-sent" style="color:#cbd5e1; font-weight:600; font-size:0.85rem;"></span>
+                                </div>
+                            </div>
+
+                            <!-- LIVE ALL USERS READ STATUS AUDIT LIST -->
+                            <div style="background:#0f172a; padding:1rem; border-radius:8px; border:1px solid #1e293b; margin-top:0.2rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid #1e293b; padding-bottom:0.5rem;">
+                                    <span style="font-size:0.8rem; color:#38bdf8; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:0.4rem;">
+                                        <i class="fa-solid fa-eye"></i> All Recipients Read Statuses
+                                    </span>
+                                    <span id="modal-read-stats" style="font-size:0.75rem; background:rgba(16, 185, 129, 0.15); color:#4ade80; padding:0.2rem 0.6rem; border-radius:4px; border:1px solid rgba(74, 222, 128, 0.3); font-weight:700;"></span>
+                                </div>
+                                <div id="modal-recipients-list" style="max-height: 260px; overflow-y: auto; display:flex; flex-direction:column; gap:0.5rem; padding-right: 4px;">
+                                    <div style="text-align:center; padding:1rem; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching recipient list...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; margin-top:1.25rem;">
+                            <button type="button" onclick="closeAuditModal()" class="btn btn-secondary">Close Audit View</button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                function showAuditDetailModal(title, msg, user, sender, isRead, readAt, sentTime) {
+                    document.getElementById('modal-notif-title').textContent = title;
+                    document.getElementById('modal-notif-msg').textContent = msg;
+                    document.getElementById('modal-notif-sender').textContent = sender;
+                    document.getElementById('modal-notif-sent').textContent = sentTime;
+                    
+                    const listContainer = document.getElementById('modal-recipients-list');
+                    const statsElem = document.getElementById('modal-read-stats');
+                    
+                    listContainer.innerHTML = '<div style="text-align:center; padding:1rem; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching recipient list...</div>';
+                    statsElem.textContent = 'Loading...';
+
+                    document.getElementById('auditDetailModal').style.display = 'flex';
+                    if (typeof window.lockBackgroundScroll === 'function') window.lockBackgroundScroll();
+                    else document.body.style.overflow = 'hidden';
+
+                    // Fetch all users who received this notification title
+                    fetch('dashboard.php?ajax=get_notif_audit&title=' + encodeURIComponent(title))
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success' && data.data) {
+                            const total = data.data.length;
+                            const readCount = data.data.filter(r => parseInt(r.is_read) === 1).length;
+                            const pct = total > 0 ? Math.round((readCount / total) * 100) : 0;
+
+                            statsElem.textContent = `${readCount} / ${total} Users Read (${pct}%)`;
+
+                            let html = '';
+                            data.data.forEach(r => {
+                                const hasRead = parseInt(r.is_read) === 1;
+                                const statusBadge = hasRead 
+                                    ? `<span style="color:#10b981; font-weight:700; font-size:0.78rem;"><i class="fa-solid fa-circle-check"></i> READ ${r.read_at ? '(' + r.read_at + ')' : ''}</span>`
+                                    : `<span style="color:#f59e0b; font-weight:600; font-size:0.78rem;"><i class="fa-solid fa-clock"></i> UNREAD</span>`;
+
+                                html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:0.6rem 0.85rem; border-radius:6px; border:1px solid #334155;">
+                                    <div>
+                                        <strong style="color:#f8fafc; font-size:0.85rem;"><i class="fa-solid fa-user-circle" style="color:#c084fc; margin-right:0.3rem;"></i> ${r.user_name}</strong> 
+                                        <span style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase;">(${r.user_role})</span>
+                                        <div style="font-size:0.75rem; color:#94a3b8;">${r.user_email}</div>
+                                    </div>
+                                    <div>${statusBadge}</div>
+                                </div>`;
+                            });
+                            listContainer.innerHTML = html;
+                        } else {
+                            listContainer.innerHTML = '<div style="color:#ef4444; padding:0.5rem;">Failed to fetch recipients.</div>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        listContainer.innerHTML = '<div style="color:#ef4444; padding:0.5rem;">Error loading recipient data.</div>';
+                    });
+                }
+
+                function closeAuditModal() {
+                    document.getElementById('auditDetailModal').style.display = 'none';
+                    if (typeof window.unlockBackgroundScroll === 'function') window.unlockBackgroundScroll();
+                    else document.body.style.overflow = '';
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const modalBackdrop = document.getElementById('auditDetailModal');
+                    if (modalBackdrop) {
+                        modalBackdrop.addEventListener('click', function(e) {
+                            if (e.target === this) closeAuditModal();
+                        });
+                    }
+                });
+                </script>
 
             <?php endif; ?>
 

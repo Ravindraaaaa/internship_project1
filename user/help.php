@@ -29,12 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_ticket'])) {
             $ticket_error = 'Please fill out all required ticket fields.';
         } else {
             try {
+                $user_email = $_SESSION['user_email'] ?? '';
+                $ai_reply = generate_ai_support_reply($user_name, $user_email, $subject, $message, "Help Ticket - $category");
+
                 // Store support ticket in feedback table as help request
-                $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message) VALUES (?, 5, ?, ?)");
-                $stmt->execute([$uid, "[HELP TICKET - $category] " . $subject, $message]);
+                $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message, ai_reply) VALUES (?, 5, ?, ?, ?)");
+                $stmt->execute([$uid, "[HELP TICKET - $category] " . $subject, $message, $ai_reply]);
+
+                create_notification($uid, "AI Support Response: " . $subject, "Support AI analyzed your '{$category}' ticket and generated an automated resolution response.", "success", "high", "user/help.php");
 
                 log_activity($uid, 'submitted_help_ticket', "Category: $category - Subject: $subject");
-                set_flash('success', 'Your help ticket has been submitted! Support team will respond shortly.');
+                set_flash('success', 'Your help ticket has been submitted! Our AI Support Agent has generated and dispatched an automated resolution email response.');
                 header('Location: help.php');
                 exit;
             } catch (Exception $e) {
@@ -174,6 +179,45 @@ require_once __DIR__ . '/../includes/header.php';
                     </button>
                 </form>
             </div>
+
+            <?php
+                $stmtHelpFeed = $pdo->prepare("SELECT * FROM feedback WHERE user_id = ? AND subject LIKE '[HELP TICKET%' ORDER BY created_at DESC LIMIT 10");
+                $stmtHelpFeed->execute([$uid]);
+                $help_tickets = $stmtHelpFeed->fetchAll();
+            ?>
+
+            <?php if ($help_tickets): ?>
+                <div class="card-glass" style="margin-top: 2rem;">
+                    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-robot" style="color: var(--theme-accent-purple);"></i> Your Support Ticket AI Responses
+                    </h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <?php foreach ($help_tickets as $ht): ?>
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($ht['subject']); ?></h4>
+                                    <span style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y H:i', strtotime($ht['created_at'])); ?></span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.85rem; line-height: 1.4;">
+                                    <strong>Query:</strong> <?php echo htmlspecialchars($ht['message']); ?>
+                                </p>
+
+                                <?php if (!empty($ht['ai_reply'])): ?>
+                                    <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid var(--theme-accent-purple); padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem;">
+                                        <div style="font-weight: 700; color: var(--theme-accent-purple); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                                            <i class="fa-solid fa-envelope-circle-check"></i> AI Support Email Response Dispatched:
+                                        </div>
+                                        <div style="color: var(--theme-text); white-space: pre-line; line-height: 1.5; font-size: 0.82rem;">
+                                            <?php echo htmlspecialchars($ht['ai_reply']); ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
 
         </main>
     </div>

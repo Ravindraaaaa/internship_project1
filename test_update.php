@@ -15,10 +15,9 @@ $_POST['github'] = 'https://github.com/test';
 $_POST['cgpa'] = '8.50';
 $_POST['name'] = 'Demo Student User Updated';
 
-// mock the logic
 try {
-    $uid = 2;
-    $current_year = intval($_POST['current_year']);
+    $userId = 2;
+    $currentYear = intval($_POST['current_year']);
     $course = trim($_POST['course']);
     $linkedin = trim($_POST['linkedin']);
     $github = trim($_POST['github']);
@@ -26,17 +25,16 @@ try {
     $cgpa = floatval($_POST['cgpa']);
     
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM student_profiles WHERE user_id = ?");
-    $stmt->execute([$uid]);
+    $stmt->execute([$userId]);
     if ($stmt->fetchColumn() > 0) {
-        $stmtUp = $pdo->prepare("UPDATE student_profiles SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, profile_pic = ?, cgpa = ? WHERE user_id = ?");
-        $stmtUp->execute([$current_year, $course, $linkedin, $github, $bio, null, $cgpa, $uid]);
+        $stmtUpdate = $pdo->prepare("UPDATE student_profiles SET current_year = ?, course = ?, linkedin = ?, github = ?, bio = ?, cgpa = ? WHERE user_id = ?");
+        $stmtUpdate->execute([$currentYear, $course, $linkedin, $github, $bio, $cgpa, $userId]);
         echo "Update successful\n";
     } else {
-        $stmtIns = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, profile_pic, cgpa) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmtIns->execute([$uid, $current_year, $course, $linkedin, $github, $bio, null, $cgpa]);
+        $stmtInsert = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, linkedin, github, bio, cgpa) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmtInsert->execute([$userId, $currentYear, $course, $linkedin, $github, $bio, $cgpa]);
         echo "Insert successful\n";
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }
-?>

@@ -43,7 +43,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div style="padding: 1rem; border-bottom: 1px solid var(--theme-border);">
                     <input type="text" id="convo-search" class="input-glass" style="font-size: 0.85rem; padding: 0.4rem 0.75rem; width:100%;" placeholder="Search chats...">
                 </div>
-                <div id="conversations-list-container" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column;">
+                <div id="conversations-list-container" data-lenis-prevent="true" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column;">
                     <div style="text-align: center; color: var(--theme-text-secondary); font-size: 0.85rem; padding: 2rem;">Loading chat logs...</div>
                 </div>
             </div>
@@ -73,7 +73,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <!-- Chat Messages Stream -->
-                <div id="chat-messages-stream" style="flex-grow: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div id="chat-messages-stream" data-lenis-prevent="true" style="flex-grow: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
                     <div id="chat-stream-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--theme-text-secondary); text-align: center; padding: 2rem;">
                         <i class="fa-regular fa-comments" style="font-size: 3rem; margin-bottom: 1rem; color: var(--theme-accent-blue);"></i>
                         <h3>Support Inbox</h3>
