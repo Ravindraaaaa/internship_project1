@@ -46,12 +46,18 @@ $history = $pdo->query("SELECT * FROM import_history ORDER BY created_at DESC LI
                     <div style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 3rem; text-align: center; background: rgba(0,0,0,0.2); cursor: pointer;" onclick="document.getElementById('fileInput').click()">
                         <i class="fa-solid fa-file-excel" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
                         <h4 style="font-size: 1.2rem; margin-bottom: 0.5rem;">Click to Browse or Drag & Drop</h4>
-                        <p style="color: var(--theme-text-muted);">Supports .csv, .xlsx, and .pdf files (Max 5MB)</p>
-                        <input type="file" id="fileInput" name="import_file" accept=".csv, .xlsx, .pdf" style="display: none;" onchange="handleFileSelect(event)">
+                        <p style="color: var(--theme-text-muted);">Supports .csv, .xlsx, .pdf, images, and text files (Max 5MB)</p>
+                        <input type="file" id="fileInput" name="import_file" accept=".csv, .xlsx, .pdf, image/*, .txt, .docx" style="display: none;" onchange="handleFileSelect(event)">
                     </div>
                     <div id="fileInfo" style="display:none; margin-top: 1rem; align-items: center; gap: 1rem;">
                         <span id="fileNameDisplay" style="font-weight: bold; color: var(--theme-accent-purple);"></span>
-                        <button type="button" class="btn btn-secondary btn-small" onclick="clearFile()">Change File</button>
+                        <button class="btn btn-secondary" onclick="clearFile()" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Clear</button>
+                    </div>
+
+                    <div style="margin-top: 2rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Universal AI Extractor (Optional)</h4>
+                        <p style="font-size: 0.85rem; color: var(--theme-text-muted); margin-bottom: 1rem;">Provide a Google Gemini API Key to intelligently extract alumni records from ANY unstructured file format (Screenshots, Scanned PDFs, Text files).</p>
+                        <input type="password" id="geminiApiKey" class="form-control" placeholder="Enter Gemini API Key (Stored securely in browser)" onchange="saveApiKey()" style="margin-bottom: 0.5rem; background: rgba(0,0,0,0.2);">
                     </div>
                     <div style="margin-top: 1.5rem; text-align: right;">
                         <button type="button" class="btn btn-primary" id="btnPreview" onclick="previewImport()" disabled>
@@ -179,8 +185,19 @@ $history = $pdo->query("SELECT * FROM import_history ORDER BY created_at DESC LI
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 let importPayload = null;
+
+// Load API key from local storage
+document.addEventListener('DOMContentLoaded', () => {
+    const key = localStorage.getItem('gemini_api_key');
+    if (key) document.getElementById('geminiApiKey').value = key;
+});
+
+function saveApiKey() {
+    localStorage.setItem('gemini_api_key', document.getElementById('geminiApiKey').value.trim());
+}
 
 function handleFileSelect(e) {
     const file = e.target.files[0];
@@ -202,25 +219,133 @@ function cancelImport() {
     clearFile();
 }
 
-function previewImport() {
+async function previewImport() {
     const file = document.getElementById('fileInput').files[0];
     if(!file) return;
 
     const btn = document.getElementById('btnPreview');
     const ogText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Parsing...';
+    const apiKey = document.getElementById('geminiApiKey').value.trim();
+
+    const isImage = file.name.match(/\.(png|jpe?g)$/i);
+    const isText = file.name.match(/\.(txt)$/i);
+
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
     btn.disabled = true;
 
-    const formData = new FormData();
-    formData.append('action', 'preview');
-    formData.append('import_file', file);
+    try {
+        let formData = new FormData();
+        
+        if (apiKey) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI Analyzing...';
+            // Convert file to Base64
+            const base64Data = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(file);
+            });
 
-    fetch('../api/import_alumni_action.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
+            // Map mime types
+            let mimeType = file.type;
+            if (file.name.endsWith('.pdf')) mimeType = 'application/pdf';
+            if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) mimeType = 'text/plain';
+
+            const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Extract all alumni records from this document. Return ONLY a valid JSON array of objects. Use these exact keys: First Name, Last Name, Email, Phone, Enrollment ID, Grad Year, Course, Company, Position, Industry, LinkedIn. Leave missing fields blank." },
+                            { inlineData: { mimeType: mimeType, data: base64Data } }
+                        ]
+                    }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            const aiData = await aiResponse.json();
+            if (aiData.error) throw new Error(aiData.error.message);
+
+            let textResp = aiData.candidates[0].content.parts[0].text;
+            // Remove potential markdown code blocks
+            textResp = textResp.replace(/```json/g, '').replace(/```/g, '').trim();
+            const records = JSON.parse(textResp);
+            
+            // Convert to 2D array format for backend
+            const headers = ["First Name", "Last Name", "Email", "Phone", "Enrollment ID", "Grad Year", "Course", "Company", "Position", "Industry", "LinkedIn"];
+            const rows2D = [headers];
+            
+            records.forEach(r => {
+                rows2D.push([
+                    r['First Name']||'', r['Last Name']||'', r['Email']||'', r['Phone']||'', r['Enrollment ID']||'', 
+                    r['Grad Year']||'', r['Course']||'', r['Company']||'', r['Position']||'', r['Industry']||'', r['LinkedIn']||''
+                ]);
+            });
+
+            formData.append('action', 'preview_ai');
+            formData.append('ai_data', JSON.stringify(rows2D));
+            formData.append('filename', file.name);
+        } else if (isImage || isText) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Local OCR Processing...';
+            
+            let rawText = '';
+            if (isImage) {
+                const worker = await Tesseract.createWorker("eng");
+                const ret = await worker.recognize(file);
+                await worker.terminate();
+                rawText = ret.data.text;
+            } else {
+                rawText = await file.text();
+            }
+
+            const lines = rawText.split('\n');
+            const headers = ["First Name", "Last Name", "Email", "Phone", "Enrollment ID", "Grad Year", "Course", "Company", "Position", "Industry", "LinkedIn"];
+            const rows2D = [headers];
+            
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                let emailMatch = line.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+                let phoneMatch = line.match(/\b\d{10}\b/);
+                let yearMatch = line.match(/\b(19|20)\d{2}\b/);
+                
+                let remaining = line;
+                if (emailMatch) remaining = remaining.replace(emailMatch[0], '');
+                if (phoneMatch) remaining = remaining.replace(phoneMatch[0], '');
+                if (yearMatch) remaining = remaining.replace(yearMatch[0], '');
+                
+                remaining = remaining.replace(/[^\w\s]/g, '').trim().split(/\s+/);
+                let firstName = remaining[0] || '';
+                let lastName = remaining.length > 1 ? remaining.slice(1).join(' ') : '';
+                
+                // Only push if we found something useful
+                if (emailMatch || phoneMatch || firstName) {
+                    rows2D.push([
+                        firstName, lastName, 
+                        emailMatch ? emailMatch[0] : '', 
+                        phoneMatch ? phoneMatch[0] : '', 
+                        '', // Enrollment ID hard to guess without context
+                        yearMatch ? yearMatch[0] : '', 
+                        '', '', '', '', ''
+                    ]);
+                }
+            });
+
+            formData.append('action', 'preview_ai');
+            formData.append('ai_data', JSON.stringify(rows2D));
+            formData.append('filename', file.name);
+        } else {
+            formData.append('action', 'preview');
+            formData.append('import_file', file);
+        }
+
+        const res = await fetch('../api/import_alumni_action.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await res.json();
         btn.innerHTML = ogText;
         btn.disabled = false;
 
@@ -229,14 +354,13 @@ function previewImport() {
             return;
         }
 
-        importPayload = data; // store globally for import execution
+        importPayload = data;
         renderPreview(data);
-    })
-    .catch(err => {
+    } catch (err) {
         btn.innerHTML = ogText;
         btn.disabled = false;
-        alert('An error occurred while parsing the file.');
-    });
+        alert('An error occurred: ' + err.message);
+    }
 }
 
 function renderPreview(data) {

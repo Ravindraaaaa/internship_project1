@@ -15,30 +15,39 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($action)) {
     exit;
 }
 
-if ($action === 'preview') {
-    if (!isset($_FILES['import_file']) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['status' => 'error', 'message' => 'File upload failed.']);
-        exit;
-    }
-
-    $fileTmpPath = $_FILES['import_file']['tmp_name'];
-    $fileName = $_FILES['import_file']['name'];
-    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-    
-    // Parse File
-    if ($ext === 'pdf') {
-        $result = SimplePDFReader::parse($fileTmpPath);
+if ($action === 'preview' || $action === 'preview_ai') {
+    if ($action === 'preview_ai') {
+        $rows = json_decode($_POST['ai_data'] ?? '[]', true);
+        $fileName = $_POST['filename'] ?? 'ai_extraction.txt';
     } else {
-        $result = SimpleXLSXReader::parse($fileTmpPath);
-    }
-    if (isset($result['error'])) {
-        echo json_encode(['status' => 'error', 'message' => $result['error']]);
-        exit;
+        if (!isset($_FILES['import_file']) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['status' => 'error', 'message' => 'File upload failed.']);
+            exit;
+        }
+
+        $fileTmpPath = $_FILES['import_file']['tmp_name'];
+        $fileName = $_FILES['import_file']['name'];
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        
+        // Parse File
+        if ($ext === 'pdf') {
+            $result = SimplePDFReader::parse($fileTmpPath);
+        } else if (in_array($ext, ['csv', 'xlsx'])) {
+            $result = SimpleXLSXReader::parse($fileTmpPath);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => "You uploaded a .$ext file, but no Gemini API Key is configured. To extract data from images or unstructured files, please enter your Gemini API Key in the Universal AI Extractor section."]);
+            exit;
+        }
+        if (isset($result['error'])) {
+            echo json_encode(['status' => 'error', 'message' => $result['error']]);
+            exit;
+        }
+
+        $rows = $result['data'];
     }
 
-    $rows = $result['data'];
-    if (count($rows) < 2) { // Need header + at least 1 row
-        echo json_encode(['status' => 'error', 'message' => 'File is empty or missing data rows.']);
+    if (empty($rows) || count($rows) < 2) { // Need header + at least 1 row
+        echo json_encode(['status' => 'error', 'message' => 'File is empty or could not be parsed correctly.']);
         exit;
     }
 
