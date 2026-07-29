@@ -45,13 +45,58 @@ try {
         } elseif ($user['role'] !== 'alumni') {
             set_flash('error', 'This action can only be performed on alumni accounts.');
         } else {
+            require_once __DIR__ . '/../includes/mailer_helper.php';
+            require_once __DIR__ . '/../includes/notification_helper.php';
+
+            $stmtCheckFull = $pdo->prepare("SELECT name, email, role FROM users WHERE id = ?");
+            $stmtCheckFull->execute([$target_id]);
+            $userInfo = $stmtCheckFull->fetch();
+
             if ($action === 'approve') {
                 $stmtUpdate = $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ?");
                 $stmtUpdate->execute([$target_id]);
-                set_flash('success', 'Alumnus "' . htmlspecialchars($user['name']) . '" approved successfully!');
+
+                // 1. Send Approval Email to Alumnus
+                if (!empty($userInfo['email'])) {
+                    $email_html = build_enterprise_email_template(
+                        "Account Approved - Welcome to AlumniNet!",
+                        "<p>Hello <strong>" . htmlspecialchars($userInfo['name']) . "</strong>,</p>
+                        <p>Great news! Your Alumni registration request has been <strong>APPROVED</strong> by the platform administrators.</p>
+                        <p>You can now sign in using your registered credentials to access alumni networking, job referrals, events, and mentorship features.</p>",
+                        "login.php",
+                        "Sign In Now"
+                    );
+                    send_logged_email($userInfo['email'], "Account Approved: Welcome to AlumniNet", $email_html, $userInfo['name'], 'account_approved');
+                }
+
+                // 2. In-App Notification
+                NotificationEngine::send([
+                    'user_id' => $target_id,
+                    'type' => 'success',
+                    'category' => 'system',
+                    'title' => "Account Approved! 🎉",
+                    'message' => "Your Alumni profile has been verified and approved by administrators.",
+                    'icon' => 'circle-check',
+                    'color' => 'emerald'
+                ]);
+
+                set_flash('success', 'Alumnus "' . htmlspecialchars($user['name']) . '" approved successfully and notification email sent!');
             } elseif ($action === 'reject') {
                 $stmtUpdate = $pdo->prepare("UPDATE users SET status = 'rejected' WHERE id = ?");
                 $stmtUpdate->execute([$target_id]);
+
+                if (!empty($userInfo['email'])) {
+                    $email_html = build_enterprise_email_template(
+                        "AlumniNet Registration Update",
+                        "<p>Hello <strong>" . htmlspecialchars($userInfo['name']) . "</strong>,</p>
+                        <p>Your Alumni registration request was reviewed by platform administrators and could not be approved at this time.</p>
+                        <p>If you believe this is an error, please contact platform support at support@alumninet.edu.</p>",
+                        null,
+                        null
+                    );
+                    send_logged_email($userInfo['email'], "AlumniNet Registration Status Update", $email_html, $userInfo['name'], 'account_rejected');
+                }
+
                 set_flash('warning', 'Alumnus "' . htmlspecialchars($user['name']) . '" registration rejected.');
             } else {
                 set_flash('error', 'Unknown approval action.');

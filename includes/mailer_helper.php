@@ -152,3 +152,90 @@ if (!function_exists('send_smtp_email')) {
         }
     }
 }
+
+/**
+ * Enterprise Responsive HTML Email Template Generator
+ */
+if (!function_exists('build_enterprise_email_template')) {
+    function build_enterprise_email_template($title, $body_content, $action_url = null, $action_text = null) {
+        $year = date('Y');
+        $btn_html = '';
+        if ($action_url && $action_text) {
+            $btn_html = "
+            <div style='text-align: center; margin: 2rem 0;'>
+                <a href='{$action_url}' style='background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: inline-block; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);'>
+                    {$action_text}
+                </a>
+            </div>";
+        }
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>{$title}</title>
+        </head>
+        <body style='margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;'>
+            <table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='background-color: #0f172a; padding: 40px 10px;'>
+                <tr>
+                    <td align='center'>
+                        <table role='presentation' width='100%' style='max-width: 600px; background-color: #1e293b; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.4);'>
+                            <!-- Header -->
+                            <tr>
+                                <td style='background: linear-gradient(135deg, #1e1b4b 0%, #311b92 100%); padding: 30px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);'>
+                                    <div style='display: inline-block; width: 64px; height: 64px; background: rgba(255,255,255,0.1); border-radius: 50%; padding: 12px; margin-bottom: 12px;'>
+                                        <img src='https://img.icons8.com/color/96/graduation-cap.png' alt='Logo' width='40' height='40' style='display: block; margin: 0 auto;'>
+                                    </div>
+                                    <h1 style='color: #ffffff; font-size: 1.5rem; margin: 0; font-weight: 700; letter-spacing: -0.5px;'>AlumniNet Enterprise</h1>
+                                    <p style='color: #a5b4fc; font-size: 0.85rem; margin: 4px 0 0 0;'>Official Institution Communication Portal</p>
+                                </td>
+                            </tr>
+                            <!-- Body Content -->
+                            <tr>
+                                <td style='padding: 32px 30px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;'>
+                                    <h2 style='color: #f8fafc; font-size: 1.25rem; margin-top: 0; margin-bottom: 16px; font-weight: 600;'>{$title}</h2>
+                                    {$body_content}
+                                    {$btn_html}
+                                </td>
+                            </tr>
+                            <!-- Footer -->
+                            <tr>
+                                <td style='background-color: #0f172a; padding: 24px 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: #64748b;'>
+                                    <p style='margin: 0 0 8px 0;'>&copy; {$year} AlumniNet Platform. All rights reserved.</p>
+                                    <p style='margin: 0; color: #475569;'>Need assistance? Contact Support at <a href='mailto:support@alumninet.edu' style='color: #818cf8; text-decoration: none;'>support@alumninet.edu</a></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>";
+    }
+}
+
+/**
+ * Logged Email Dispatcher
+ */
+if (!function_exists('send_logged_email')) {
+    function send_logged_email($to_email, $subject, $html_body, $to_name = '', $category = 'general') {
+        global $pdo;
+        
+        $res = send_smtp_email($to_email, $subject, $html_body, $to_name);
+        $status = ($res['success'] ?? false) ? 'Sent' : 'Failed';
+        $response_msg = $res['message'] ?? $res['error'] ?? 'No response details';
+
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO email_logs (recipient_email, subject, category, status, smtp_response) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$to_email, $subject, $category, $status, $response_msg]);
+            } catch (Exception $e) {
+                error_log("Failed writing to email_logs: " . $e->getMessage());
+            }
+        }
+
+        return $res;
+    }
+}

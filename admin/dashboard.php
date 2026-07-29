@@ -69,10 +69,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $pdo->rollBack();
             set_flash('error', 'Error creating announcement: ' . $e->getMessage());
         }
-    } else {
-        set_flash('error', 'Title and content are required.');
     }
     header("Location: dashboard.php?tab=announcements");
+    exit;
+}
+
+require_once __DIR__ . '/../includes/mailer_helper.php';
+require_once __DIR__ . '/../includes/notification_helper.php';
+
+// Handle Admin Ticket Reply & Status Update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reply_ticket') {
+    $ticket_id = intval($_POST['ticket_id'] ?? 0);
+    $reply_msg = trim($_POST['reply_message'] ?? '');
+    $new_status = trim($_POST['status'] ?? 'In Review');
+
+    if ($ticket_id > 0 && !empty($reply_msg)) {
+        try {
+            $stmt = $pdo->prepare("SELECT st.*, u.email as user_email, u.name as user_name FROM support_tickets st LEFT JOIN users u ON st.user_id = u.id WHERE st.id = ?");
+            $stmt->execute([$ticket_id]);
+            $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($ticket) {
+                // Insert ticket reply
+                $reply_stmt = $pdo->prepare("INSERT INTO ticket_replies (ticket_id, sender_id, sender_role, message, created_at) VALUES (?, ?, 'admin', ?, NOW())");
+                $reply_stmt->execute([$ticket_id, $uid, $reply_msg]);
+
+                // Update ticket status
+                $upd_stmt = $pdo->prepare("UPDATE support_tickets SET status = ?, updated_at = NOW() WHERE id = ?");
+                $upd_stmt->execute([$new_status, $ticket_id]);
+
+                // Send email to user
+                if (!empty($ticket['user_email'])) {
+                    $email_html = build_enterprise_email_template(
+                        "Update on Support Ticket #{$ticket['ticket_number']}",
+                        "<p>Hello <strong>" . htmlspecialchars($ticket['user_name'] ?? 'User') . "</strong>,</p>
+                        <p>An administrator has posted an update regarding your support ticket <strong>#{$ticket['ticket_number']}</strong>.</p>
+                        <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #10b981;'>
+                            <p style='margin: 0 0 5px 0;'><strong>Status Changed To:</strong> " . htmlspecialchars($new_status) . "</p>
+                            <p style='margin: 0;'><strong>Admin Message:</strong> " . nl2br(htmlspecialchars($reply_msg)) . "</p>
+                        </div>
+                        <p>Log in to AlumniNet to view the full conversation history or post a response.</p>",
+                        null,
+                        null
+                    );
+                    send_logged_email($ticket['user_email'], "Support Update: Ticket #{$ticket['ticket_number']}", $email_html, $ticket['user_name'] ?? '', 'ticket_reply');
+                }
+
+                // Send in-app notification to user
+                if (!empty($ticket['user_id'])) {
+                    NotificationEngine::send([
+                        'user_id' => $ticket['user_id'],
+                        'type' => 'info',
+                        'category' => 'support',
+                        'title' => "Ticket Reply: {$ticket['ticket_number']}",
+                        'message' => "Admin replied to ticket #{$ticket['ticket_number']}: status is now {$new_status}.",
+                        'icon' => 'headset',
+                        'color' => 'emerald'
+                    ]);
+                }
+
+                set_flash('success', "Ticket #{$ticket['ticket_number']} updated and reply email dispatched!");
+            }
+        } catch (Exception $e) {
+            set_flash('error', 'Error updating ticket: ' . $e->getMessage());
+        }
+    }
+    header("Location: dashboard.php?tab=support_tickets");
+    exit;
+}
+
+// Handle Admin Feedback Reply & Status Update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reply_feedback') {
+    $fdb_id = intval($_POST['feedback_id'] ?? 0);
+    $reply_msg = trim($_POST['admin_reply'] ?? '');
+    $new_status = trim($_POST['status'] ?? 'Resolved');
+
+    if ($fdb_id > 0) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM feedback WHERE id = ?");
+            $stmt->execute([$fdb_id]);
+            $fdb = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($fdb) {
+                $upd = $pdo->prepare("UPDATE feedback SET admin_reply = ?, status = ? WHERE id = ?");
+                $upd->execute([$reply_msg, $new_status, $fdb_id]);
+
+                // Send email to user
+                if (!empty($fdb['email'])) {
+                    $email_html = build_enterprise_email_template(
+                        "Update on Feedback #{$fdb['feedback_id']}",
+                        "<p>Hello <strong>" . htmlspecialchars($fdb['name']) . "</strong>,</p>
+                        <p>Our platform administration team has reviewed your feedback (Reference: <strong>{$fdb['feedback_id']}</strong>).</p>
+                        <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b;'>
+                            <p style='margin: 0 0 5px 0;'><strong>Status:</strong> " . htmlspecialchars($new_status) . "</p>
+                            <p style='margin: 0;'><strong>Moderator Response:</strong> " . nl2br(htmlspecialchars($reply_msg)) . "</p>
+                        </div>",
+                        null,
+                        null
+                    );
+                    send_logged_email($fdb['email'], "Feedback Response: {$fdb['feedback_id']}", $email_html, $fdb['name'], 'feedback_reply');
+                }
+
+                // In-App Notification
+                if (!empty($fdb['user_id'])) {
+                    NotificationEngine::send([
+                        'user_id' => $fdb['user_id'],
+                        'type' => 'success',
+                        'category' => 'system',
+                        'title' => "Feedback Reviewed: {$fdb['feedback_id']}",
+                        'message' => "Moderators reviewed your feedback '{$fdb['subject']}'. Status: {$new_status}.",
+                        'icon' => 'comments',
+                        'color' => 'amber'
+                    ]);
+                }
+
+                set_flash('success', "Feedback #{$fdb['feedback_id']} status updated to {$new_status} and notification sent.");
+            }
+        } catch (Exception $e) {
+            set_flash('error', 'Error updating feedback: ' . $e->getMessage());
+        }
+    }
+    header("Location: dashboard.php?tab=feedback_reviews");
     exit;
 }
 

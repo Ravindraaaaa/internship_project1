@@ -14,31 +14,96 @@ $user_name = get_user_name();
 $page_title = "Submit Platform Feedback";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // CSRF protection
     $token = $_POST['csrf_token'] ?? '';
     if (!check_csrf($token)) {
         set_flash('error', 'CSRF verification failed.');
     } else {
-        $rating = intval($_POST['rating'] ?? 5);
-        $subject = trim($_POST['subject'] ?? '');
-        $message = trim($_POST['message'] ?? '');
+        $rating   = intval($_POST['rating'] ?? 5);
+        $subject  = trim($_POST['subject'] ?? '');
+        $category = trim($_POST['category'] ?? 'General Feedback');
+        $message  = trim($_POST['message'] ?? '');
+        $attachment_path = null;
 
         if ($rating < 1 || $rating > 5 || empty($subject) || empty($message)) {
-            set_flash('error', 'Please fill in all feedback form fields.');
+            set_flash('error', 'Please fill in all required feedback form fields.');
         } else {
             try {
-                $user_email = $_SESSION['user_email'] ?? '';
-                $ai_reply = generate_ai_support_reply($user_name, $user_email, $subject, $message, "Feedback ({$rating} Stars)");
-                
-                $stmt = $pdo->prepare("INSERT INTO feedback (user_id, rating, subject, message, ai_reply) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$uid, $rating, $subject, $message, $ai_reply]);
-                
-                // Dispatch automatic notifications with AI response
-                create_notification($uid, "AI Support Response: " . $subject, "Our AI Support system analyzed your ticket and dispatched an intelligent resolution email response.", "success", "medium", "user/feedback.php");
-                notify_admins("New Feedback Ticket", "User " . $user_name . " submitted a " . $rating . "-star ticket: '" . $subject . "'.", "info", "high");
+                $user_email = $_SESSION['user_email'] ?? get_user_email() ?? 'alumni@alumninet.edu';
+                $feedback_id = 'FDB-' . date('Y') . '-' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
 
-                log_activity($uid, 'submitted_feedback', "Rating: $rating - Subject: $subject");
-                set_flash('success', 'Thank you! Our AI Support Agent has generated and dispatched an automated resolution email response.');
+                // File Attachment processing
+                if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+                    $upload_dir = __DIR__ . '/../uploads/attachments/';
+                    if (!is_dir($upload_dir)) @mkdir($upload_dir, 0777, true);
+
+                    $file_ext = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+                    $allowed_exts = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'txt', 'zip'];
+                    if (in_array($file_ext, $allowed_exts)) {
+                        $saved_filename = 'fdb_' . time() . '_' . uniqid() . '.' . $file_ext;
+                        $target_file = $upload_dir . $saved_filename;
+                        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $target_file)) {
+                            $attachment_path = 'uploads/attachments/' . $saved_filename;
+                        }
+                    }
+                }
+
+                $stmt = $pdo->prepare("INSERT INTO feedback (feedback_id, user_id, name, email, role, subject, category, rating, message, attachment, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New', NOW())");
+                $stmt->execute([$feedback_id, $uid, $user_name, $user_email, $role, $subject, $category, $rating, $message, $attachment_path]);
+
+                // 1. Send Confirmation Email to User
+                $user_email_html = build_enterprise_email_template(
+                    "Feedback Submitted - Ticket #{$feedback_id}",
+                    "<p>Hello <strong>" . htmlspecialchars($user_name) . "</strong>,</p>
+                    <p>Thank you for submitting feedback to AlumniNet. Your submission has been assigned Reference ID <strong>{$feedback_id}</strong>.</p>
+                    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4f46e5;'>
+                        <p style='margin: 0 0 5px 0;'><strong>Category:</strong> " . htmlspecialchars($category) . "</p>
+                        <p style='margin: 0 0 5px 0;'><strong>Subject:</strong> " . htmlspecialchars($subject) . "</p>
+                        <p style='margin: 0;'><strong>Rating:</strong> " . str_repeat('⭐', $rating) . "</p>
+                    </div>
+                    <p>Our platform administration team has been notified and will review your comments shortly.</p>",
+                    null,
+                    null
+                );
+                send_logged_email($user_email, "Feedback Received: {$feedback_id}", $user_email_html, $user_name, 'feedback_confirmation');
+
+                // 2. Send Alert Email to Admin
+                $admin_email_html = build_enterprise_email_template(
+                    "New User Feedback Received ({$feedback_id})",
+                    "<p>Admin Alert: A new feedback review has been posted on AlumniNet.</p>
+                    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b;'>
+                        <p style='margin: 0 0 5px 0;'><strong>User:</strong> " . htmlspecialchars($user_name) . " (" . htmlspecialchars($user_email) . " - " . ucfirst($role) . ")</p>
+                        <p style='margin: 0 0 5px 0;'><strong>Category:</strong> " . htmlspecialchars($category) . "</p>
+                        <p style='margin: 0 0 5px 0;'><strong>Subject:</strong> " . htmlspecialchars($subject) . "</p>
+                        <p style='margin: 0 0 5px 0;'><strong>Rating:</strong> {$rating}/5 Stars</p>
+                        <p style='margin: 0;'><strong>Message:</strong> " . nl2br(htmlspecialchars($message)) . "</p>
+                    </div>",
+                    null,
+                    null
+                );
+                send_logged_email('admin@alumninet.edu', "Admin Alert: New Feedback {$feedback_id}", $admin_email_html, 'Admin Team', 'admin_feedback_alert');
+
+                // 3. In-App Notifications
+                NotificationEngine::send([
+                    'user_id' => $uid,
+                    'type' => 'success',
+                    'category' => 'system',
+                    'title' => "Feedback Submitted ({$feedback_id})",
+                    'message' => "Your feedback '{$subject}' has been received and sent to moderators.",
+                    'icon' => 'comments',
+                    'color' => 'emerald'
+                ]);
+
+                NotificationEngine::sendToRole('admin', [
+                    'type' => 'info',
+                    'category' => 'system',
+                    'title' => "New Feedback: {$feedback_id}",
+                    'message' => "{$user_name} ({$role}) submitted {$rating}-star feedback: '{$subject}'.",
+                    'icon' => 'star',
+                    'color' => 'amber'
+                ]);
+
+                log_activity($uid, 'submitted_feedback', "Ref: $feedback_id - Rating: $rating - Subject: $subject");
+                set_flash('success', "Thank you! Your feedback (#{$feedback_id}) has been submitted and confirmation email sent.");
                 header('Location: feedback.php');
                 exit;
             } catch (Exception $e) {
@@ -67,7 +132,7 @@ require_once __DIR__ . '/../includes/header.php';
                     Help us improve AlumniNet. Share your experiences, report bugs, or request features directly to platform moderators.
                 </p>
 
-                <form action="feedback.php" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <form action="feedback.php" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.25rem;">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
 
                     <!-- Star Rating Choice -->
@@ -81,14 +146,31 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="subject" class="form-label" style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.5rem; display:block;">Topic / Subject</label>
-                        <input type="text" name="subject" id="subject" class="input-glass" placeholder="e.g. Navigation issue, Mentorship feedback" required>
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="category" class="form-label" style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.5rem; display:block;">Category</label>
+                            <select name="category" id="category" class="input-glass" required>
+                                <option value="General Feedback">General Feedback</option>
+                                <option value="Feature Request">Feature Request</option>
+                                <option value="UI & UX Bug">UI & UX Bug</option>
+                                <option value="Mentorship Experience">Mentorship Experience</option>
+                                <option value="Job Board Review">Job Board Review</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject" class="form-label" style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.5rem; display:block;">Topic / Subject</label>
+                            <input type="text" name="subject" id="subject" class="input-glass" placeholder="e.g. Navigation issue, Mentorship feedback" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="message" class="form-label" style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.5rem; display:block;">Your Detailed Review</label>
-                        <textarea name="message" id="message" class="input-glass" rows="5" placeholder="Share your detailed feedback here..." required></textarea>
+                        <textarea name="message" id="message" class="input-glass" rows="4" placeholder="Share your detailed feedback here..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="attachment" class="form-label" style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Attachment / Screenshot (Optional)</label>
+                        <input type="file" name="attachment" id="attachment" class="input-glass" accept="image/*,.pdf,.doc,.docx,.zip">
                     </div>
 
                     <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">

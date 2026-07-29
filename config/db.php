@@ -51,10 +51,188 @@ try {
 
     $checkAlumniTable = $pdo->query("SHOW TABLES LIKE 'alumni_profiles'")->fetch();
     if ($checkAlumniTable) {
-        $checkAlumniCover = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE 'cover_pic'")->fetch();
-        if (!$checkAlumniCover) {
-            $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN cover_pic VARCHAR(255) NULL DEFAULT NULL");
+        $alumniCols = [
+            'cover_pic' => "VARCHAR(255) NULL DEFAULT NULL",
+            'reg_no' => "VARCHAR(100) NULL DEFAULT NULL",
+            'branch' => "VARCHAR(100) NULL DEFAULT NULL",
+            'batch' => "VARCHAR(100) NULL DEFAULT NULL",
+            'passing_year' => "INT NULL DEFAULT NULL",
+            'ug_year' => "INT NULL DEFAULT NULL",
+            'pg_year' => "INT NULL DEFAULT NULL",
+            'dob' => "DATE NULL DEFAULT NULL",
+            'gender' => "VARCHAR(20) NULL DEFAULT NULL",
+            'phone' => "VARCHAR(30) NULL DEFAULT NULL",
+            'current_address' => "TEXT NULL DEFAULT NULL",
+            'permanent_address' => "TEXT NULL DEFAULT NULL",
+            'city' => "VARCHAR(100) NULL DEFAULT NULL",
+            'state' => "VARCHAR(100) NULL DEFAULT NULL",
+            'country' => "VARCHAR(100) NULL DEFAULT NULL",
+            'receipt_no' => "VARCHAR(100) NULL DEFAULT NULL",
+            'payment_details' => "TEXT NULL DEFAULT NULL",
+            'signature_pic' => "VARCHAR(255) NULL DEFAULT NULL",
+            'employment_status' => "VARCHAR(50) DEFAULT 'Working'",
+            'verification_status' => "VARCHAR(50) DEFAULT 'approved'",
+            'skills' => "TEXT NULL DEFAULT NULL",
+            'achievements' => "TEXT NULL DEFAULT NULL",
+            'mentorship_available' => "TINYINT(1) DEFAULT 1"
+        ];
+        foreach ($alumniCols as $col => $definition) {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE '$col'")->fetch();
+            if (!$checkCol) {
+                $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN $col $definition");
+            }
         }
+    }
+
+    // Enterprise Alumni Import History table
+    $checkImportHistory = $pdo->query("SHOW TABLES LIKE 'alumni_import_history'")->fetch();
+    if (!$checkImportHistory) {
+        $pdo->exec("CREATE TABLE alumni_import_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            admin_id INT DEFAULT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            original_file_path VARCHAR(255) DEFAULT NULL,
+            file_type VARCHAR(50) DEFAULT NULL,
+            file_size INT DEFAULT 0,
+            total_records INT DEFAULT 0,
+            imported_count INT DEFAULT 0,
+            failed_count INT DEFAULT 0,
+            skipped_count INT DEFAULT 0,
+            duplicate_count INT DEFAULT 0,
+            ocr_accuracy DECIMAL(5,2) DEFAULT 95.00,
+            status VARCHAR(50) DEFAULT 'Completed',
+            error_log TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_admin (admin_id),
+            INDEX idx_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // Enterprise Alumni Digital Archive Documents table
+    $checkAlumniDocs = $pdo->query("SHOW TABLES LIKE 'alumni_documents'")->fetch();
+    if (!$checkAlumniDocs) {
+        $pdo->exec("CREATE TABLE alumni_documents (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            document_type VARCHAR(100) DEFAULT 'registration_form',
+            file_name VARCHAR(255) NOT NULL,
+            file_path VARCHAR(255) NOT NULL,
+            mime_type VARCHAR(100) DEFAULT NULL,
+            file_size INT DEFAULT 0,
+            ocr_raw_text LONGTEXT DEFAULT NULL,
+            version INT DEFAULT 1,
+            uploaded_by INT DEFAULT NULL,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_doc (user_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // Email Dispatch Audit Logs Table
+    $checkEmailLogs = $pdo->query("SHOW TABLES LIKE 'email_logs'")->fetch();
+    if (!$checkEmailLogs) {
+        $pdo->exec("CREATE TABLE email_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            recipient_email VARCHAR(255) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            category VARCHAR(50) DEFAULT 'general',
+            status VARCHAR(50) DEFAULT 'Sent',
+            smtp_response TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_email_status (status),
+            INDEX idx_email_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // Support Tickets Table
+    $checkSupportTickets = $pdo->query("SHOW TABLES LIKE 'support_tickets'")->fetch();
+    if (!$checkSupportTickets) {
+        $pdo->exec("CREATE TABLE support_tickets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ticket_number VARCHAR(100) NOT NULL UNIQUE,
+            user_id INT DEFAULT NULL,
+            subject VARCHAR(255) NOT NULL,
+            category VARCHAR(100) DEFAULT 'General Support',
+            priority VARCHAR(50) DEFAULT 'Medium',
+            description TEXT NOT NULL,
+            attachment VARCHAR(255) DEFAULT NULL,
+            status VARCHAR(50) DEFAULT 'New',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_tkt_user (user_id),
+            INDEX idx_tkt_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } else {
+        $checkTktNum = $pdo->query("SHOW COLUMNS FROM support_tickets LIKE 'ticket_number'")->fetch();
+        if (!$checkTktNum) {
+            $pdo->exec("ALTER TABLE support_tickets ADD COLUMN ticket_number VARCHAR(100) NULL AFTER id");
+        }
+    }
+
+    // Ticket Replies Table
+    $checkTicketReplies = $pdo->query("SHOW TABLES LIKE 'ticket_replies'")->fetch();
+    if (!$checkTicketReplies) {
+        $pdo->exec("CREATE TABLE ticket_replies (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ticket_id INT NOT NULL,
+            sender_id INT DEFAULT NULL,
+            sender_role VARCHAR(50) DEFAULT 'admin',
+            message TEXT NOT NULL,
+            attachment VARCHAR(255) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_reply_ticket (ticket_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    // Feedback Table
+    $checkFeedback = $pdo->query("SHOW TABLES LIKE 'feedback'")->fetch();
+    if (!$checkFeedback) {
+        $pdo->exec("CREATE TABLE feedback (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            feedback_id VARCHAR(100) NOT NULL UNIQUE,
+            user_id INT DEFAULT NULL,
+            name VARCHAR(150) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            role VARCHAR(50) DEFAULT 'alumni',
+            subject VARCHAR(255) DEFAULT NULL,
+            category VARCHAR(100) DEFAULT 'General Feedback',
+            rating INT DEFAULT 5,
+            message TEXT NOT NULL,
+            attachment VARCHAR(255) DEFAULT NULL,
+            status VARCHAR(50) DEFAULT 'New',
+            admin_reply TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_fdb_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } else {
+        $checkFdbId = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'feedback_id'")->fetch();
+        if (!$checkFdbId) {
+            $pdo->exec("ALTER TABLE feedback ADD COLUMN feedback_id VARCHAR(100) NULL AFTER id");
+        }
+        $checkFdbReply = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'admin_reply'")->fetch();
+        if (!$checkFdbReply) {
+            $pdo->exec("ALTER TABLE feedback ADD COLUMN admin_reply TEXT NULL AFTER status");
+        }
+    }
+
+    // Announcements Table
+    $checkAnnouncements = $pdo->query("SHOW TABLES LIKE 'announcements'")->fetch();
+    if (!$checkAnnouncements) {
+        $pdo->exec("CREATE TABLE announcements (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            priority VARCHAR(50) DEFAULT 'Medium',
+            target_audience VARCHAR(50) DEFAULT 'all',
+            image VARCHAR(255) DEFAULT NULL,
+            pdf_attachment VARCHAR(255) DEFAULT NULL,
+            start_date DATE DEFAULT NULL,
+            end_date DATE DEFAULT NULL,
+            status VARCHAR(50) DEFAULT 'Publish',
+            created_by INT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ann_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
     // 2. Check & add last_active and two_factor_secret in users

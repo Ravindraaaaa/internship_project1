@@ -75,8 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmtProfile = $pdo->prepare("INSERT INTO student_profiles (user_id, current_year, course, bio, profile_pic) VALUES (?, 1, ?, ?, ?)");
                         $stmtProfile->execute([$new_user_id, $uData['course'], 'Registered Student.', $uData['profile_pic_path']]);
                     } else {
-                        $stmtProfile = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, course, bio, profile_pic) VALUES (?, ?, ?, ?, ?)");
-                        $stmtProfile->execute([$new_user_id, $uData['grad_year'], $uData['course'], 'Registered Alumnus.', $uData['profile_pic_path']]);
+                        $stmtProfile = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, passing_year, course, branch, company, position, city, reg_no, bio, profile_pic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmtProfile->execute([
+                            $new_user_id,
+                            $uData['grad_year'],
+                            $uData['grad_year'],
+                            $uData['course'],
+                            $uData['course'],
+                            $uData['company'] ?? null,
+                            $uData['position'] ?? null,
+                            $uData['city'] ?? null,
+                            $uData['reg_no'] ?? null,
+                            'Registered Alumnus.',
+                            $uData['profile_pic_path']
+                        ]);
                     }
 
                     $pdo->commit();
@@ -86,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     create_notification(
                         $new_user_id,
                         "Welcome to AlumniNet! 🎉",
-                        "Your account registration has been submitted successfully. Explore platform features, jobs, and networking.",
+                        ($uData['role'] === 'alumni') ? "Your Alumni registration has been submitted and is currently pending Admin Approval." : "Your account registration has been submitted successfully.",
                         "success",
                         "high"
                     );
@@ -100,11 +112,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unset($_SESSION['otp_verify']);
 
                     if ($uData['role'] === 'alumni') {
-                        set_flash('success', 'Mobile OTP Verified! Registration submitted for admin approval.');
-                    } else {
-                        set_flash('success', 'Mobile OTP Verified! Your account has been activated. Please log in.');
+                        set_flash('info', 'Registration Successful! Your Alumni account is currently PENDING ADMIN APPROVAL. You can sign in once an administrator approves your registration.');
+                        header('Location: login.php');
+                        exit;
                     }
-                    header('Location: login.php');
+
+                    // For students, auto log in
+                    $_SESSION['user_id'] = $new_user_id;
+                    $_SESSION['user_name'] = $uData['name'];
+                    $_SESSION['user_role'] = $uData['role'];
+                    $_SESSION['user_status'] = $uData['status'];
+
+                    set_flash('success', 'OTP Verified successfully! Welcome to AlumniNet.');
+                    header('Location: dashboard.php');
                     exit;
                 }
             } catch (Exception $e) {

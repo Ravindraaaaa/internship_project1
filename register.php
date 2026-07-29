@@ -97,6 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $course = trim(filter_var($_POST['course'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
                     $grad_year = intval($_POST['grad_year'] ?? date('Y'));
+                    $company = trim(filter_var($_POST['company'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
+                    $position = trim(filter_var($_POST['position'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
+                    $city = trim(filter_var($_POST['city'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
+                    $reg_no = trim(filter_var($_POST['reg_no'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS));
 
                     // Generate random 6-digit OTP code
                     $otp_code = sprintf('%06d', mt_rand(100000, 999999));
@@ -118,6 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'status' => $status,
                             'course' => $course,
                             'grad_year' => $grad_year,
+                            'company' => $company,
+                            'position' => $position,
+                            'city' => $city,
+                            'reg_no' => $reg_no,
                             'profile_pic_path' => $profile_pic_path
                         ]
                     ];
@@ -339,8 +347,33 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
 
                 <div class="form-group" id="passout-field" style="display: none;">
-                    <label for="grad_year" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Passout Year</label>
+                    <label for="grad_year" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Passing Year / Passout Year</label>
                     <input type="number" name="grad_year" id="grad_year" class="input-glass" min="1950" max="2035" value="<?php echo date('Y'); ?>">
+                </div>
+
+                <!-- Alumni Specific Fields -->
+                <div id="alumni-extra-fields" style="display: none; grid-column: 1 / -1; background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-top: 0.5rem;">
+                    <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: #a855f7; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-briefcase"></i> Professional & Alumni Details
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                        <div class="form-group">
+                            <label for="company" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Company / Employer</label>
+                            <input type="text" name="company" id="company" class="input-glass" placeholder="e.g. TCS, Infosys, Google, Freelance">
+                        </div>
+                        <div class="form-group">
+                            <label for="position" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Designation / Job Title</label>
+                            <input type="text" name="position" id="position" class="input-glass" placeholder="e.g. Software Engineer, BDM">
+                        </div>
+                        <div class="form-group">
+                            <label for="city" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">Current Work City / Location</label>
+                            <input type="text" name="city" id="city" class="input-glass" placeholder="e.g. Pune, Mumbai, Remote">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_no" class="form-label" style="font-size: 0.82rem; font-weight:600; margin-bottom: 0.4rem; display:block;">College Reg / PRN No (Optional)</label>
+                            <input type="text" name="reg_no" id="reg_no" class="input-glass" placeholder="e.g. PRN-2020-019">
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -410,10 +443,12 @@ require_once __DIR__ . '/includes/header.php';
         if (role === 'student') {
             document.getElementById('btn-student').classList.add('active');
             document.getElementById('passout-field').style.display = 'none';
+            document.getElementById('alumni-extra-fields').style.display = 'none';
             document.getElementById('grad_year').removeAttribute('required');
         } else {
             document.getElementById('btn-alumni').classList.add('active');
             document.getElementById('passout-field').style.display = 'block';
+            document.getElementById('alumni-extra-fields').style.display = 'block';
             document.getElementById('grad_year').setAttribute('required', 'required');
         }
     }

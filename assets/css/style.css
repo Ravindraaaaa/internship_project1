@@ -783,19 +783,19 @@ body.theme-glass-white .input-glass:focus {
 
     .sidebar.collapsed .sidebar-toggle-btn {
         position: fixed;
-        left: 20px;
-        top: 20px;
+        left: 12px;
+        top: 48px;
         z-index: 13000;
-        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
         color: #ffffff !important;
-        width: 44px;
-        height: 44px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex !important;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
-        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        border: 1.5px solid rgba(255, 255, 255, 0.25);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         animation: pulseOpenBtn 2.5s infinite;
