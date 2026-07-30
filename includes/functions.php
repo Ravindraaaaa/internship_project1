@@ -283,4 +283,67 @@ if (!function_exists('generate_ai_support_reply')) {
         return $ai_response;
     }
 }
+
+if (!function_exists('get_company_logo_url')) {
+    /**
+     * Resolves high-res company brand logo URL for display on alumni cards and profiles.
+     */
+    function get_company_logo_url($company) {
+        $comp = strtolower(trim($company ?? ''));
+        if (empty($comp) || $comp === 'independent' || $comp === 'n/a' || $comp === 'none' || $comp === 'campus' || $comp === 'student') {
+            return null;
+        }
+
+        // Domain mapping dictionary for popular companies
+        $domain_map = [
+            'google' => 'google.com',
+            'tcs' => 'tcs.com',
+            'tata consultancy services' => 'tcs.com',
+            'infosys' => 'infosys.com',
+            'wipro' => 'wipro.com',
+            'microsoft' => 'microsoft.com',
+            'amazon' => 'amazon.com',
+            'accenture' => 'accenture.com',
+            'cognizant' => 'cognizant.com',
+            'capgemini' => 'capgemini.com',
+            'hcl' => 'hcltech.com',
+            'hcltech' => 'hcltech.com',
+            'ibm' => 'ibm.com',
+            'oracle' => 'oracle.com',
+            'tech mahindra' => 'techmahindra.com',
+            'l&t' => 'larsentoubro.com',
+            'meta' => 'meta.com',
+            'facebook' => 'meta.com',
+            'apple' => 'apple.com',
+            'netflix' => 'netflix.com',
+            'adobe' => 'adobe.com',
+            'salesforce' => 'salesforce.com',
+            'uber' => 'uber.com',
+            'swiggy' => 'swiggy.com',
+            'zomato' => 'zomato.com',
+            'paytm' => 'paytm.com',
+            'stripe' => 'stripe.com',
+            'cisco' => 'cisco.com',
+            'intel' => 'intel.com',
+            'nvidia' => 'nvidia.com',
+            'samsung' => 'samsung.com',
+            'persistent' => 'persistent.com',
+            'persistent systems' => 'persistent.com'
+        ];
+
+        $domain = $domain_map[$comp] ?? null;
+        if (!$domain) {
+            $clean = preg_replace('/[^a-z0-9]/', '', $comp);
+            if (!empty($clean)) {
+                $domain = $clean . '.com';
+            }
+        }
+
+        if ($domain) {
+            return "https://logo.clearbit.com/" . $domain;
+        }
+
+        return null;
+    }
+}
 ?>

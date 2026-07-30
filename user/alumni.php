@@ -2,6 +2,7 @@
 $is_subfolder = true;
 require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 $page_title = "Member Directory";
 $active_page = "alumni";
@@ -454,6 +455,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 $locationText = !empty($alum['location']) ? $alum['location'] : 'Pune, India';
                                 $hasMentorship = !empty($alum['mentorship_available']) && ($alum['mentorship_available'] == 1 || strtolower((string)$alum['mentorship_available']) === 'yes');
                                 $u_id = !empty($alum['user_id']) ? $alum['user_id'] : (!empty($alum['id']) ? $alum['id'] : 0);
+                                $companyLogo = get_company_logo_url($companyText);
                             ?>
                             <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
                                 <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
@@ -468,8 +470,14 @@ require_once __DIR__ . '/../includes/header.php';
                                         <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
                                             <?php echo htmlspecialchars($designationText); ?>
                                         </div>
-                                        <div style="font-size: 0.88rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
-                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> <?php echo htmlspecialchars($companyText); ?>
+                                        <div style="font-size: 0.88rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.45rem;">
+                                            <?php if ($companyLogo): ?>
+                                                <img src="<?php echo htmlspecialchars($companyLogo); ?>" alt="Company Logo" style="width: 22px; height: 22px; border-radius: 5px; object-fit: contain; background: #ffffff; padding: 2px; border: 1px solid var(--theme-border); flex-shrink: 0;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                                <i class="fa-solid fa-building" style="opacity: 0.6; display: none;"></i>
+                                            <?php else: ?>
+                                                <i class="fa-solid fa-building" style="opacity: 0.6;"></i>
+                                            <?php endif; ?>
+                                            <span style="font-weight: 600; color: var(--theme-text);"><?php echo htmlspecialchars($companyText); ?></span>
                                         </div>
                                     </div>
                                 </div>
