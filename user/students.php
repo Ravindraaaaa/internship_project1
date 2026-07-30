@@ -10,13 +10,13 @@ $uid = get_user_id();
 
 require_login();
 
-// Total Student Count
+// Total Counts for Top Capsules
 try {
-    $student_total_count = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn();
-    $alumni_total_count = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'alumni'")->fetchColumn();
+    $alumni_total_count = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE LOWER(role) = 'alumni'")->fetchColumn();
+    $student_total_count = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE LOWER(role) = 'student'")->fetchColumn();
 } catch (Exception $e) {
-    $student_total_count = 0;
     $alumni_total_count = 0;
+    $student_total_count = 0;
 }
 
 // Input Filter Parameters
@@ -33,7 +33,7 @@ try {
     $courses_list = [];
 }
 
-// Query Construction for Students Only
+// Query Construction strictly for STUDENTS ONLY
 $sql = "SELECT u.id as user_id, u.name, u.role, u.email, u.phone as u_phone, u.last_active,
                COALESCE(sp.current_year, '1') as current_year,
                COALESCE(sp.course, 'General Stream') as course,
@@ -41,13 +41,20 @@ $sql = "SELECT u.id as user_id, u.name, u.role, u.email, u.phone as u_phone, u.l
                sp.profile_pic, sp.cgpa, sp.linkedin as s_linkedin, sp.github
         FROM users u
         JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE u.role = 'student'";
+        WHERE LOWER(u.role) = 'student'";
 
 $params = [];
 if (!empty($search)) {
-    $sql .= " AND (u.name LIKE ? OR sp.course LIKE ?)";
-    $sp = "%{$search}%";
-    array_push($params, $sp, $sp);
+    $clean_search_id = preg_replace('/[^0-9]/', '', $search);
+    if (!empty($clean_search_id)) {
+        $sql .= " AND (u.name LIKE ? OR sp.course LIKE ? OR u.id = ?)";
+        $sp = "%{$search}%";
+        array_push($params, $sp, $sp, intval($clean_search_id));
+    } else {
+        $sql .= " AND (u.name LIKE ? OR sp.course LIKE ?)";
+        $sp = "%{$search}%";
+        array_push($params, $sp, $sp);
+    }
 }
 if (!empty($year_filter)) {
     $sql .= " AND sp.current_year = ?";
@@ -127,8 +134,8 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- Filter Bar Form -->
             <form action="students.php" method="GET" class="filter-bar" style="background: var(--theme-card-bg); border: 1px solid var(--theme-border); border-radius: 12px; padding: 1.25rem; display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 1rem; align-items: end; margin-bottom: 2rem;">
                 <div class="filter-group">
-                    <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Search Student Name / Stream</label>
-                    <input type="text" name="search" placeholder="Search Name, Course Stream..." value="<?php echo htmlspecialchars($search); ?>" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
+                    <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Search Student Name / Stream / ID</label>
+                    <input type="text" name="search" placeholder="Search Student Name, Course Stream, ID..." value="<?php echo htmlspecialchars($search); ?>" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
                 </div>
 
                 <div class="filter-group">
@@ -188,6 +195,7 @@ require_once __DIR__ . '/../includes/header.php';
                             $userAvatar = (!empty($std['profile_pic']) && file_exists(__DIR__ . '/../' . ltrim($std['profile_pic'], '/'))) ? htmlspecialchars($std['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
                             $u_id = !empty($std['user_id']) ? $std['user_id'] : 0;
                             $isOnline = (!empty($std['last_active']) && (strtotime($std['last_active']) >= (time() - 300)));
+                            $studentIdStr = 'STD-' . ($std['current_year'] ?? '1') . '-' . str_pad($u_id, 4, '0', STR_PAD_LEFT);
                         ?>
                         <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
                             <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
@@ -202,6 +210,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         <?php echo htmlspecialchars($std['name']); ?>
                                         <span style="font-size: 0.72rem; font-weight: 600; color: #38bdf8; display: block; margin-top: 2px; text-transform: uppercase;">(STUDENT)</span>
                                     </h4>
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; margin-top: 2px;">
+                                        <i class="fa-solid fa-id-badge" style="margin-right: 2px;"></i> ID: <?php echo htmlspecialchars($studentIdStr); ?>
+                                    </div>
                                     <div style="font-size: 0.85rem; color: var(--theme-text-secondary); font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
                                         Academic Year <?php echo htmlspecialchars($std['current_year'] ?? '1'); ?>
                                     </div>
