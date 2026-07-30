@@ -47,10 +47,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($target_id > 0 && $target_id !== $admin_id) {
             $pdo->beginTransaction();
             if ($op === 'approve') {
-                $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ?")->execute([$target_id]);
+                $pdo->prepare("UPDATE users SET status = 'approved', failed_attempts = 0, lockout_until = NULL WHERE id = ?")->execute([$target_id]);
+                
+                $uStmt = $pdo->prepare("SELECT name, email, role FROM users WHERE id = ?");
+                $uStmt->execute([$target_id]);
+                $uData = $uStmt->fetch();
+                
+                if (!empty($uData['email'])) {
+                    require_once __DIR__ . '/../includes/mailer_helper.php';
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                    $login_url = $protocol . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname($_SERVER['PHP_SELF'] ?? '')), '/\\') . '/login.php';
+                    $email_html = build_enterprise_email_template(
+                        "Account Approved - Welcome to AlumniNet!",
+                        "<p>Hello <strong>" . htmlspecialchars($uData['name']) . "</strong>,</p>
+                        <p>Great news! Your registration request has been <strong>APPROVED</strong> by platform administrators.</p>
+                        <p>You can now sign in using your registered credentials to access all features.</p>",
+                        $login_url,
+                        "Sign In Now"
+                    );
+                    send_logged_email($uData['email'], "Account Approved: Welcome to AlumniNet", $email_html, $uData['name'], 'account_approved');
+                }
                 create_notification($target_id, "Account Approved! 🎉", "Your account registration has been approved by the administrator. You now have full platform access.", "success", "high");
                 log_activity($admin_id, 'approve_user', "Approved user ID: $target_id");
-                set_flash('success', 'User approved successfully!');
+                set_flash('success', 'User approved successfully and approval notification email sent!');
             } elseif ($op === 'reject') {
                 $pdo->prepare("UPDATE users SET status = 'rejected' WHERE id = ?")->execute([$target_id]);
                 create_notification($target_id, "Account Registration Update", "Your account registration status was updated to rejected by the administrator.", "warning", "high");

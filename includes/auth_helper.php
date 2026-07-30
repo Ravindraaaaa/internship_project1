@@ -359,6 +359,9 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=feedback"><i class="fa-solid fa-comments"></i> <span class="link-text">User Feedback</span></a>
                         </li>
+                        <li class="sidebar-item <?php echo $active_page === 'support_tickets' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=support_tickets"><i class="fa-solid fa-headset"></i> <span class="link-text">Support Tickets</span></a>
+                        </li>
 
                         <li class="sidebar-item <?php echo $active_page === 'notifications' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>announcement_analytics.php"><i class="fa-solid fa-chart-pie"></i> <span class="link-text">Notification Analytics</span></a>

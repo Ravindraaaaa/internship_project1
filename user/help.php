@@ -279,36 +279,55 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
 
             <?php
-                $stmtHelpFeed = $pdo->prepare("SELECT * FROM feedback WHERE user_id = ? AND subject LIKE '[HELP TICKET%' ORDER BY created_at DESC LIMIT 10");
-                $stmtHelpFeed->execute([$uid]);
-                $help_tickets = $stmtHelpFeed->fetchAll();
+                $stmtHelpTkt = $pdo->prepare("SELECT * FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+                $stmtHelpTkt->execute([$uid]);
+                $help_tickets = $stmtHelpTkt->fetchAll(PDO::FETCH_ASSOC);
             ?>
 
             <?php if ($help_tickets): ?>
                 <div class="card-glass" style="margin-top: 2rem;">
                     <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-robot" style="color: var(--theme-accent-purple);"></i> Your Support Ticket AI Responses
+                        <i class="fa-solid fa-headset" style="color: var(--theme-accent-blue);"></i> Track Your Support Tickets
                     </h3>
                     
                     <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <?php foreach ($help_tickets as $ht): ?>
+                        <?php foreach ($help_tickets as $ht): 
+                            $st_val = strtolower($ht['status'] ?? 'new');
+                            $st_color = ($st_val === 'resolved' || $st_val === 'closed') ? '#10b981' : (($st_val === 'pending' || $st_val === 'in review') ? '#f59e0b' : '#38bdf8');
+                            $st_bg = ($st_val === 'resolved' || $st_val === 'closed') ? 'rgba(16,185,129,0.15)' : (($st_val === 'pending' || $st_val === 'in review') ? 'rgba(245,158,11,0.15)' : 'rgba(56,189,248,0.15)');
+                            
+                            $stmtR = $pdo->prepare("SELECT * FROM ticket_replies WHERE ticket_id = ? ORDER BY created_at ASC");
+                            $stmtR->execute([$ht['id']]);
+                            $replies = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+                        ?>
                             <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($ht['subject']); ?></h4>
+                                    <div>
+                                        <code style="background: rgba(255,255,255,0.08); padding: 0.15rem 0.5rem; border-radius: 4px; color: var(--theme-accent-blue); font-weight: 700; font-size: 0.78rem; margin-right: 0.5rem;"><?php echo htmlspecialchars($ht['ticket_number']); ?></code>
+                                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0; display: inline-block; margin-right: 0.5rem;"><?php echo htmlspecialchars($ht['subject']); ?></h4>
+                                        <span class="badge" style="background: <?php echo $st_bg; ?>; color: <?php echo $st_color; ?>; border: 1px solid <?php echo $st_color; ?>40; font-weight: 700; font-size: 0.72rem;">
+                                            <?php echo htmlspecialchars(ucfirst($ht['status'] ?? 'New')); ?>
+                                        </span>
+                                    </div>
                                     <span style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y H:i', strtotime($ht['created_at'])); ?></span>
                                 </div>
                                 <p style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.85rem; line-height: 1.4;">
-                                    <strong>Query:</strong> <?php echo htmlspecialchars($ht['message']); ?>
+                                    <strong>Details:</strong> <?php echo htmlspecialchars($ht['description'] ?? $ht['message'] ?? ''); ?>
                                 </p>
 
-                                <?php if (!empty($ht['ai_reply'])): ?>
-                                    <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid var(--theme-accent-purple); padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem;">
-                                        <div style="font-weight: 700; color: var(--theme-accent-purple); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
-                                            <i class="fa-solid fa-envelope-circle-check"></i> AI Support Email Response Dispatched:
-                                        </div>
-                                        <div style="color: var(--theme-text); white-space: pre-line; line-height: 1.5; font-size: 0.82rem;">
-                                            <?php echo htmlspecialchars($ht['ai_reply']); ?>
-                                        </div>
+                                <?php if ($replies): ?>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+                                        <?php foreach ($replies as $rep): ?>
+                                            <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem;">
+                                                <div style="font-weight: 700; color: #10b981; margin-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
+                                                    <span><i class="fa-solid fa-user-shield"></i> Support Admin Reply:</span>
+                                                    <span style="font-size: 0.72rem; color: var(--theme-text-secondary); font-weight: 400;"><?php echo date('M d, Y H:i', strtotime($rep['created_at'])); ?></span>
+                                                </div>
+                                                <div style="color: var(--theme-text); white-space: pre-line; line-height: 1.5; font-size: 0.82rem;">
+                                                    <?php echo htmlspecialchars($rep['message']); ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>

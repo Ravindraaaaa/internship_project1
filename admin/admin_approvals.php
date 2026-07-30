@@ -35,6 +35,17 @@ try {
     } elseif ($action === 'delete_feedback') {
         $pdo->prepare("DELETE FROM feedback WHERE id = ?")->execute([$target_id]);
         set_flash('success', 'Feedback entry deleted successfully!');
+    } elseif ($action === 'toggle_feedback_status') {
+        $status = trim($_GET['status'] ?? 'Resolved');
+        $pdo->prepare("UPDATE feedback SET status = ? WHERE id = ?")->execute([$status, $target_id]);
+        set_flash('success', "Feedback status updated to " . htmlspecialchars($status) . "!");
+    } elseif ($action === 'delete_ticket') {
+        $pdo->prepare("DELETE FROM support_tickets WHERE id = ?")->execute([$target_id]);
+        set_flash('success', 'Support ticket deleted successfully!');
+    } elseif ($action === 'toggle_ticket_status') {
+        $status = trim($_GET['status'] ?? 'Resolved');
+        $pdo->prepare("UPDATE support_tickets SET status = ?, updated_at = NOW() WHERE id = ?")->execute([$status, $target_id]);
+        set_flash('success', "Support ticket status updated to " . htmlspecialchars($status) . "!");
     } else {
         $stmtCheck = $pdo->prepare("SELECT name, role FROM users WHERE id = ?");
         $stmtCheck->execute([$target_id]);
@@ -53,17 +64,20 @@ try {
             $userInfo = $stmtCheckFull->fetch();
 
             if ($action === 'approve') {
-                $stmtUpdate = $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ?");
+                $stmtUpdate = $pdo->prepare("UPDATE users SET status = 'approved', failed_attempts = 0, lockout_until = NULL WHERE id = ?");
                 $stmtUpdate->execute([$target_id]);
 
                 // 1. Send Approval Email to Alumnus
                 if (!empty($userInfo['email'])) {
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                    $login_url = $protocol . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname($_SERVER['PHP_SELF'] ?? '')), '/\\') . '/login.php';
+
                     $email_html = build_enterprise_email_template(
                         "Account Approved - Welcome to AlumniNet!",
                         "<p>Hello <strong>" . htmlspecialchars($userInfo['name']) . "</strong>,</p>
                         <p>Great news! Your Alumni registration request has been <strong>APPROVED</strong> by the platform administrators.</p>
                         <p>You can now sign in using your registered credentials to access alumni networking, job referrals, events, and mentorship features.</p>",
-                        "login.php",
+                        $login_url,
                         "Sign In Now"
                     );
                     send_logged_email($userInfo['email'], "Account Approved: Welcome to AlumniNet", $email_html, $userInfo['name'], 'account_approved');

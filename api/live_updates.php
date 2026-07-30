@@ -40,7 +40,7 @@ try {
     if (is_admin()) {
         $response['admin_stats'] = [
             'users' => (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn(),
-            'pending' => (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'alumni' AND status = 'pending'")->fetchColumn(),
+            'pending' => (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'pending'")->fetchColumn(),
             'jobs' => (int)$pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'active'")->fetchColumn(),
             'events' => (int)$pdo->query("SELECT COUNT(*) FROM events WHERE event_date >= NOW()")->fetchColumn()
         ];
