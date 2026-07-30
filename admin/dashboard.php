@@ -264,7 +264,10 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- TAB B: MANAGE ALUMNI -->
             <?php elseif ($tab === 'alumni'): ?>
                 <div class="card-glass">
-                    <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem;"><i data-lucide="user-check" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-purple);"></i> Manage Alumni Members</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem;">
+                        <h3 style="font-size: 1.3rem; margin:0;"><i data-lucide="user-check" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-purple);"></i> Manage Alumni Members</h3>
+                        <button class="btn btn-primary" onclick="openModal('importAlumniModal')"><i class="fa-solid fa-file-import"></i> Import Alumni (CSV)</button>
+                    </div>
                     <div class="table-responsive">
                         <table class="custom-table">
                             <thead>
@@ -792,6 +795,28 @@ require_once __DIR__ . '/../includes/header.php';
             <div style="display: flex; justify-content: flex-end; gap: 1rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('createEventModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Schedule Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== IMPORT ALUMNI MODAL ==================== -->
+<div class="modal" id="importAlumniModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="modal-close" onclick="closeModal('importAlumniModal')">&times;</button>
+        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-file-import" style="color: var(--theme-accent-purple);"></i> Import Alumni Data</h2>
+        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Upload a CSV file containing alumni details to bulk register them.</p>
+        
+        <form action="import_alumni.php" method="POST" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Select CSV File</label>
+                <input type="file" name="csv_file" accept=".csv" class="input-glass" required>
+                <small style="display:block; margin-top:0.5rem; color:var(--theme-text-secondary);">Expected format: <em>Name, Email, Graduation Year, Course, Company, Position</em></small>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('importAlumniModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Import Data</button>
             </div>
         </form>
     </div>

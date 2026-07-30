@@ -4,6 +4,7 @@ $is_subfolder = true;
 require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/security_helper.php';
+require_once __DIR__ . '/../includes/email_helper.php';
 
 require_login();
 handle_session_timeout();
@@ -33,6 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Dispatch automatic notifications
                 create_notification($uid, "Feedback Ticket Received 💬", "Thank you for your ticket ('" . $subject . "')! Our team has received your feedback.", "success", "medium");
                 notify_admins("New Feedback Ticket", "User " . $user_name . " submitted a " . $rating . "-star ticket: '" . $subject . "'.", "info", "high");
+                
+                // Dispatch system email
+                send_system_email($uid, "Feedback Received - AlumniNet", "Thank you for submitting your feedback ('$subject'). Our team has successfully received it and will review it shortly. Your input helps us improve the platform.");
 
                 log_activity($uid, 'submitted_feedback', "Rating: $rating - Subject: $subject");
                 set_flash('success', 'Thank you for your valuable feedback!');

@@ -1,11 +1,12 @@
 <?php
-$host = 'localhost';
+$host = '127.0.0.1';
+$port = 3307;
 $db   = 'internship_project1';
 $user = 'root';
 $pass = ''; 
 $charset = 'utf8mb4';
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -55,6 +56,10 @@ try {
         $checkAlumniCover = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE 'cover_pic'")->fetch();
         if (!$checkAlumniCover) {
             $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN cover_pic VARCHAR(255) NULL DEFAULT NULL");
+        }
+        $checkAlumniSalary = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE 'salary'")->fetch();
+        if (!$checkAlumniSalary) {
+            $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN salary VARCHAR(100) NULL DEFAULT NULL");
         }
     }
 

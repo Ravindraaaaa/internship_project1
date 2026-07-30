@@ -341,6 +341,11 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="profile-cover-wrapper">
                 <div class="profile-cover-photo" style="<?php echo $cover_bg_style; ?>">
                     <div style="position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                        <?php if ($role === 'user'): ?>
+                        <a href="id_card.php" target="_blank" class="badge" style="background: rgba(139, 92, 246, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(139, 92, 246, 0.4); color: #e2e8f0; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700; text-decoration: none; cursor: pointer;">
+                            <i class="fa-solid fa-id-card" style="margin-right: 0.35rem; color: #a78bfa;"></i> Digital ID Card
+                        </a>
+                        <?php endif; ?>
                         <span class="badge" style="background: rgba(99, 102, 241, 0.25); backdrop-filter: blur(8px); border: 1px solid rgba(129, 140, 248, 0.4); color: #c7d2fe; font-size: 0.78rem; padding: 0.35rem 0.85rem; font-weight: 700;">
                             <i class="fa-solid fa-graduation-cap" style="margin-right: 0.35rem; color: #818cf8;"></i> AlumniNet Pro
                         </span>
