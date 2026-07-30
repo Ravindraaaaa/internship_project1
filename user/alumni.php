@@ -278,19 +278,55 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="dashboard-content-area">
         <?php include __DIR__ . '/../includes/top_nav.php'; ?>
         
-        <main class="dashboard-workspace" style="padding: 2rem;">
-            <div class="member-dir-header">
-                <h1>Member Directory</h1>
-                <p>Browse our network and search members by Name, Member ID (e.g., CS-1002), Course, or Company.</p>
+        <main class="dashboard-workspace" style="padding: 1.5rem;">
+            <!-- Header Banner -->
+            <div class="alumni-header-banner" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+                <div style="position: relative; z-index: 1;">
+                    <h1 style="font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, var(--theme-text), var(--theme-accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        🎓 Alumni Directory & Digital Archive
+                    </h1>
+                    <p style="color: var(--theme-text-secondary); font-size: 1.05rem; margin-top: 0.75rem; max-width: 600px; line-height: 1.6;">
+                        Browse and connect with verified alumni members organized by <strong>Passing Year → Branch → Batch</strong>. Discover their professional journeys and explore their digital archives.
+                    </p>
+                </div>
             </div>
 
-            <!-- FILTER BAR -->
-            <form method="GET" action="alumni.php" class="filter-bar">
-                <div class="filter-group">
-                    <label>Keyword Search</label>
-                    <div style="position:relative;">
-                        <i class="fa-solid fa-search" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:#64748b;"></i>
-                        <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search name, ID (e.g. CS-1001)" style="padding-left: 2.5rem;">
+            <!-- YEAR DASHBOARD PILLS & STATS -->
+            <div class="card-glass" style="padding: 1.25rem; border-radius: 16px; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--theme-text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-calendar-days" style="color: #818cf8;"></i> Select Graduation Batch Year
+                </div>
+                <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">
+                    <a href="alumni.php" class="year-pill <?php echo empty($year_filter) ? 'active' : ''; ?>" style="padding: 0.5rem 1.25rem; border-radius: 20px; font-weight: 700; text-decoration: none; font-size: 0.85rem; white-space: nowrap; background: <?php echo empty($year_filter) ? 'linear-gradient(135deg, #6366f1, #a855f7)' : 'var(--theme-bg-secondary)'; ?>; color: <?php echo empty($year_filter) ? '#fff' : 'var(--theme-text)'; ?>; border: 1px solid <?php echo empty($year_filter) ? 'transparent' : 'var(--theme-border)'; ?>;">
+                        All Years
+                    </a>
+                    <?php foreach ($years_list as $yr): ?>
+                    <a href="alumni.php?year=<?php echo urlencode($yr); ?>" class="year-pill <?php echo $year_filter == $yr ? 'active' : ''; ?>" style="padding: 0.5rem 1.25rem; border-radius: 20px; font-weight: 700; text-decoration: none; font-size: 0.85rem; white-space: nowrap; background: <?php echo $year_filter == $yr ? 'linear-gradient(135deg, #6366f1, #a855f7)' : 'var(--theme-bg-secondary)'; ?>; color: <?php echo $year_filter == $yr ? '#fff' : 'var(--theme-text)'; ?>; border: 1px solid <?php echo $year_filter == $yr ? 'transparent' : 'var(--theme-border)'; ?>;">
+                        Batch <?php echo $yr; ?>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Year Metrics Bar -->
+                <?php if ($active_year): ?>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; background: var(--theme-bg-secondary); padding: 1rem; border-radius: 12px; border: 1px solid var(--theme-border);">
+                    <div style="flex: 1; min-width: 140px;">
+                        <div style="font-size: 0.75rem; color: var(--theme-text-muted);">Batch <?php echo $active_year; ?> Total Alumni</div>
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;"><?php echo number_format($year_alumni_count); ?> Members</div>
+                    </div>
+                    <div style="flex: 2; min-width: 250px;">
+                        <div style="font-size: 0.75rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;">Top Recruiters for Batch <?php echo $active_year; ?></div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <?php if (empty($top_companies_year)): ?>
+                            <span style="font-size: 0.8rem; color: var(--theme-text-muted);">No recruiter data recorded</span>
+                            <?php else: ?>
+                            <?php foreach ($top_companies_year as $tc): ?>
+                            <span style="padding: 0.25rem 0.6rem; background: rgba(129, 140, 248, 0.15); color: #818cf8; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(129, 140, 248, 0.2);">
+                                <?php echo htmlspecialchars($tc['company']); ?> (<?php echo $tc['cnt']; ?>)
+                            </span>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="filter-group">
@@ -344,34 +380,68 @@ require_once __DIR__ . '/../includes/header.php';
                 <p style="color:#94a3b8;">Adjust your filters to find members.</p>
             </div>
             <?php else: ?>
-            <div class="members-grid">
-                <?php foreach ($members as $m): 
-                    $is_alumni = $m['role'] === 'alumni';
-                    $role_class = $is_alumni ? 'role-alumni' : 'role-student';
-                    $role_label = strtoupper($m['role']);
-                    
-                    // Construct display ID
-                    $display_id = '';
-                    if ($is_alumni && !empty($m['reg_no'])) {
-                        $display_id = $m['reg_no'];
-                    } else {
-                        // Generate a dummy id like the screenshot if missing
-                        $prefix = $is_alumni ? 'AL' : 'ST';
-                        $display_id = $prefix . '-' . (1000 + $m['user_id']);
-                    }
-                    
-                    $class_label = $is_alumni ? "Class of " . $m['passing_year'] : "Academic Year " . $m['passing_year'];
-                    $display_pic = !empty($m['profile_pic']) ? $m['profile_pic'] : 'https://ui-avatars.com/api/?name=' . urlencode($m['name']) . '&background=6366f1&color=fff';
-                ?>
-                <div class="member-card">
-                    <div class="member-top">
-                        <img src="<?php echo htmlspecialchars($display_pic); ?>" alt="Profile" class="member-avatar">
-                        <div class="member-info">
-                            <h3><?php echo htmlspecialchars($m['name']); ?></h3>
-                            <div class="role-pill <?php echo $role_class; ?>"><?php echo $role_label; ?> (<?php echo htmlspecialchars($display_id); ?>)</div>
-                            <div class="member-academic">
-                                <div><?php echo htmlspecialchars($class_label); ?></div>
-                                <div><?php echo htmlspecialchars($m['course']); ?></div>
+            <?php foreach ($hierarchy as $yr => $branches): ?>
+            <div style="margin-bottom: 2.5rem;">
+                <!-- Passing Year Header -->
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 0.5rem;">
+                    <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); letter-spacing: 0.5px;">
+                        🎓 Passing Year: <?php echo $yr; ?>
+                    </span>
+                </div>
+
+                <?php foreach ($branches as $br => $batches): ?>
+                <div class="hierarchy-header" style="margin-left: 1.5rem; margin-bottom: 2.5rem;">
+                    <!-- Branch Sub-Header -->
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--theme-text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i> <?php echo htmlspecialchars($br); ?>
+                    </h3>
+
+                    <?php foreach ($batches as $bt => $members): ?>
+                    <div style="margin-bottom: 2rem;">
+                        <!-- Batch Sub-Tag -->
+                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text-secondary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: <?php echo htmlspecialchars($bt); ?>
+                            <span style="padding: 0.25rem 0.75rem; background: var(--theme-bg-secondary); color: var(--theme-text); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid var(--theme-border);"><?php echo count($members); ?> Alumni</span>
+                        </div>
+
+                        <!-- Alumni Cards Grid -->
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                            <?php foreach ($members as $alum): ?>
+                            <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            <?php echo htmlspecialchars($alum['name']); ?>
+                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            <?php echo htmlspecialchars($alum['designation'] ?: 'Alumnus'); ?>
+                                        </div>
+                                        <div style="font-size: 0.9rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['company'] ?: 'Independent'); ?>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--theme-border); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
+                                    <?php if ($alum['mentorship_available']): ?>
+                                    <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                    <?php if (!empty($alum['linkedin'])): ?>
+                                    <a href="<?php echo htmlspecialchars($alum['linkedin']); ?>" target="_blank" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
+                                        <i class="fa-brands fa-linkedin"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -464,7 +534,7 @@ function openArchiveModal(userId) {
         }
 
         document.getElementById('archiveModalBody').innerHTML = `
-            <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 12px;">
+            <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; background: var(--theme-bg-secondary); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--theme-border);">
                 <img src="${p.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8;">
                 <div>
                     <h3 style="margin:0; font-size: 1.2rem; color: var(--theme-text-primary);">${p.name}</h3>
@@ -489,7 +559,7 @@ function openArchiveModal(userId) {
             <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-contract" style="color: #818cf8;"></i> Archived Registration Documents</h4>
             ${docsHtml}
 
-            <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--theme-border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 0.75rem; color: var(--theme-text-muted);">
                     <i class="fa-solid fa-lock" style="color: #10b981;"></i> Data is strictly confidential.
                 </div>

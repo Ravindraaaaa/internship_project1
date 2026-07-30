@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Directory & Digital Archive - AlumniNet</title>
+    <meta name="description" content="AlumniNet is a high-fidelity platform designed to bridge the gap between academic generations.">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%23818cf8' d='M256 32L32 144l224 112 224-112L256 32z'/><path fill='%2338bdf8' d='M256 288l-176-88v120c0 44.2 78.8 80 176 80s176-35.8 176-80V200L256 288z'/><path fill='%23a855f7' d='M448 184v168h32V184l-32 0z'/></svg>">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Style System CSS -->
+    <link rel="stylesheet" href="../assets/css/style.css?v=1785386759">
+    <!-- Modern Real-Time Notification CSS & JS -->
+    <link rel="stylesheet" href="../assets/css/notifications.css?v=1785386759">
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis Smooth Scroll -->
+    <script src="../assets/js/lenis.min.js"></script>
+    <script>
+        (function() {
+            var mode = localStorage.getItem('theme_mode') || 'dark';
+            if (mode === 'light' || mode === 'theme-light') {
+                document.documentElement.className = 'theme-light';
+            } else {
+                document.documentElement.className = 'theme-dark';
+            }
+        })();
+    </script>
+        <script src="../assets/js/notifications.js?v=1785386759" defer></script>
+    </head>
+<body class="page-loading">
+
+    <!-- ==================== PAGE LOADER ==================== -->
+    
+    <!-- ==================== CLEAN STATIC BACKDROP LAYER ==================== -->
+    <div class="custom-bg-overlay"></div>
+
+    <!-- ==================== PUBLIC STICKY NAV HEADER ==================== -->
+    
+    <!-- Display alerts dynamically matching toast trigger functions -->
+    
+<style>
+    .alumni-header-banner {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+        border-radius: 20px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .alumni-header-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 40%);
+        pointer-events: none;
+        animation: rotateBanner 20s linear infinite;
+    }
+    @keyframes rotateBanner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .alumni-member-card {
+        background: var(--theme-surface);
+        border: 1px solid var(--theme-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+    .alumni-member-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .alumni-avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+    .alumni-avatar {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .alumni-member-card:hover .alumni-avatar {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+    }
+    .btn-archive {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.15));
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        color: #a855f7;
+        transition: all 0.3s ease;
+    }
+    .btn-archive:hover {
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        color: white;
+        box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4);
+    }
+    .btn-archive:hover i {
+        color: white !important;
+    }
+    .year-pill {
+        transition: all 0.3s ease;
+    }
+    .year-pill:hover:not(.active) {
+        background: rgba(255,255,255,0.15) !important;
+        transform: translateY(-2px);
+    }
+    .hierarchy-header {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    .hierarchy-header::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #6366f1, #a855f7);
+        border-radius: 4px;
+    }
+    .linkedin-btn {
+        background: rgba(0, 119, 181, 0.1); 
+        border: 1px solid rgba(0, 119, 181, 0.3); 
+        color: #0077b5; 
+        transition: all 0.3s ease;
+    }
+    .linkedin-btn:hover {
+        background: #0077b5;
+        color: white;
+        box-shadow: 0 5px 15px rgba(0, 119, 181, 0.4);
+    }
+</style>
+
+<div class="dashboard-wrapper">
+            <aside class="sidebar" id="sidebar" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
+            <div class="sidebar-header">
+                <a href="../index.php" class="logo logo-text">
+                    <i class="fa-solid fa-graduation-cap"></i> AlumniNet
+                </a>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <ul class="sidebar-menu" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
+                                                            <li class="sidebar-item ">
+                            <a href="dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="profile.php"><i class="fa-solid fa-circle-user"></i> <span class="link-text">My Profile</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="mentorship.php"><i class="fa-solid fa-handshake-angle"></i> <span class="link-text">Mentorship</span></a>
+                        </li>
+                        <li class="sidebar-item active">
+                            <a href="alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="events.php"><i class="fa-solid fa-calendar-days"></i> <span class="link-text">Events Board</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="portfolio.php"><i class="fa-solid fa-folder-open"></i> <span class="link-text">My Portfolio</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Messenger</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="feedback.php"><i class="fa-solid fa-comments"></i> <span class="link-text">Feedback</span></a>
+                        </li>
+                        <li class="sidebar-item ">
+                            <a href="help.php"><i class="fa-solid fa-circle-question"></i> <span class="link-text">Help & Support</span></a>
+                        </li>
+                                                </ul>
+        </aside>
+            
+    <div class="dashboard-content-area">
+        
+<!-- Top Moving Announcement Marquee Banner (Student/Alumni Only) -->
+<div class="announcement-marquee-bar" id="announcementMarqueeBar">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.15); padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3); flex-shrink: 0;">
+        <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE BROADCAST
+    </div>
+    <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px;">
+        <div id="marqueeTrack" style="display: inline-block; white-space: nowrap; font-weight: 500; animation: marqueeScroll 55s linear infinite; cursor: pointer;">
+                                                <a href="events.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #34d399; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            🎉 EVENT (05 Aug 2026)                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Alumni Mentorship Roundtable                        </span>
+                    </a>
+                                    <a href="events.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #34d399; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            🎉 EVENT (12 Sep 2026)                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Cloud Native Architecture Trends                        </span>
+                    </a>
+                                    <a href="events.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #34d399; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            🎉 EVENT (15 Oct 2026)                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Tech Reunion &amp; Networking Evening                        </span>
+                    </a>
+                                    <a href="events.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #34d399; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            🎉 EVENT (20 Nov 2026)                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Careers in Autonomy &amp; Embedded Systems                        </span>
+                    </a>
+                                    <a href="jobs.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #60a5fa; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            💼 JOB OPENING                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Production Engineer at Meta                        </span>
+                    </a>
+                                    <a href="jobs.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #60a5fa; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            💼 JOB OPENING                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Battery Control Engineer at Tesla                        </span>
+                    </a>
+                                    <a href="jobs.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #60a5fa; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            💼 JOB OPENING                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Site Reliability Engineer at Meta                        </span>
+                    </a>
+                                    <a href="jobs.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #60a5fa; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            💼 JOB OPENING                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Product Lead at Tesla                        </span>
+                    </a>
+                                    <a href="feedback.php" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: #a855f7; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            ✨ THANK YOU                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            Thank you for your feedback &amp; support tickets! Our moderation team reviews every submission.                        </span>
+                    </a>
+                                    </div>
+    </div>
+    <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 600; flex-shrink: 0;" class="marquee-live-label">
+        <span style="background: rgba(255,255,255,0.12); padding: 3px 9px; border-radius: 6px;">Live Broadcast</span>
+    </div>
+</div>
+
+<style>
+/* Notice Banner Positioning & Light Mode Contrast Overrides */
+.announcement-marquee-bar {
+    background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    color: #ffffff;
+    padding: 7px 16px 7px 60px; /* Added 60px left padding so collapsed toggle button never overlaps */
+    font-size: 0.83rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+    position: relative;
+    box-sizing: border-box;
+}
+
+html.theme-light .announcement-marquee-bar,
+body.theme-light .announcement-marquee-bar {
+    background: linear-gradient(90deg, #e0e7ff 0%, #c7d2fe 50%, #e0e7ff 100%) !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #a5b4fc !important;
+}
+
+html.theme-light .announcement-marquee-bar .marquee-item-link,
+body.theme-light .announcement-marquee-bar .marquee-item-link {
+    color: #0f172a !important;
+}
+
+html.theme-light .announcement-marquee-bar .marquee-live-label span,
+body.theme-light .announcement-marquee-bar .marquee-live-label span {
+    background: rgba(15, 23, 42, 0.08) !important;
+    color: #1e1b4b !important;
+}
+
+.marquee-item-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+@keyframes marqueeScroll {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+#marqueeTrack:hover {
+    animation-play-state: paused;
+}
+</style>
+
+<nav class="top-nav">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
+        <div class="top-nav-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <label for="global-nav-search-input" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Search platform</label>
+            <input type="text" id="global-nav-search-input" name="global_search" class="input-glass" placeholder="Search platform..." autocomplete="off" aria-label="Search platform" title="Click or press Ctrl+K to search">
+            <span class="search-kbd">⌘K</span>
+        </div>
+    </div>
+
+    <div class="top-nav-actions">
+        <button class="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Bright Mode">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+        
+        <!-- Direct Messages Shortcut -->
+                <a href="chat.php" class="notif-bell-btn" title="Direct Chat & Messages" style="text-decoration: none;">
+            <i class="fa-regular fa-comment-dots" style="font-size: 18px;"></i>
+        </a>
+        
+        <!-- Notification Bell -->
+        <button class="notif-bell-btn" id="notifBellBtn" title="Notification Center">
+            <i class="fa-regular fa-bell" style="font-size: 18px;"></i>
+            <span class="notif-badge" id="notifBadge" style="display:flex;">
+                2            </span>
+        </button>
+
+        <!-- Visible Role Pill Badge in Top Navbar -->
+        <div class="nav-role-badge">
+                            <span class="role-pill pill-alumni" title="Alumni Member Network"><i class="fa-solid fa-user-tie"></i> Alumni</span>
+                    </div>
+
+        <!-- User profile dropdown -->
+        <div style="position: relative;">
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User Avatar" class="nav-user-avatar" id="profile-avatar-toggle">
+            <div class="nav-dropdown-menu" id="profile-dropdown-menu">
+                <div class="dropdown-header-info">
+                    <h4>User</h4>
+                    <p style="margin-top: 0.25rem;">
+                                                    <span style="font-weight: 600; color: var(--theme-accent-blue); display: inline-flex; align-items: center; gap: 0.35rem;"><i class="fa-solid fa-user-tie"></i> Alumni Member</span>
+                                            </p>
+                </div>
+                                    <a href="profile.php" class="dropdown-item"><i data-lucide="user" style="width:16px;height:16px;"></i> My Profile</a>
+                                <a href="change_password.php" class="dropdown-item"><i data-lucide="key" style="width:16px;height:16px;"></i> Change Password</a>
+                <div style="border-top: 1px solid var(--theme-border); margin: 0.25rem 0;"></div>
+                <a href="../logout.php" class="dropdown-item" style="color: var(--accent-danger);"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign Out</a>
+            </div>
+        </div>
+    </div>
+</nav>
+        
+        <main class="dashboard-workspace" style="padding: 1.5rem;">
+            <!-- Header Banner -->
+            <div class="alumni-header-banner" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+                <div style="position: relative; z-index: 1;">
+                    <h1 style="font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, #fff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        🎓 Alumni Directory & Digital Archive
+                    </h1>
+                    <p style="color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-top: 0.75rem; max-width: 600px; line-height: 1.6;">
+                        Browse and connect with verified alumni members organized by <strong>Passing Year → Branch → Batch</strong>. Discover their professional journeys and explore their digital archives.
+                    </p>
+                </div>
+            </div>
+
+            <!-- YEAR DASHBOARD PILLS & STATS -->
+            <div class="card-glass" style="padding: 1.25rem; border-radius: 16px; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--theme-text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-calendar-days" style="color: #818cf8;"></i> Select Graduation Batch Year
+                </div>
+                <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">
+                    <a href="alumni.php" class="year-pill active" style="padding: 0.5rem 1.25rem; border-radius: 20px; font-weight: 700; text-decoration: none; font-size: 0.85rem; white-space: nowrap; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff;">
+                        All Years
+                    </a>
+                                        <a href="alumni.php?year=2024" class="year-pill " style="padding: 0.5rem 1.25rem; border-radius: 20px; font-weight: 700; text-decoration: none; font-size: 0.85rem; white-space: nowrap; background: rgba(255,255,255,0.06); color: #fff;">
+                        Batch 2024                    </a>
+                                        <a href="alumni.php?year=2023" class="year-pill " style="padding: 0.5rem 1.25rem; border-radius: 20px; font-weight: 700; text-decoration: none; font-size: 0.85rem; white-space: nowrap; background: rgba(255,255,255,0.06); color: #fff;">
+                        Batch 2023                    </a>
+                                    </div>
+
+                <!-- Year Metrics Bar -->
+                                <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px;">
+                    <div style="flex: 1; min-width: 140px;">
+                        <div style="font-size: 0.75rem; color: var(--theme-text-muted);">Batch 2024 Total Alumni</div>
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;">1 Members</div>
+                    </div>
+                    <div style="flex: 2; min-width: 250px;">
+                        <div style="font-size: 0.75rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;">Top Recruiters for Batch 2024</div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                                                                    <span style="padding: 0.25rem 0.6rem; background: rgba(129, 140, 248, 0.15); color: #818cf8; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(129, 140, 248, 0.2);">
+                                Tech Co (1)
+                            </span>
+                                                                                </div>
+                    </div>
+                </div>
+                            </div>
+
+            <!-- SEARCH & FILTERS PANEL -->
+            <div class="card-glass" style="padding: 1.25rem; border-radius: 16px; margin-bottom: 2rem;">
+                <form method="GET" action="alumni.php" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--theme-text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">Search Query</label>
+                        <input type="text" name="search" class="form-control input-glass" value="" placeholder="Name, Reg No, Company, Skills, Designation...">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--theme-text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">Branch / Department</label>
+                        <select name="branch" class="form-control input-glass">
+                            <option value="">All Branches</option>
+                                                        <option value="BTech CS" >BTech CS</option>
+                                                        <option value="BTech IT" >BTech IT</option>
+                                                        <option value="Information Technology" >Information Technology</option>
+                                                    </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--theme-text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">Company</label>
+                        <select name="company" class="form-control input-glass">
+                            <option value="">All Companies</option>
+                                                        <option value="Academor" >Academor</option>
+                                                        <option value="ATOS" >ATOS</option>
+                                                        <option value="ATOS Global" >ATOS Global</option>
+                                                        <option value="e-Emphasys Pvt. Ltd." >e-Emphasys Pvt. Ltd.</option>
+                                                        <option value="Intellipaat" >Intellipaat</option>
+                                                        <option value="IT Co" >IT Co</option>
+                                                        <option value="TCS" >TCS</option>
+                                                        <option value="Tech Co" >Tech Co</option>
+                                                        <option value="Xsymplify" >Xsymplify</option>
+                                                    </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--theme-text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">Status</label>
+                        <select name="status" class="form-control input-glass">
+                            <option value="">All Statuses</option>
+                            <option value="Working" >Working</option>
+                            <option value="Higher Studies" >Higher Studies</option>
+                            <option value="Entrepreneur" >Entrepreneur</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 10px; padding: 0.65rem;"><i class="fa-solid fa-magnifying-glass"></i> Filter Results</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- HIERARCHICAL ALUMNI DIRECTORY (Passing Year -> Branch -> Batch -> Cards) -->
+                                    <div style="margin-bottom: 2.5rem;">
+                <!-- Passing Year Header -->
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 0.5rem;">
+                    <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); letter-spacing: 0.5px;">
+                        🎓 Passing Year: 2024                    </span>
+                </div>
+
+                                <div class="hierarchy-header" style="margin-left: 1.5rem; margin-bottom: 2.5rem;">
+                    <!-- Branch Sub-Header -->
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: #e0e7ff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i> BTech CS                    </h3>
+
+                                        <div style="margin-bottom: 2rem;">
+                        <!-- Batch Sub-Tag -->
+                        <div style="font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: Batch 2024                            <span style="padding: 0.25rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);">1 Alumni</span>
+                        </div>
+
+                        <!-- Alumni Cards Grid -->
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Test User1                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Alumnus                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> Tech Co                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(28)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                    </div>
+                    </div>
+                                    </div>
+                            </div>
+                        <div style="margin-bottom: 2.5rem;">
+                <!-- Passing Year Header -->
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 0.5rem;">
+                    <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); letter-spacing: 0.5px;">
+                        🎓 Passing Year: 2023                    </span>
+                </div>
+
+                                <div class="hierarchy-header" style="margin-left: 1.5rem; margin-bottom: 2.5rem;">
+                    <!-- Branch Sub-Header -->
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: #e0e7ff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i> Information Technology                    </h3>
+
+                                        <div style="margin-bottom: 2rem;">
+                        <!-- Batch Sub-Tag -->
+                        <div style="font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: Batch 2023                            <span style="padding: 0.25rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);">9 Alumni</span>
+                        </div>
+
+                        <!-- Alumni Cards Grid -->
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Atharv Rahul Taware                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Software Trainee                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> ATOS                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(23)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Mayur Ganesh Todkar                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Software Trainee                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> ATOS                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(20)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            More Pratiket Vijaykumar                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Academic Counsellor                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> Academor                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(24)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Namrata Shankar Parab                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Trainee Engineer                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> ATOS Global                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(18)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Shaktiprasad Sadanand Patra                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            BDM                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> Xsymplify                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(26)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Sumeet Nathuji Satpute                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Software Eng. Trainee                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> TCS                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(25)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Supkar Darpan Rajeshree                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            BDA                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> Intellipaat                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(22)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Tanaya Khare                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Associate System Engineer                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> e-Emphasys Pvt. Ltd.                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(21)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Vaishnavi Valmik Pawar                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Assistant Software Engineer                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> TCS                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(19)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                    </div>
+                    </div>
+                                    </div>
+                                <div class="hierarchy-header" style="margin-left: 1.5rem; margin-bottom: 2.5rem;">
+                    <!-- Branch Sub-Header -->
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: #e0e7ff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i> BTech IT                    </h3>
+
+                                        <div style="margin-bottom: 2rem;">
+                        <!-- Batch Sub-Tag -->
+                        <div style="font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: Batch 2023                            <span style="padding: 0.25rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);">1 Alumni</span>
+                        </div>
+
+                        <!-- Alumni Cards Grid -->
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                                                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name=User&amp;background=6366f1&amp;color=fff" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
+                                            Test User2                                        </h4>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            Alumnus                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> IT Co                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> Pune, India</span>
+                                                                        <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
+                                                                    </div>
+
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(29)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                    </button>
+                                                                    </div>
+                            </div>
+                                                    </div>
+                    </div>
+                                    </div>
+                            </div>
+                                </main>
+    </div>
+</div>
+
+<!-- DIGITAL ARCHIVE MODAL (Read-Only for Students) -->
+<div class="modal" id="archiveModal" style="display: none;">
+    <div class="modal-content card-glass" style="max-width: 700px; width: 90%; border-radius: 16px; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1.25rem;"><i class="fa-solid fa-box-archive" style="color: #a855f7;"></i> Alumni Digital Archive & Verified Records</h3>
+            <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()" style="padding: 0.2rem 0.6rem;">&times;</button>
+        </div>
+
+        <div id="archiveModalBody">
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #818cf8;"></i>
+                <p style="margin-top: 1rem; color: var(--theme-text-muted);">Loading digital document archive...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script class="script">
+function openArchiveModal(userId) {
+    document.getElementById('archiveModal').style.display = 'flex';
+    document.getElementById('archiveModalBody').innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #818cf8;"></i>
+            <p style="margin-top: 1rem; color: var(--theme-text-muted);">Retrieving official document archives...</p>
+        </div>
+    `;
+
+    fetch('../api/alumni_archive_api.php?action=documents&user_id=' + userId)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success || !data.profile) {
+            document.getElementById('archiveModalBody').innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to retrieve document archive.</p>';
+            return;
+        }
+
+        const p = data.profile;
+        const docs = data.documents || [];
+
+        let docsHtml = '';
+        if (docs.length === 0) {
+            docsHtml = '<p style="color: var(--theme-text-muted); font-size: 0.85rem;">Original Registration Archive File attached on import.</p>';
+        } else {
+            docs.forEach(d => {
+                docsHtml += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">📄 ${d.file_name}</div>
+                            <div style="font-size: 0.75rem; color: var(--theme-text-muted);">Uploaded: ${d.uploaded_at}</div>
+                        </div>
+                        <a href="../${d.file_path}" target="_blank" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">View Original</a>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById('archiveModalBody').innerHTML = `
+            <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 12px;">
+                <img src="${p.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8;">
+                <div>
+                    <h3 style="margin:0; font-size: 1.2rem; color: var(--theme-text-primary);">${p.name}</h3>
+                    <div style="color: #818cf8; font-weight:600; font-size: 0.9rem;">${p.position || 'Alumnus'} at ${p.company || 'N/A'}</div>
+                    <div style="font-size: 0.8rem; color: var(--theme-text-muted); margin-top: 0.25rem;">
+                        Reg No: <strong>${p.reg_no || 'REG-' + p.user_id}</strong> | Receipt: <strong>${p.receipt_no || 'REC-VERIFIED'}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                <div><strong>Branch:</strong> ${p.branch || p.course || 'N/A'}</div>
+                <div><strong>Passing Year:</strong> ${p.passing_year || p.graduation_year || 'N/A'}</div>
+                <div><strong>Batch:</strong> ${p.batch || '2020-2024'}</div>
+                <div><strong>Employment Status:</strong> <span style="color: #10b981; font-weight: bold;">${p.employment_status || 'Working'}</span></div>
+                <div><strong>Email:</strong> ${p.email}</div>
+                <div><strong>Phone:</strong> ${p.phone || p.u_phone || 'N/A'}</div>
+                <div><strong>Current Location:</strong> ${p.location || 'Pune, India'}</div>
+                <div><strong>Verification Status:</strong> <span style="padding:0.1rem 0.5rem; background:rgba(16,185,129,0.2); color:#10b981; border-radius:10px; font-weight:bold;">Approved</span></div>
+            </div>
+
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-contract" style="color: #818cf8;"></i> Archived Registration Documents</h4>
+            ${docsHtml}
+
+            <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--theme-text-muted);">
+                    <i class="fa-solid fa-lock" style="color: #10b981;"></i> Students have read-only access to archive records.
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Close Archive</button>
+            </div>
+        `;
+    });
+}
+
+function closeArchiveModal() {
+    document.getElementById('archiveModal').style.display = 'none';
+}
+</script>
+
+    <!-- ==================== BACK TO TOP FAB ==================== -->
+    <button class="back-to-top" id="back-to-top" title="Back to Top">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+
+    <!-- Main JavaScript Core Asset -->
+    <script src="../assets/js/main.js?v=1785386759"></script>
+    
+    <!-- Fade in page load GSAP utility -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // GSAP page entrance reveal
+            gsap.from("body", {
+                opacity: 0,
+                duration: 0.8,
+                ease: "power2.out"
+            });
+
+            // Initialize Lucide Icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+                <!-- ==================== ENTERPRISE WIDGETS ==================== -->
+        
+        
+        <!-- 2. Global Search Overlay Modal -->
+        <div class="search-modal-overlay" id="search-modal-overlay" onclick="if(event.target===this) toggleSearchModal(false)">
+            <div class="search-modal-card">
+                <div class="search-modal-header">
+                    <i class="fa-solid fa-magnifying-glass" style="color:var(--theme-text-secondary);"></i>
+                    <input type="text" id="global-search-input" class="input-glass" style="flex-grow:1; font-size:0.95rem; border:none; background:none; padding:0.5rem;" placeholder="Search users, jobs, alumni, companies..." onkeyup="performGlobalSearch(this.value)">
+                    <button onclick="toggleSearchModal(false)" style="background:none; border:none; color:var(--theme-text-secondary); cursor:pointer; font-size:1.35rem; line-height:1;">&times;</button>
+                </div>
+                <div class="search-modal-results" id="search-modal-results">
+                    <div style="text-align:center; color:var(--theme-text-secondary); font-size:0.85rem; padding:2rem 0;">
+                        <i class="fa-solid fa-keyboard" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i>
+                        Type at least 2 characters to trigger dynamic indexing...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Scripts Integration -->
+        <script>
+            
+            // --- GLOBAL INSTANT SEARCH LOGIC ---
+            function toggleSearchModal(show) {
+                const overlay = document.getElementById('search-modal-overlay');
+                const input = document.getElementById('global-search-input');
+                if (show) {
+                    overlay.classList.add('active');
+                    input.focus();
+                } else {
+                    overlay.classList.remove('active');
+                    input.value = '';
+                }
+            }
+
+            // Wire input searches to trigger the overlay modal
+            document.addEventListener('DOMContentLoaded', () => {
+                const navSearch = document.querySelector('.top-nav-search input');
+                if (navSearch) {
+                    navSearch.addEventListener('focus', (e) => {
+                        e.preventDefault();
+                        navSearch.blur();
+                        toggleSearchModal(true);
+                    });
+                }
+                
+                // Ctrl+K / Cmd+K to trigger instant search, ESC Key to close
+                document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                        e.preventDefault();
+                        toggleSearchModal(true);
+                    }
+                    if (e.key === 'Escape') {
+                        toggleSearchModal(false);
+                        const win = document.getElementById('ai-chat-window');
+                        if (win) win.classList.remove('active');
+                    }
+                });
+                
+                // Notification Sync triggers
+                syncNotificationCount();
+                setInterval(syncNotificationCount, 15000); // sync every 15s
+                
+                // Wire notification dropdown toggle to load lists
+                const bell = document.getElementById('notif-bell-toggle');
+                if (bell) {
+                    bell.addEventListener('click', loadRecentNotificationsList);
+                }
+            });
+
+            function performGlobalSearch(q) {
+                const results = document.getElementById('search-modal-results');
+                if (q.trim().length < 2) {
+                    results.innerHTML = `
+                        <div style="text-align:center; color:var(--theme-text-secondary); font-size:0.85rem; padding:2rem 0;">
+                            <i class="fa-solid fa-keyboard" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i>
+                            Type at least 2 characters to trigger dynamic indexing...
+                        </div>`;
+                    return;
+                }
+                
+                results.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem;"></i> Searching system nodes...</div>';
+                
+                fetch('../api/search.php?q=' + encodeURIComponent(q))
+                .then(res => res.json())
+                .then(data => {
+                    results.innerHTML = '';
+                    if (data.status === 'success') {
+                        let total = 0;
+                        
+                        // 1. Render Users
+                        if (data.users && data.users.length > 0) {
+                            total += data.users.length;
+                            const div = document.createElement('div');
+                            div.innerHTML = '<div class="search-result-group-title"><i class="fa-solid fa-user-graduate"></i> Accounts & Members</div>';
+                            data.users.forEach(u => {
+                                const path = u.role === 'admin' ? '../admin/dashboard.php' : '../user/alumni.php?search=' + encodeURIComponent(u.name);
+                                div.innerHTML += `<a href="${path}" class="search-result-item">
+                                    <div>
+                                        <strong>${u.name}</strong>
+                                        <p style="font-size:0.75rem;color:var(--theme-text-secondary);margin:0.15rem 0;">${u.email}</p>
+                                    </div>
+                                    <span style="font-size:0.7rem;background:rgba(255,255,255,0.05);padding:0.1rem 0.35rem;border-radius:3px;text-transform:uppercase;">${u.role}</span>
+                                </a>`;
+                            });
+                            results.appendChild(div);
+                        }
+                        
+                        // 2. Render Jobs
+                        if (data.jobs && data.jobs.length > 0) {
+                            total += data.jobs.length;
+                            const div = document.createElement('div');
+                            div.innerHTML = '<div class="search-result-group-title" style="margin-top:1rem;"><i class="fa-solid fa-briefcase"></i> Placements & Internships</div>';
+                            data.jobs.forEach(j => {
+                                div.innerHTML += `<a href="../user/jobs.php" class="search-result-item">
+                                    <div>
+                                        <strong>${j.title}</strong>
+                                        <p style="font-size:0.75rem;color:var(--theme-text-secondary);margin:0.15rem 0;">${j.company} | ${j.location}</p>
+                                    </div>
+                                    <span style="font-size:0.7rem;background:rgba(59,130,246,0.15);color:var(--theme-accent-blue);padding:0.1rem 0.35rem;border-radius:3px;text-transform:uppercase;">${j.type}</span>
+                                </a>`;
+                            });
+                            results.appendChild(div);
+                        }
+
+                        // 3. Render Events
+                        if (data.events && data.events.length > 0) {
+                            total += data.events.length;
+                            const div = document.createElement('div');
+                            div.innerHTML = '<div class="search-result-group-title" style="margin-top:1rem;"><i class="fa-solid fa-calendar-days"></i> Upcoming Events</div>';
+                            data.events.forEach(e => {
+                                div.innerHTML += `<a href="../user/events.php" class="search-result-item">
+                                    <div>
+                                        <strong>${e.title}</strong>
+                                        <p style="font-size:0.75rem;color:var(--theme-text-secondary);margin:0.15rem 0;">${e.location}</p>
+                                    </div>
+                                    <span style="font-size:0.7rem;background:rgba(168,85,247,0.15);color:var(--theme-accent-purple);padding:0.1rem 0.35rem;border-radius:3px;text-transform:uppercase;">${e.event_type}</span>
+                                </a>`;
+                            });
+                            results.appendChild(div);
+                        }
+                        
+                        if (total === 0) {
+                            results.innerHTML = '<div style="text-align:center;color:var(--theme-text-secondary);padding:2rem;">No matching indexed files found.</div>';
+                        }
+                    }
+                });
+            }
+
+            // --- DYNAMIC NOTIFICATIONS LOGIC ---
+            function syncNotificationCount() {
+                const badge = document.querySelector('.top-nav-badge');
+                if (!badge) return;
+                
+                fetch('../api/notifications.php?action=count')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const count = data.count;
+                        if (count > 0) {
+                            badge.textContent = count;
+                            badge.style.display = 'inline-flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                });
+            }
+
+            function loadRecentNotificationsList() {
+                const list = document.getElementById('notif-dropdown-menu');
+                if (!list) return;
+                
+                list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.8rem;color:var(--theme-text-secondary);"><i class="fa-solid fa-circle-notch fa-spin"></i> Refreshing notifications...</div>';
+                
+                fetch('../api/notifications.php?action=list&status=unread')
+                .then(res => res.json())
+                .then(data => {
+                    list.innerHTML = `<div class="dropdown-header-info">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h4 style="margin:0;font-size:0.9rem;">Recent Alerts</h4>
+                            <button onclick="markAllNotificationsRead(event)" style="background:none;border:none;color:var(--theme-accent-blue);font-size:0.72rem;font-weight:700;cursor:pointer;">Clear All</button>
+                        </div>
+                    </div>`;
+                    
+                    if (data.status === 'success') {
+                        if (data.notifications && data.notifications.length > 0) {
+                            data.notifications.forEach(notif => {
+                                let icon = 'fa-info-circle';
+                                let iconColor = 'var(--theme-accent-blue)';
+                                if (notif.type === 'success') { icon = 'fa-circle-check'; iconColor = '#22c55e'; }
+                                else if (notif.type === 'warning') { icon = 'fa-triangle-exclamation'; iconColor = '#eab308'; }
+                                else if (notif.type === 'error') { icon = 'fa-circle-xmark'; iconColor = '#ef4444'; }
+                                
+                                const item = document.createElement('div');
+                                item.className = 'notif-item';
+                                item.style.cursor = 'pointer';
+                                item.style.borderLeft = `3px solid ${iconColor}`;
+                                const redirectUrl = notif.link ? `?read_notif=${notif.id}&redirect_to=${encodeURIComponent(notif.link)}` : `?read_notif=${notif.id}`;
+                                item.onclick = () => { window.location.href = redirectUrl; };
+                                item.innerHTML = `
+                                    <div class="notif-item-title"><i class="fa-solid ${icon}" style="color:${iconColor};margin-right:0.35rem;"></i> ${notif.title}</div>
+                                    <div style="font-size:0.75rem;color:var(--theme-text-secondary);margin:0.25rem 0 0.25rem 1.25rem;">${notif.message}</div>
+                                    <div class="notif-item-time" style="margin-left:1.25rem;">Priority: ${notif.priority}</div>
+                                `;
+                                list.appendChild(item);
+                            });
+                        } else {
+                            list.innerHTML += '<div style="text-align:center;padding:1.5rem;font-size:0.8rem;color:var(--theme-text-secondary);font-style:italic;">No unread alerts found.</div>';
+                        }
+                    }
+                });
+            }
+
+            function markAllNotificationsRead(e) {
+                if (e) e.stopPropagation();
+                
+                const formData = new FormData();
+                formData.append('action', 'mark_read');
+                
+                fetch('../api/notifications.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        syncNotificationCount();
+                        loadRecentNotificationsList();
+                        if (window.showToast) {
+                            window.showToast('All notifications cleared.', 'success');
+                        }
+                    }
+                });
+            }
+        </script>
+    
+    <!-- ==================== PROFESSIONAL SYSTEM FOOTER ==================== -->
+    
+    <!-- ==================== ABOUT & TEAM OVERLAY MODAL ==================== -->
+    <div class="search-modal-overlay" id="about-modal-overlay" onclick="if(event.target===this) toggleAboutModal(false)">
+        <div class="search-modal-card" style="max-width: 780px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="search-modal-header" style="justify-content: space-between; border-bottom: 1px solid var(--theme-border); padding: 1.25rem 1.5rem; background: var(--theme-bg-secondary, #1e293b);">
+                <div style="display: flex; align-items: center; gap: 0.6rem; color: var(--theme-text, #f8fafc);">
+                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8); font-size: 1.3rem;"></i>
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--theme-text, #f8fafc);">About AlumniNet</h3>
+                        <p style="font-size: 0.78rem; color: var(--theme-text-secondary, #94a3b8); margin: 0;">Platform Overview & Project Team Directory</p>
+                    </div>
+                </div>
+                <button onclick="toggleAboutModal(false)" style="background: none; border: none; color: var(--theme-text-secondary); cursor: pointer; font-size: 1.4rem; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="padding: 1.5rem; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Platform Overview -->
+                <div style="background: rgba(129, 140, 248, 0.05); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 8px; padding: 1rem 1.25rem;">
+                    <h4 style="color: var(--theme-accent-purple, #818cf8); font-size: 0.92rem; margin: 0 0 0.4rem 0; font-weight: 700;">
+                        <i class="fa-solid fa-graduation-cap"></i> Enterprise Alumni Engagement & Mentorship Platform
+                    </h4>
+                    <p style="font-size: 0.85rem; color: var(--theme-text-secondary, #94a3b8); line-height: 1.55; margin: 0;">
+                        AlumniNet is designed to seamlessly bridge academic generations by connecting university students with established alumni. Our platform powers real-world mentorship, exclusive job referrals, networking events, and institutional career development.
+                    </p>
+                </div>
+
+                <!-- Team Directory -->
+                <div>
+                    <h4 style="color: var(--theme-text, #f8fafc); font-size: 0.95rem; font-weight: 700; margin: 0 0 0.8rem 0; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-users" style="color: var(--theme-accent-blue, #38bdf8);"></i> Project Team & Administration
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem;">
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Ashwin Pande</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(129, 140, 248, 0.15); color: var(--theme-accent-purple, #818cf8); font-weight: 600;">
+                                    Administrator                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:9226830066" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 9226830066                                </a>
+                                                                                                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> alumninethelp@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Ravindra Mude</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(129, 140, 248, 0.15); color: var(--theme-accent-purple, #818cf8); font-weight: 600;">
+                                    Administrator                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:9209276332" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 9209276332                                </a>
+                                                                                                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> alumninethelp@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Yashraj Nanaware</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(129, 140, 248, 0.15); color: var(--theme-accent-purple, #818cf8); font-weight: 600;">
+                                    Administrator                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:9325818393" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 9325818393                                </a>
+                                                                                                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> alumninethelp@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Kaif Khan</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(129, 140, 248, 0.15); color: var(--theme-accent-purple, #818cf8); font-weight: 600;">
+                                    Administrator                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:9589904746" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 9589904746                                </a>
+                                                                                                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> alumninethelp@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Srushti Mokashe</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:7821995050" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 7821995050                                </a>
+                                                                                                <a href="mailto:srushtimokashe4@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> srushtimokashe4@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Mahesh Padse</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:8237020804" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 8237020804                                </a>
+                                                                                                <a href="mailto:maheshpadse2005@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> maheshpadse2005@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Aishwarya Nirwal</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:8087906522" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 8087906522                                </a>
+                                                                                                <a href="mailto:nirwalaishwarya7@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> nirwalaishwarya7@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Bhagyashree Patil</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:7821809886" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 7821809886                                </a>
+                                                                                                <a href="mailto:vaishnavipatil0942007@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> vaishnavipatil0942007@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Gital Patil</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:7820803005" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 7820803005                                </a>
+                                                                                                <a href="mailto:gitalpatil07@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> gitalpatil07@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Ishwari Nikam</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:9834922170" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 9834922170                                </a>
+                                                                                                <a href="mailto:ishwarinikam7930@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> ishwarinikam7930@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                                <div style="background: var(--theme-card, rgba(255,255,255,0.03)); border: 1px solid var(--theme-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 0.9rem;">
+                            <div style="font-weight: 700; color: var(--theme-text, #f8fafc); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Nakul Waghmare</span>
+                                <span style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: var(--theme-accent-blue, #38bdf8); font-weight: 600;">
+                                    Team Member                                </span>
+                            </div>
+                            <div style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.2rem; color: var(--theme-text-secondary, #94a3b8);">
+                                                                <a href="tel:8446644436" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-phone" style="font-size: 0.72rem; color: var(--theme-accent-blue, #38bdf8);"></i> +91 8446644436                                </a>
+                                                                                                <a href="mailto:nakulwaghmare007@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; word-break: break-all;" onmouseover="this.style.color='var(--theme-accent-blue)'" onmouseout="this.style.color='var(--theme-text-secondary)'">
+                                    <i class="fa-solid fa-envelope" style="font-size: 0.72rem; color: var(--theme-accent-purple, #818cf8);"></i> nakulwaghmare007@gmail.com                                </a>
+                                                            </div>
+                        </div>
+                                            </div>
+                </div>
+            </div>
+
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--theme-border); background: var(--theme-bg-secondary, #1e293b); display: flex; justify-content: space-between; align-items: center;">
+                <a href="../about.php" class="btn btn-secondary btn-small" style="font-size: 0.82rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Full About Page
+                </a>
+                <button onclick="toggleAboutModal(false)" class="btn btn-primary btn-small" style="font-size: 0.82rem; padding: 0.4rem 1rem;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PROFESSIONAL COMPACT SYSTEM FOOTER ==================== -->
+    <footer class="app-footer has-sidebar" style="background: var(--theme-sidebar, #0f172a); border-top: 1px solid var(--theme-border, rgba(255,255,255,0.08)); padding: 0.85rem 1.5rem; margin-top: auto; color: var(--theme-text-secondary, #94a3b8); font-size: 0.83rem;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding-right: 0;">
+            
+            <!-- Left Brand & Copyright -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; color: var(--theme-text, #f8fafc); font-weight: 600;">
+                <i class="fa-solid fa-graduation-cap" style="color: var(--theme-accent-purple, #818cf8); font-size: 1.05rem;"></i>
+                <span>AlumniNet</span>
+                <span style="opacity: 0.4; font-weight: 400;">|</span>
+                <span style="font-weight: 400; color: var(--theme-text-secondary, #94a3b8); font-size: 0.78rem;">&copy; 2026 All rights reserved.</span>
+            </div>
+
+            <!-- Right Action Links -->
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; font-size: 0.82rem;">
+                <a href="#" onclick="toggleAboutModal(true); return false;" style="color: var(--theme-text, #f8fafc); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-purple, #818cf8)'" onmouseout="this.style.color='var(--theme-text, #f8fafc)'">
+                    <i class="fa-solid fa-circle-info" style="color: var(--theme-accent-purple, #818cf8);"></i> About & Team
+                </a>
+                <a href="../user/help.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-headset" style="color: var(--theme-accent-blue, #38bdf8);"></i> Help Center
+                </a>
+                <a href="../user/feedback.php" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-comment-dots" style="color: var(--theme-accent-blue, #38bdf8);"></i> Feedback
+                </a>
+                <a href="mailto:alumninethelp@gmail.com" style="color: var(--theme-text-secondary, #94a3b8); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent-blue, #38bdf8)'" onmouseout="this.style.color='var(--theme-text-secondary, #94a3b8)'">
+                    <i class="fa-solid fa-envelope" style="color: var(--theme-accent-blue, #38bdf8);"></i> Contact
+                </a>
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        function toggleAboutModal(show) {
+            const overlay = document.getElementById('about-modal-overlay');
+            if (overlay) {
+                if (show) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
+

@@ -82,6 +82,15 @@ if (!function_exists('get_user_name')) {
 }
 
 /**
+ * Get current user's email.
+ */
+if (!function_exists('get_user_email')) {
+    function get_user_email() {
+        return $_SESSION['user_email'] ?? $_SESSION['email'] ?? null;
+    }
+}
+
+/**
  * Enforce that a user is logged in. Redirect to login if not.
  */
 if (!function_exists('require_login')) {
@@ -350,12 +359,7 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'feedback' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=feedback"><i class="fa-solid fa-comments"></i> <span class="link-text">User Feedback</span></a>
                         </li>
-                        <li class="sidebar-item <?php echo $active_page === 'scan_id' ? 'active' : ''; ?>">
-                            <a href="<?php echo $admin_prefix; ?>scan_id.php"><i class="fa-solid fa-qrcode"></i> <span class="link-text">Scan Student ID</span></a>
-                        </li>
-                        <li class="sidebar-item <?php echo $active_page === 'import_resume' ? 'active' : ''; ?>">
-                            <a href="<?php echo $admin_prefix; ?>import_resume.php"><i class="fa-solid fa-file-import"></i> <span class="link-text">Import Resumes</span></a>
-                        </li>
+
                         <li class="sidebar-item <?php echo $active_page === 'notifications' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>announcement_analytics.php"><i class="fa-solid fa-chart-pie"></i> <span class="link-text">Notification Analytics</span></a>
                         </li>

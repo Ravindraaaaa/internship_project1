@@ -463,21 +463,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.admin_stats) {
                     if (label === 'Total Users') {
-                        valEl.innerText = data.admin_stats.users;
+                        animateSingleCounter(valEl, data.admin_stats.users);
                     } else if (label === 'Pending Approvals') {
-                        valEl.innerText = data.admin_stats.pending;
+                        animateSingleCounter(valEl, data.admin_stats.pending);
                     } else if (label === 'Active Referrals') {
-                        valEl.innerText = data.admin_stats.jobs;
+                        animateSingleCounter(valEl, data.admin_stats.jobs);
                     } else if (label === 'Scheduled Events') {
-                        valEl.innerText = data.admin_stats.events;
+                        animateSingleCounter(valEl, data.admin_stats.events);
                     }
                 } else if (data.user_stats) {
                     if (label === 'Referrals Posted') {
-                        valEl.innerText = data.user_stats.jobs_posted;
+                        animateSingleCounter(valEl, data.user_stats.jobs_posted);
                     } else if (label === 'Mentoring Requests' || label === 'Active Mentors') {
-                        valEl.innerText = data.user_stats.mentorship_requests || data.user_stats.active_mentors;
+                        animateSingleCounter(valEl, data.user_stats.mentorship_requests || data.user_stats.active_mentors);
                     } else if (label === 'RSVPs Reserved') {
-                        valEl.innerText = data.user_stats.rsvps_reserved;
+                        animateSingleCounter(valEl, data.user_stats.rsvps_reserved);
                     }
                 }
             }
@@ -578,26 +578,43 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
+    function animateSingleCounter(el, target) {
+        const currentVal = parseInt(el.innerText.replace(/\D/g, '')) || 0;
+        if (currentVal === target) {
+            el.innerText = target;
+            return;
+        }
+        
+        let current = currentVal;
+        const duration = 1000;
+        const stepTime = 15;
+        const steps = duration / stepTime;
+        const diff = target - currentVal;
+        const increment = diff / steps;
+        
+        if (el.animationTimer) clearInterval(el.animationTimer);
+        
+        let stepCount = 0;
+        el.animationTimer = setInterval(() => {
+            current += increment;
+            stepCount++;
+            if (stepCount >= steps) {
+                el.innerText = target;
+                clearInterval(el.animationTimer);
+                delete el.animationTimer;
+            } else {
+                el.innerText = Math.round(current);
+            }
+        }, stepTime);
+    }
+
     // Animated Counters for metric values
     function animateCounters() {
         document.querySelectorAll('.stat-card-val').forEach(el => {
             const target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
             if (target === 0) return;
-            let current = 0;
-            const duration = 1000; // ms
-            const stepTime = 15;
-            const steps = duration / stepTime;
-            const increment = Math.ceil(target / steps);
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    el.innerText = target;
-                    clearInterval(timer);
-                } else {
-                    el.innerText = current;
-                }
-            }, stepTime);
+            el.innerText = '0';
+            animateSingleCounter(el, target);
         });
     }
 

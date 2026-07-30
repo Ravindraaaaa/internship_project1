@@ -1202,13 +1202,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-trigger inline button dot-loading on form submit to cover server delays
     document.querySelectorAll('form').forEach(form => {
         if (!form.hasAttribute('data-no-loader') && form.getAttribute('action') !== 'api/send_otp.php') {
-            form.addEventListener('submit', function() {
+            form.addEventListener('submit', function(e) {
                 if (form.checkValidity()) {
-                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const submitBtn = e.submitter || form.querySelector('button[type="submit"]');
                     if (submitBtn) {
                         if (form.hasAttribute('data-full-loader')) {
                             window.showLoader();
                         } else {
+                            if (submitBtn.hasAttribute('name')) {
+                                const hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = submitBtn.name;
+                                hiddenInput.value = submitBtn.value;
+                                form.appendChild(hiddenInput);
+                            }
+                            const w = submitBtn.getBoundingClientRect().width;
+                            if (w > 0) {
+                                submitBtn.style.width = w + 'px';
+                            }
                             submitBtn.disabled = true;
                             submitBtn.style.pointerEvents = 'none';
                             submitBtn.innerHTML = '<span class="dots-loader"><span></span><span></span><span></span></span>';

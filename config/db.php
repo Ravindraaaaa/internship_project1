@@ -1,6 +1,6 @@
 <?php
 $host = '127.0.0.1';
-$port = 3307;
+$port = 3306;
 $db   = 'internship_project1';
 $user = 'root';
 $pass = ''; 
@@ -211,13 +211,21 @@ try {
             INDEX idx_fdb_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     } else {
-        $checkFdbId = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'feedback_id'")->fetch();
-        if (!$checkFdbId) {
-            $pdo->exec("ALTER TABLE feedback ADD COLUMN feedback_id VARCHAR(100) NULL AFTER id");
-        }
-        $checkFdbReply = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'admin_reply'")->fetch();
-        if (!$checkFdbReply) {
-            $pdo->exec("ALTER TABLE feedback ADD COLUMN admin_reply TEXT NULL AFTER status");
+        $columns_to_add = [
+            'feedback_id' => "VARCHAR(100) NULL AFTER id",
+            'name' => "VARCHAR(150) NULL AFTER user_id",
+            'email' => "VARCHAR(255) NULL AFTER name",
+            'role' => "VARCHAR(50) DEFAULT 'alumni' AFTER email",
+            'category' => "VARCHAR(100) DEFAULT 'General Feedback' AFTER subject",
+            'attachment' => "VARCHAR(255) DEFAULT NULL AFTER message",
+            'status' => "VARCHAR(50) DEFAULT 'New' AFTER attachment",
+            'admin_reply' => "TEXT DEFAULT NULL AFTER status"
+        ];
+        foreach ($columns_to_add as $col => $def) {
+            $check = $pdo->query("SHOW COLUMNS FROM feedback LIKE '$col'")->fetch();
+            if (!$check) {
+                $pdo->exec("ALTER TABLE feedback ADD COLUMN $col $def");
+            }
         }
     }
 

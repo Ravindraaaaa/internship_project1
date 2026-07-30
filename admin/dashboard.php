@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             set_flash('error', 'Error updating feedback: ' . $e->getMessage());
         }
     }
-    header("Location: dashboard.php?tab=feedback_reviews");
+    header("Location: dashboard.php?tab=feedback");
     exit;
 }
 
@@ -204,7 +204,7 @@ $alumni_by_stream = [];
 $student_by_stream = [];
 
 try {
-    $admin_stats['users'] = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+    $admin_stats['users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
     $admin_stats['pending'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'alumni' AND status = 'pending'")->fetchColumn();
     $admin_stats['jobs'] = $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'active'")->fetchColumn();
     $admin_stats['events'] = $pdo->query("SELECT COUNT(*) FROM events WHERE event_date >= NOW()")->fetchColumn();
@@ -741,6 +741,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             <td style="max-width: 300px; font-size: 0.85rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['message']); ?></td>
                                             <td style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y', strtotime($fb['created_at'])); ?></td>
                                             <td style="text-align: right;">
+                                                <button type="button" onclick="document.getElementById('reply_feedback_id').value = <?php echo $fb['id']; ?>; openModal('replyFeedbackModal')" class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.35rem; border: none; cursor: pointer;"><i class="fa-solid fa-reply"></i> Reply</button>
                                                 <a href="admin_approvals.php?action=delete_feedback&id=<?php echo $fb['id']; ?>&tab=feedback" class="btn btn-danger" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px;" onclick="return confirm('Delete this feedback entry completely?')"><i class="fa-solid fa-trash-can"></i> Delete</a>
                                             </td>
                                         </tr>
@@ -1141,6 +1142,39 @@ require_once __DIR__ . '/../includes/header.php';
             <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('postJobModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Publish Referral</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== REPLY FEEDBACK MODAL ==================== -->
+<div class="modal" id="replyFeedbackModal">
+    <div class="modal-content" style="max-width: 550px;">
+        <button class="modal-close" onclick="closeModal('replyFeedbackModal')">&times;</button>
+        <h3 style="margin-top:0; color:var(--theme-text);"><i class="fa-solid fa-reply"></i> Reply to Feedback</h3>
+        <p style="color:var(--theme-text-secondary); font-size:0.85rem; margin-bottom:1.5rem;">The user will receive an email and an in-app notification with your response.</p>
+        
+        <form method="POST" action="dashboard.php">
+            <input type="hidden" name="action" value="reply_feedback">
+            <input type="hidden" name="feedback_id" id="reply_feedback_id" value="">
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Update Status</label>
+                <select name="status" class="form-input" style="width: 100%;" required>
+                    <option value="Resolved">Resolved</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label>Admin Reply Message</label>
+                <textarea name="admin_reply" class="form-input" rows="5" style="width: 100%; resize: vertical;" placeholder="Type your response here..." required></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('replyFeedbackModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Reply</button>
             </div>
         </form>
     </div>
