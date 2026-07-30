@@ -328,9 +328,7 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=alumni"><i class="fa-solid fa-user-check"></i> <span class="link-text">Manage Alumni</span></a>
                         </li>
-                        <li class="sidebar-item <?php echo $active_page === 'import_alumni' ? 'active' : ''; ?>">
-                            <a href="<?php echo $admin_prefix; ?>import_alumni.php" title="Enterprise Data Import & Archive"><i class="fa-solid fa-file-import"></i> <span class="link-text">Import & Archive Engine</span></a>
-                        </li>
+
                         <li class="sidebar-item <?php echo $active_page === 'students' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=students"><i class="fa-solid fa-users"></i> <span class="link-text">Manage Students</span></a>
                         </li>

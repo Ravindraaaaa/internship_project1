@@ -129,44 +129,44 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- USER DASHBOARD DEFAULT PANELS -->
             <div class="stats-cards-grid">
-                <div class="stat-card-view card-glass" title="<?php echo htmlspecialchars($user_name); ?>">
+                <a href="profile.php" class="stat-card-view card-glass" title="<?php echo htmlspecialchars($user_name); ?>" style="text-decoration: none; color: inherit; cursor: pointer;">
                     <div style="flex: 1 1 auto; min-width: 0;">
                         <span class="stat-card-lbl">Welcome Back</span>
                         <div class="stat-card-val stat-card-username" title="<?php echo htmlspecialchars($user_name); ?>"><?php echo htmlspecialchars($user_name); ?></div>
                     </div>
                     <div class="stat-card-icon" style="color: var(--theme-accent-purple); flex-shrink: 0;"><i class="fa-solid fa-graduation-cap"></i></div>
-                </div>
+                </a>
                 
                 <?php if ($role === 'alumni'): ?>
-                    <div class="stat-card-view card-glass">
+                    <a href="jobs.php" class="stat-card-view card-glass" style="text-decoration: none; color: inherit; cursor: pointer;">
                         <div>
                             <span class="stat-card-lbl">Referrals Posted</span>
                             <div class="stat-card-val"><?php echo count($alumni_jobs); ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: var(--theme-accent-blue);"><i class="fa-solid fa-briefcase"></i></div>
-                    </div>
-                    <div class="stat-card-view card-glass">
+                    </a>
+                    <a href="mentorship.php" class="stat-card-view card-glass" style="text-decoration: none; color: inherit; cursor: pointer;">
                         <div>
                             <span class="stat-card-lbl">Mentoring Requests</span>
                             <div class="stat-card-val"><?php echo count($alumni_mentorships); ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-handshake-angle"></i></div>
-                    </div>
+                    </a>
                 <?php else: ?>
-                    <div class="stat-card-view card-glass">
+                    <a href="mentorship.php" class="stat-card-view card-glass" style="text-decoration: none; color: inherit; cursor: pointer;">
                         <div>
                             <span class="stat-card-lbl">Active Mentors</span>
                             <div class="stat-card-val"><?php echo count($student_mentorships); ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: var(--theme-accent-blue);"><i class="fa-solid fa-handshake-angle"></i></div>
-                    </div>
-                    <div class="stat-card-view card-glass">
+                    </a>
+                    <a href="events.php" class="stat-card-view card-glass" style="text-decoration: none; color: inherit; cursor: pointer;">
                         <div>
                             <span class="stat-card-lbl">RSVPs Reserved</span>
                             <div class="stat-card-val"><?php echo count($student_rsvps); ?></div>
                         </div>
                         <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-calendar-check"></i></div>
-                    </div>
+                    </a>
                 <?php endif; ?>
             </div>
 

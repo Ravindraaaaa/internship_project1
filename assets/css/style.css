@@ -6,8 +6,8 @@
     --theme-bg: #090d16;
     --theme-bg-secondary: #0f172a;
     --theme-sidebar: rgba(15, 23, 42, 0.75);
-    --theme-card: rgba(30, 41, 59, 0.55);
-    --theme-card-hover: rgba(30, 41, 59, 0.85);
+    --theme-card: rgba(30, 41, 59, 0.85);
+    --theme-card-hover: rgba(30, 41, 59, 0.95);
     --theme-text: #f8fafc;
     --theme-text-secondary: #94a3b8;
     --theme-border: rgba(255, 255, 255, 0.08);

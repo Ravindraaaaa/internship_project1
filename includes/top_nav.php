@@ -128,27 +128,32 @@ if (!$is_admin_portal) {
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.15); padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3); flex-shrink: 0;">
         <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE BROADCAST
     </div>
-    <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px;">
-        <div id="marqueeTrack" style="display: inline-block; white-space: nowrap; font-weight: 500; animation: marqueeScroll 55s linear infinite; cursor: pointer;">
-            <?php if (!empty($marquee_items)): ?>
-                <?php foreach ($marquee_items as $item): ?>
-                    <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
-                        <span style="font-weight: 700; color: <?php echo $item['badge_color']; ?>; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
-                            <?php echo htmlspecialchars($item['badge']); ?>
-                        </span>
-                        <span style="font-weight: 500; font-size: 0.83rem;">
-                            <?php echo htmlspecialchars($item['title']); ?>
-                        </span>
+    <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px; display: flex;">
+        <div id="marqueeTrack" style="display: flex; white-space: nowrap; font-weight: 500; animation: marqueeScroll 8s linear infinite; cursor: pointer; min-width: 100%;">
+            <?php 
+                // We render the items twice to create a seamless continuous loop
+                for ($i = 0; $i < 2; $i++): 
+            ?>
+                <?php if (!empty($marquee_items)): ?>
+                    <?php foreach ($marquee_items as $item): ?>
+                        <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                            <span style="font-weight: 700; color: <?php echo $item['badge_color']; ?>; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                                <?php echo htmlspecialchars($item['badge']); ?>
+                            </span>
+                            <span style="font-weight: 500; font-size: 0.83rem;">
+                                <?php echo htmlspecialchars($item['title']); ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
+                        📢 Alumni Meet & Campus Placement Drive Registrations Open! Click to view Job Board.
                     </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
-                    📢 Alumni Meet & Campus Placement Drive Registrations Open! Click to view Job Board.
-                </a>
-                <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
-                    🎉 New Mentorship & Career Guidance Sessions Available. Click to view Events.
-                </a>
-            <?php endif; ?>
+                    <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
+                        🎉 New Mentorship & Career Guidance Sessions Available. Click to view Events.
+                    </a>
+                <?php endif; ?>
+            <?php endfor; ?>
         </div>
     </div>
     <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 600; flex-shrink: 0;" class="marquee-live-label">
@@ -195,9 +200,13 @@ body.theme-light .announcement-marquee-bar .marquee-live-label span {
     text-decoration: underline !important;
 }
 
+.announcement-marquee-bar:hover #marqueeTrack {
+    animation-play-state: paused !important;
+}
+
 @keyframes marqueeScroll {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
 #marqueeTrack:hover {
     animation-play-state: paused;
