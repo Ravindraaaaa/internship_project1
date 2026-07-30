@@ -375,7 +375,10 @@ if (!function_exists('render_sidebar')) {
                             <a href="<?php echo $sub_prefix; ?>mentorship.php"><i class="fa-solid fa-handshake-angle"></i> <span class="link-text">Mentorship</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
-                            <a href="<?php echo $sub_prefix; ?>alumni.php"><i class="fa-solid fa-users"></i> <span class="link-text">Alumni Directory</span></a>
+                            <a href="<?php echo $sub_prefix; ?>alumni.php"><i class="fa-solid fa-user-graduate"></i> <span class="link-text">Alumni Directory</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'students' ? 'active' : ''; ?>">
+                            <a href="<?php echo $sub_prefix; ?>students.php"><i class="fa-solid fa-graduation-cap"></i> <span class="link-text">Student Directory</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'jobs' ? 'active' : ''; ?>">
                             <a href="<?php echo $sub_prefix; ?>jobs.php"><i class="fa-solid fa-briefcase"></i> <span class="link-text">Job Board</span></a>

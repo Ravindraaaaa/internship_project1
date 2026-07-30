@@ -268,6 +268,9 @@ $student_by_stream = [];
 
 try {
     $admin_stats['users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
+    $admin_stats['total_alumni'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'alumni'")->fetchColumn();
+    $admin_stats['total_students'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn();
+    $admin_stats['online_users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE last_active >= NOW() - INTERVAL 5 MINUTE")->fetchColumn();
     $admin_stats['pending'] = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'pending'")->fetchColumn();
     $admin_stats['jobs'] = $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'active'")->fetchColumn();
     $admin_stats['events'] = $pdo->query("SELECT COUNT(*) FROM events WHERE event_date >= NOW()")->fetchColumn();
@@ -281,14 +284,14 @@ try {
     $pending_approvals = $stmtPend->fetchAll();
 
     if ($tab === 'alumni') {
-        $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.status, ap.graduation_year, ap.course, ap.company, ap.position 
+        $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.status, u.last_active, ap.graduation_year, ap.course, ap.company, ap.position 
                              FROM users u 
                              LEFT JOIN alumni_profiles ap ON u.id = ap.user_id 
                              WHERE u.role = 'alumni' 
                              ORDER BY u.created_at DESC");
         $all_alumni = $stmt->fetchAll();
     } elseif ($tab === 'students') {
-        $stmt = $pdo->query("SELECT u.id, u.name, u.email, sp.current_year, sp.course 
+        $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.status, u.last_active, sp.current_year, sp.course 
                              FROM users u 
                              LEFT JOIN student_profiles sp ON u.id = sp.user_id 
                              WHERE u.role = 'student' 
@@ -361,35 +364,49 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- TAB A: DEFAULT OVERVIEW -->
             <?php if ($tab === 'overview'): ?>
                 
-                <!-- Metrics row -->
-                <div class="stats-cards-grid">
-                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=students'">
+                <!-- Metrics row (Clickable Real-Time Stats) -->
+                <div class="stats-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=alumni'" title="Click to View Alumni Directory">
                         <div>
-                            <span class="stat-card-lbl">Total Users</span>
-                            <div class="stat-card-val"><?php echo $admin_stats['users']; ?></div>
+                            <span class="stat-card-lbl">Total Alumni</span>
+                            <div class="stat-card-val" style="color: #818cf8;"><?php echo number_format($admin_stats['total_alumni']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: var(--theme-accent-purple);"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-card-icon" style="color: #818cf8;"><i class="fa-solid fa-user-graduate"></i></div>
                     </div>
-                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=alumni'">
+
+                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=students'" title="Click to View Student Directory">
+                        <div>
+                            <span class="stat-card-lbl">Total Students</span>
+                            <div class="stat-card-val" style="color: #38bdf8;"><?php echo number_format($admin_stats['total_students']); ?></div>
+                        </div>
+                        <div class="stat-card-icon" style="color: #38bdf8;"><i class="fa-solid fa-graduation-cap"></i></div>
+                    </div>
+
+                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=overview'" title="Click to Review Pending Verifications">
                         <div>
                             <span class="stat-card-lbl">Pending Approvals</span>
-                            <div class="stat-card-val" style="<?php echo $admin_stats['pending'] > 0 ? 'color: var(--accent-warning);' : ''; ?>"><?php echo $admin_stats['pending']; ?></div>
+                            <div class="stat-card-val" style="<?php echo $admin_stats['pending'] > 0 ? 'color: #f59e0b;' : 'color: #10b981;'; ?>"><?php echo number_format($admin_stats['pending']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: var(--accent-warning);"><i class="fa-solid fa-user-clock"></i></div>
+                        <div class="stat-card-icon" style="color: #f59e0b;"><i class="fa-solid fa-user-clock"></i></div>
                     </div>
-                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=jobs'">
+
+                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=overview'" title="Click to View Online Users">
+                        <div>
+                            <span class="stat-card-lbl">Online Active Now</span>
+                            <div class="stat-card-val" style="color: #10b981; font-weight:800; display:flex; align-items:center; gap:0.4rem;">
+                                <i class="fa-solid fa-circle" style="font-size:0.75rem; color:#10b981; animation: pulse 1.5s infinite;"></i>
+                                <?php echo number_format($admin_stats['online_users']); ?>
+                            </div>
+                        </div>
+                        <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-signal"></i></div>
+                    </div>
+
+                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=jobs'" title="Click to View Job Board">
                         <div>
                             <span class="stat-card-lbl">Active Referrals</span>
-                            <div class="stat-card-val"><?php echo $admin_stats['jobs']; ?></div>
+                            <div class="stat-card-val"><?php echo number_format($admin_stats['jobs']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: var(--theme-accent-blue);"><i class="fa-solid fa-briefcase"></i></div>
-                    </div>
-                    <div class="stat-card-view card-glass" style="cursor: pointer;" onclick="location.href='dashboard.php?tab=events'">
-                        <div>
-                            <span class="stat-card-lbl">Scheduled Events</span>
-                            <div class="stat-card-val"><?php echo $admin_stats['events']; ?></div>
-                        </div>
-                        <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-calendar-check"></i></div>
+                        <div class="stat-card-icon" style="color: var(--theme-accent-purple);"><i class="fa-solid fa-briefcase"></i></div>
                     </div>
                 </div>
 
@@ -482,18 +499,32 @@ require_once __DIR__ . '/../includes/header.php';
                                     <th>Graduation</th>
                                     <th>Course Stream</th>
                                     <th>Current Work</th>
-                                    <th>Status</th>
+                                    <th>Live Activity</th>
+                                    <th>Account Status</th>
                                     <th style="text-align: right;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($all_alumni as $alm): ?>
+                                <?php foreach ($all_alumni as $alm): 
+                                    $isOnline = (!empty($alm['last_active']) && (strtotime($alm['last_active']) >= (time() - 300)));
+                                ?>
                                     <tr>
                                         <td><strong><?php echo htmlspecialchars($alm['name']); ?></strong></td>
                                         <td><?php echo htmlspecialchars($alm['email']); ?></td>
                                         <td><?php echo htmlspecialchars($alm['graduation_year'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($alm['course'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($alm['position'] ?? 'N/A'); ?> at <?php echo htmlspecialchars($alm['company'] ?? 'N/A'); ?></td>
+                                        <td>
+                                            <?php if ($isOnline): ?>
+                                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                    <i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.55rem;"></i> Online
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                    <i class="fa-solid fa-circle" style="color: #94a3b8; font-size: 0.55rem;"></i> Offline
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><span class="badge badge-<?php echo $alm['status'] === 'approved' ? 'approved' : ($alm['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($alm['status']); ?></span></td>
                                         <td style="text-align: right; display:flex; gap:0.4rem; justify-content:flex-end;">
                                             <?php if ($alm['status'] !== 'approved'): ?>
@@ -523,16 +554,30 @@ require_once __DIR__ . '/../includes/header.php';
                                     <th>Email</th>
                                     <th>Academic Year</th>
                                     <th>Department / Course</th>
+                                    <th>Live Activity</th>
                                     <th style="text-align: right;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($all_students as $std): ?>
+                                <?php foreach ($all_students as $std): 
+                                    $isOnline = (!empty($std['last_active']) && (strtotime($std['last_active']) >= (time() - 300)));
+                                ?>
                                     <tr>
                                         <td><strong><?php echo htmlspecialchars($std['name']); ?></strong></td>
                                         <td><?php echo htmlspecialchars($std['email']); ?></td>
                                         <td>Year <?php echo htmlspecialchars($std['current_year'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($std['course'] ?? 'N/A'); ?></td>
+                                        <td>
+                                            <?php if ($isOnline): ?>
+                                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                    <i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.55rem;"></i> Online
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                    <i class="fa-solid fa-circle" style="color: #94a3b8; font-size: 0.55rem;"></i> Offline
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td style="text-align: right; display: flex; justify-content: flex-end; gap: 0.4rem;">
                                             <button onclick="viewStudentDetails(<?php echo $std['id']; ?>)" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;"><i class="fa-solid fa-eye"></i> View Profile</button>
                                             <a href="admin_approvals.php?action=delete_user&id=<?php echo $std['id']; ?>&tab=students" class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;" onclick="return confirm('Delete student profile completely?')">Delete</a>
