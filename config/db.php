@@ -285,6 +285,38 @@ try {
         }
     }
 
+    // Check & add notifications table missing columns
+    $checkNotifTable = $pdo->query("SHOW TABLES LIKE 'notifications'")->fetch();
+    if ($checkNotifTable) {
+        $notifCols = [
+            'type' => "VARCHAR(50) DEFAULT 'info'",
+            'priority' => "VARCHAR(50) DEFAULT 'medium'",
+            'link' => "VARCHAR(255) DEFAULT NULL",
+            'sender_id' => "INT DEFAULT NULL"
+        ];
+        foreach ($notifCols as $col => $definition) {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM notifications LIKE '$col'")->fetch();
+            if (!$checkCol) {
+                $pdo->exec("ALTER TABLE notifications ADD COLUMN $col $definition");
+            }
+        }
+    }
+
+    // Check & add announcements table priority & status columns
+    $checkAnnTable = $pdo->query("SHOW TABLES LIKE 'announcements'")->fetch();
+    if ($checkAnnTable) {
+        $annCols = [
+            'priority' => "VARCHAR(50) DEFAULT 'Medium'",
+            'status' => "VARCHAR(50) DEFAULT 'Publish'"
+        ];
+        foreach ($annCols as $col => $definition) {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM announcements LIKE '$col'")->fetch();
+            if (!$checkCol) {
+                $pdo->exec("ALTER TABLE announcements ADD COLUMN $col $definition");
+            }
+        }
+    }
+
     // 3. Check & create ai_chats table if missing
     $checkAiChatsTable = $pdo->query("SHOW TABLES LIKE 'ai_chats'")->fetch();
     if (!$checkAiChatsTable) {

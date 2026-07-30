@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (mentorshipTbody.getAttribute('data-raw') !== JSON.stringify(data.mentorship_requests_logs)) {
-                mentorshipTbody.innerHTML = mentorshipHtml || '<tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">No mentorship requests logged.</td></tr>';
+                mentorshipTbody.innerHTML = mentorshipHtml || '<tr><td colspan="5" style="text-align:center; padding: 3rem 1rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-comments" style="font-size: 2rem; color: var(--theme-text-muted); margin-bottom: 0.5rem; display: block;"></i><strong>No Mentorship Connection Logs Found</strong><br><span style="font-size: 0.85rem; opacity: 0.7;">When students send mentorship requests to alumni members, the connection history will appear here in real-time.</span></td></tr>';
                 mentorshipTbody.setAttribute('data-raw', JSON.stringify(data.mentorship_requests_logs));
                 const table = document.getElementById('mentorship-logs-table');
                 if (table) enhanceTable(table);
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (chatTbody.getAttribute('data-raw') !== JSON.stringify(data.chat_messages_logs)) {
-                chatTbody.innerHTML = chatHtml || '<tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">No direct chat messages logged.</td></tr>';
+                chatTbody.innerHTML = chatHtml || '<tr><td colspan="5" style="text-align:center; padding: 3rem 1rem; color:var(--theme-text-secondary);"><i class="fa-solid fa-paper-plane" style="font-size: 2rem; color: var(--theme-text-muted); margin-bottom: 0.5rem; display: block;"></i><strong>No Direct Chat Logs Recorded</strong><br><span style="font-size: 0.85rem; opacity: 0.7;">When users send direct messages in the portal, real-time activity logs will be displayed here.</span></td></tr>';
                 chatTbody.setAttribute('data-raw', JSON.stringify(data.chat_messages_logs));
                 const table = document.getElementById('chat-logs-table');
                 if (table) enhanceTable(table);

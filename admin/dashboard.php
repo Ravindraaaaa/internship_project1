@@ -725,15 +725,25 @@ require_once __DIR__ . '/../includes/header.php';
                                 </tr>
                             </thead>
                             <tbody id="mentorship-logs-tbody">
-                                <?php foreach ($all_messages as $msg): ?>
+                                <?php if (!empty($all_messages)): ?>
+                                    <?php foreach ($all_messages as $msg): ?>
+                                        <tr>
+                                            <td><strong><?php echo htmlspecialchars($msg['student_name']); ?></strong></td>
+                                            <td><strong><?php echo htmlspecialchars($msg['alumni_name']); ?></strong></td>
+                                            <td><span style="font-style: italic; font-size:0.85rem;">"<?php echo htmlspecialchars($msg['message']); ?>"</span></td>
+                                            <td><span class="badge badge-<?php echo $msg['status'] === 'accepted' ? 'approved' : ($msg['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($msg['status']); ?></span></td>
+                                            <td><?php echo date('M d, Y - h:i A', strtotime($msg['created_at'])); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
                                     <tr>
-                                        <td><strong><?php echo htmlspecialchars($msg['student_name']); ?></strong></td>
-                                        <td><strong><?php echo htmlspecialchars($msg['alumni_name']); ?></strong></td>
-                                        <td><span style="font-style: italic; font-size:0.85rem;">"<?php echo htmlspecialchars($msg['message']); ?>"</span></td>
-                                        <td><span class="badge badge-<?php echo $msg['status'] === 'accepted' ? 'approved' : ($msg['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($msg['status']); ?></span></td>
-                                        <td><?php echo date('M d, Y - h:i A', strtotime($msg['created_at'])); ?></td>
+                                        <td colspan="5" style="text-align:center; padding: 3rem 1rem; color:var(--theme-text-secondary);">
+                                            <i class="fa-solid fa-comments" style="font-size: 2rem; color: var(--theme-text-muted); margin-bottom: 0.5rem; display: block;"></i>
+                                            <strong>No Mentorship Connection Logs Found</strong><br>
+                                            <span style="font-size: 0.85rem; opacity: 0.7;">When students send mentorship requests to alumni members, the connection history will appear here in real-time.</span>
+                                        </td>
                                     </tr>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -751,7 +761,13 @@ require_once __DIR__ . '/../includes/header.php';
                                 </tr>
                             </thead>
                             <tbody id="chat-logs-tbody">
-                                <tr><td colspan="5" style="text-align:center;color:var(--theme-text-secondary);">Loading chat messages...</td></tr>
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding: 3rem 1rem; color:var(--theme-text-secondary);">
+                                        <i class="fa-solid fa-paper-plane" style="font-size: 2rem; color: var(--theme-text-muted); margin-bottom: 0.5rem; display: block;"></i>
+                                        <strong>No Direct Chat Logs Recorded</strong><br>
+                                        <span style="font-size: 0.85rem; opacity: 0.7;">When users send direct messages in the portal, real-time activity logs will be displayed here.</span>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
