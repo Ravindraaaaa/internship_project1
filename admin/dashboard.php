@@ -115,6 +115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     }
                 }
 
+                // Auto-award Blue Tick if package >= 8 LPA
+                $pkg_num = 0;
+                if (preg_match('/(\d+(\.\d+)?)/', $final_pkg, $matches)) {
+                    $pkg_num = floatval($matches[1]);
+                }
+                if ($pkg_num >= 8) {
+                    $stmtUpdateBlueTick = $pdo->prepare("UPDATE alumni_profiles SET is_blue_tick = 1, salary = ? WHERE user_id = ?");
+                    $stmtUpdateBlueTick->execute([$final_pkg, $alumni_user_id]);
+                }
+
                 // Also publish as priority Announcement
                 $stmtAnn = $pdo->prepare("INSERT INTO announcements (title, content, priority, target_audience, status, created_by, created_at) VALUES (?, ?, 'High', 'all', 'Publish', ?, NOW())");
                 $stmtAnn->execute(["🎉 Placement Spotlight: " . $alumni_name . " (" . $alumni_id_str . ")", $notif_body, $uid]);

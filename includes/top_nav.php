@@ -97,24 +97,40 @@ if (!$is_admin_portal) {
     } catch (Exception $e) {}
 
     // 1. Admin Announcements
+    $placement_spotlights = [];
+    $marquee_items = [];
+
+    // 1. Announcements
     try {
-        $annStmt = $pdo->query("SELECT id, title FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 4");
+        $annStmt = $pdo->query("SELECT id, title, content FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 5");
         while ($ann = $annStmt->fetch(PDO::FETCH_ASSOC)) {
-            $marquee_items[] = [
-                'badge' => '📢 ANNOUNCEMENT',
-                'badge_color' => '#fbbf24',
-                'title' => $ann['title'] . ' — Check Notifications tab for details!',
-                'url' => $sub_prefix_nav . 'dashboard.php'
-            ];
+            if (strpos($ann['title'], 'Placement Spotlight') !== false || strpos($ann['title'], '🎉') !== false) {
+                $placement_spotlights[] = [
+                    'id' => 'ann_' . $ann['id'],
+                    'badge' => '🏆 CONGRATULATIONS',
+                    'badge_color' => '#10b981',
+                    'title' => str_replace('🎉 Placement Spotlight: ', '', $ann['title']) . ' — Check it out!',
+                    'url' => $sub_prefix_nav . 'notifications.php'
+                ];
+            } else {
+                $marquee_items[] = [
+                    'id' => 'ann_' . $ann['id'],
+                    'badge' => '📢 ANNOUNCEMENT',
+                    'badge_color' => '#fbbf24',
+                    'title' => $ann['title'] . ' — Check Notifications!',
+                    'url' => $sub_prefix_nav . 'notifications.php'
+                ];
+            }
         }
     } catch (Exception $e) {}
 
     // 2. Upcoming Events with Dates
     try {
-        $evtStmt = $pdo->query("SELECT id, title, event_date FROM events WHERE event_date >= NOW() ORDER BY event_date ASC LIMIT 4");
+        $evtStmt = $pdo->query("SELECT id, title, event_date FROM events WHERE event_date >= NOW() ORDER BY event_date ASC LIMIT 3");
         while ($evt = $evtStmt->fetch(PDO::FETCH_ASSOC)) {
             $date_fmt = date('d M Y', strtotime($evt['event_date']));
             $marquee_items[] = [
+                'id' => 'evt_' . $evt['id'],
                 'badge' => '🎉 EVENT (' . $date_fmt . ')',
                 'badge_color' => '#34d399',
                 'title' => $evt['title'],
@@ -125,9 +141,10 @@ if (!$is_admin_portal) {
 
     // 3. Latest Active Job & Internship Postings
     try {
-        $jobStmt = $pdo->query("SELECT id, title, company FROM jobs WHERE status = 'active' ORDER BY created_at DESC LIMIT 4");
+        $jobStmt = $pdo->query("SELECT id, title, company FROM jobs WHERE status = 'active' ORDER BY created_at DESC LIMIT 3");
         while ($job = $jobStmt->fetch(PDO::FETCH_ASSOC)) {
             $marquee_items[] = [
+                'id' => 'job_' . $job['id'],
                 'badge' => '💼 JOB OPENING',
                 'badge_color' => '#60a5fa',
                 'title' => $job['title'] . ' at ' . $job['company'],
@@ -136,11 +153,15 @@ if (!$is_admin_portal) {
         }
     } catch (Exception $e) {}
 
+    // Merge placement spotlights at the very beginning
+    $marquee_items = array_merge($placement_spotlights, $marquee_items);
+
     // 4. Feedback Acknowledgement Broadcast
     $marquee_items[] = [
+        'id' => 'static_feedback',
         'badge' => '✨ THANK YOU',
         'badge_color' => '#a855f7',
-        'title' => 'Thank you for your feedback & support tickets! Our moderation team reviews every submission.',
+        'title' => 'Thank you for your feedback! Our team reviews every submission.',
         'url' => $sub_prefix_nav . 'feedback.php'
     ];
 }
@@ -154,37 +175,68 @@ if (!$is_admin_portal) {
         <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE BROADCAST
     </div>
     <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px; display: flex;">
-        <div id="marqueeTrack" style="display: flex; white-space: nowrap; font-weight: 500; animation: marqueeScroll 8s linear infinite; cursor: pointer; min-width: 100%;">
-            <?php 
-                // We render the items twice to create a seamless continuous loop
-                for ($i = 0; $i < 2; $i++): 
-            ?>
-                <?php if (!empty($marquee_items)): ?>
-                    <?php foreach ($marquee_items as $item): ?>
-                        <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
-                            <span style="font-weight: 700; color: <?php echo $item['badge_color']; ?>; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
-                                <?php echo htmlspecialchars($item['badge']); ?>
-                            </span>
-                            <span style="font-weight: 500; font-size: 0.83rem;">
-                                <?php echo htmlspecialchars($item['title']); ?>
-                            </span>
-                        </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
-                        📢 Alumni Meet & Campus Placement Drive Registrations Open! Click to view Job Board.
-                    </a>
-                    <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
-                        🎉 New Mentorship & Career Guidance Sessions Available. Click to view Events.
-                    </a>
-                <?php endif; ?>
-            <?php endfor; ?>
+        <div id="marqueeTrack" style="display: flex; white-space: nowrap; font-weight: 500; cursor: pointer; min-width: 100%; width: max-content;">
+            <!-- JS Will Populate This -->
         </div>
     </div>
     <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 600; flex-shrink: 0;" class="marquee-live-label">
         <span style="background: rgba(255,255,255,0.12); padding: 3px 9px; border-radius: 6px;">Live Broadcast</span>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const rawItems = <?php echo json_encode($marquee_items ?? []); ?>;
+    const track = document.getElementById('marqueeTrack');
+    const bar = document.getElementById('announcementMarqueeBar');
+    
+    let readBroadcasts = [];
+    try {
+        readBroadcasts = JSON.parse(localStorage.getItem('read_broadcasts')) || [];
+    } catch (e) {}
+
+    const unreadItems = rawItems.filter(item => !readBroadcasts.includes(item.id));
+
+    if (unreadItems.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+
+    let itemHtml = '';
+    unreadItems.forEach(item => {
+        itemHtml += `
+            <a href="${item.url}" class="marquee-item-link" onclick="markBroadcastRead('${item.id}')" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                <span style="font-weight: 700; color: ${item.badge_color}; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                    ${item.badge}
+                </span>
+                <span style="font-weight: 500; font-size: 0.83rem;">
+                    ${item.title}
+                </span>
+            </a>
+        `;
+    });
+
+    // Duplicate content twice for seamless marquee loop
+    track.innerHTML = itemHtml + itemHtml;
+
+    // Calculate dynamic animation duration based on content length
+    // Average 100px per second scroll speed
+    const estimatedWidth = unreadItems.length * 400; // rough estimate
+    const duration = Math.max(15, estimatedWidth / 100);
+    track.style.animation = `marqueeScroll ${duration}s linear infinite`;
+});
+
+function markBroadcastRead(id) {
+    let readBroadcasts = [];
+    try {
+        readBroadcasts = JSON.parse(localStorage.getItem('read_broadcasts')) || [];
+    } catch (e) {}
+    if (!readBroadcasts.includes(id)) {
+        readBroadcasts.push(id);
+        localStorage.setItem('read_broadcasts', JSON.stringify(readBroadcasts));
+    }
+}
+</script>
 
 <style>
 /* Notice Banner Positioning & Light Mode Contrast Overrides */

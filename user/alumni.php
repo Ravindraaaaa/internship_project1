@@ -337,4 +337,100 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<!-- DIGITAL ARCHIVE MODAL (Read-Only for Students) -->
+<div class="modal" id="archiveModal" style="display: none;">
+    <div class="modal-content card-glass" style="max-width: 700px; width: 90%; border-radius: 16px; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1.25rem;"><i class="fa-solid fa-box-archive" style="color: #a855f7;"></i> Alumni Digital Archive & Verified Records</h3>
+            <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()" style="padding: 0.2rem 0.6rem;">&times;</button>
+        </div>
+
+        <div id="archiveModalBody">
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #818cf8;"></i>
+                <p style="margin-top: 1rem; color: var(--theme-text-muted);">Loading digital document archive...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openArchiveModal(userId) {
+    document.getElementById('archiveModal').style.display = 'flex';
+    document.getElementById('archiveModalBody').innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #818cf8;"></i>
+            <p style="margin-top: 1rem; color: var(--theme-text-muted);">Retrieving official document archives...</p>
+        </div>
+    `;
+
+    fetch('../api/alumni_archive_api.php?action=documents&user_id=' + userId)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success || !data.profile) {
+            document.getElementById('archiveModalBody').innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to retrieve document archive.</p>';
+            return;
+        }
+
+        const p = data.profile;
+        const docs = data.documents || [];
+
+        let docsHtml = '';
+        if (docs.length === 0) {
+            docsHtml = '<p style="color: var(--theme-text-muted); font-size: 0.85rem;">Original Registration Archive File attached on import.</p>';
+        } else {
+            docs.forEach(d => {
+                docsHtml += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">📄 ${d.file_name}</div>
+                            <div style="font-size: 0.75rem; color: var(--theme-text-muted);">Uploaded: ${d.uploaded_at}</div>
+                        </div>
+                        <a href="../${d.file_path}" target="_blank" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">View Original</a>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById('archiveModalBody').innerHTML = `
+            <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 12px;">
+                <img src="${p.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8;">
+                <div>
+                    <h3 style="margin:0; font-size: 1.2rem; color: var(--theme-text-primary);">${p.name}</h3>
+                    <div style="color: #818cf8; font-weight:600; font-size: 0.9rem;">${p.position || 'Alumnus'} at ${p.company || 'N/A'}</div>
+                    <div style="font-size: 0.8rem; color: var(--theme-text-muted); margin-top: 0.25rem;">
+                        Reg No: <strong>${p.reg_no || 'REG-' + p.user_id}</strong> | Receipt: <strong>${p.receipt_no || 'REC-VERIFIED'}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                <div><strong>Branch:</strong> ${p.branch || p.course || 'N/A'}</div>
+                <div><strong>Passing Year:</strong> ${p.passing_year || p.graduation_year || 'N/A'}</div>
+                <div><strong>Batch:</strong> ${p.batch || '2020-2024'}</div>
+                <div><strong>Employment Status:</strong> <span style="color: #10b981; font-weight: bold;">${p.employment_status || 'Working'}</span></div>
+                <div><strong>Email:</strong> ${p.email}</div>
+                <div><strong>Phone:</strong> ${p.phone || p.u_phone || 'N/A'}</div>
+                <div><strong>Current Location:</strong> ${p.location || 'Pune, India'}</div>
+                <div><strong>Verification Status:</strong> <span style="padding:0.1rem 0.5rem; background:rgba(16,185,129,0.2); color:#10b981; border-radius:10px; font-weight:bold;">Approved</span></div>
+            </div>
+
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-contract" style="color: #818cf8;"></i> Archived Registration Documents</h4>
+            ${docsHtml}
+
+            <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--theme-text-muted);">
+                    <i class="fa-solid fa-lock" style="color: #10b981;"></i> Students have read-only access to archive records.
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Close Archive</button>
+            </div>
+        `;
+    });
+}
+
+function closeArchiveModal() {
+    document.getElementById('archiveModal').style.display = 'none';
+}
+</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>

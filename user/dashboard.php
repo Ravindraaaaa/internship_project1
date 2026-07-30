@@ -158,14 +158,14 @@ require_once __DIR__ . '/../includes/header.php';
                             <span class="stat-card-lbl">Active Mentors</span>
                             <div class="stat-card-val"><?php echo count($student_mentorships); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: var(--theme-accent-blue);"><i class="fa-solid fa-handshake-angle"></i></div>
+                        <div class="stat-card-icon" style="color: var(--theme-accent-blue); background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(139, 92, 246, 0.1));"><i class="fa-solid fa-handshake-angle"></i></div>
                     </a>
                     <a href="events.php" class="stat-card-view card-glass" style="text-decoration: none; color: inherit; cursor: pointer;">
                         <div>
                             <span class="stat-card-lbl">RSVPs Reserved</span>
                             <div class="stat-card-val"><?php echo count($student_rsvps); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-calendar-check"></i></div>
+                        <div class="stat-card-icon" style="color: var(--theme-accent-blue); background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(139, 92, 246, 0.1));"><i class="fa-solid fa-calendar-check"></i></div>
                     </a>
                 <?php endif; ?>
             </div>
