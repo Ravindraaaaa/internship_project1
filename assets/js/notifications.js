@@ -230,9 +230,33 @@ const NotificationApp = (function() {
             const isUnread = !item.is_read;
             const iconClass = getIconForCategory(item.category || item.type, item.icon);
             const colorClass = item.color || getColorForCategory(item.category);
-            const targetUrl = item.url && item.url !== '#' ? resolveUrl(item.url) : 'javascript:void(0);';
+            const targetUrl = item.url && item.url !== '#' ? resolveUrl(item.url) : (item.link ? resolveUrl(item.link) : 'javascript:void(0);');
             const safeTitle = escapeHtml(item.title || '').replace(/'/g, "\\'");
             const safeMsg = escapeHtml(item.message || '').replace(/'/g, "\\'");
+
+            if (item.type === 'placement_spotlight' || item.category === 'placement_spotlight' || (item.title && item.title.includes('Placement Spotlight'))) {
+                html += `
+                    <div class="notif-card placement-spotlight-card ${isUnread ? 'unread' : ''}" data-id="${item.id}" onclick="NotificationApp.handleCardClick(event, ${item.id}, '${targetUrl}', '${safeTitle}', '${safeMsg}', '${item.time_ago || ''}', 'high', 'placement_spotlight', 'fas fa-graduation-cap', 'purple')" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.18)); border: 1.5px solid #a855f7; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 8px 20px rgba(168, 85, 247, 0.2);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                            <span style="font-size:0.75rem; font-weight:800; color:#a855f7; text-transform:uppercase; letter-spacing:0.5px;"><i class="fas fa-crown" style="color:#eab308;"></i> CONGRATULATIONS ALUMNI!</span>
+                            <span class="badge" style="background:#38bdf8; color:#0f172a; font-size:0.68rem; font-weight:800; padding:0.2rem 0.5rem; border-radius:10px;">SPOTLIGHT</span>
+                        </div>
+                        <div class="notif-card-title" style="font-weight:800; font-size:0.98rem; color:var(--theme-text); margin-bottom:0.35rem;">
+                            ${escapeHtml(item.title)}
+                        </div>
+                        <div class="notif-card-desc" style="font-size:0.85rem; color:var(--theme-text-secondary); line-height:1.4; margin-bottom:0.6rem;">
+                            ${escapeHtml(item.message)}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <a href="${targetUrl}" onclick="event.stopPropagation(); window.location.href='${targetUrl}';" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.85rem; background:linear-gradient(135deg, #0284c7, #38bdf8); color:#fff; font-size:0.78rem; font-weight:700; border-radius:8px; text-decoration:none;">
+                                <i class="fas fa-user-graduate"></i> View Profile <i class="fas fa-arrow-right"></i>
+                            </a>
+                            <span class="notif-time">${item.time_ago || 'Just now'}</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
 
             html += `
                 <div class="notif-card ${isUnread ? 'unread' : ''}" data-id="${item.id}" onclick="NotificationApp.handleCardClick(event, ${item.id}, '${targetUrl}', '${safeTitle}', '${safeMsg}', '${item.time_ago || ''}', '${item.priority || 'medium'}', '${item.category || ''}', '${item.icon || ''}', '${item.color || ''}')">

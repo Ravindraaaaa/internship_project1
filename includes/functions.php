@@ -346,4 +346,51 @@ if (!function_exists('get_company_logo_url')) {
         return null;
     }
 }
+
+if (!function_exists('parse_salary_in_lpa')) {
+    /**
+     * Parse salary string into LPA numerical float value.
+     * e.g., "8.5 LPA" -> 8.5, "12 Lakhs" -> 12.0, "800000" -> 8.0, "15" -> 15.0
+     */
+    function parse_salary_in_lpa($salary) {
+        if (empty($salary)) return 0.0;
+        $str = strtolower(trim((string)$salary));
+
+        if (preg_match('/([0-9]+(?:\.[0-9]+)?)\s*(?:lpa|lakh|lakhs|lac|lacs|l)/i', $str, $matches)) {
+            return floatval($matches[1]);
+        }
+
+        $clean_digits = preg_replace('/[^0-9.]/', '', $str);
+        if (!empty($clean_digits)) {
+            $num = floatval($clean_digits);
+            if ($num >= 100000) {
+                return $num / 100000.0;
+            }
+            return $num;
+        }
+
+        return 0.0;
+    }
+}
+
+if (!function_exists('sync_auto_blue_ticks')) {
+    /**
+     * Synchronize automatic blue ticks for alumni members with salary >= 8 LPA
+     */
+    function sync_auto_blue_ticks($pdo) {
+        try {
+            $stmt = $pdo->query("SELECT user_id, salary, is_blue_tick FROM alumni_profiles");
+            $alumni = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $upd = $pdo->prepare("UPDATE alumni_profiles SET is_blue_tick = ? WHERE user_id = ?");
+
+            foreach ($alumni as $row) {
+                $lpa = parse_salary_in_lpa($row['salary']);
+                $should_have_tick = ($lpa >= 8.0) ? 1 : 0;
+                if ((int)$row['is_blue_tick'] !== $should_have_tick) {
+                    $upd->execute([$should_have_tick, $row['user_id']]);
+                }
+            }
+        } catch (Exception $e) {}
+    }
+}
 ?>

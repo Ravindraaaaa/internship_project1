@@ -89,6 +89,11 @@ try {
         if (!$checkAlumniSalary) {
             $pdo->exec("ALTER TABLE alumni_profiles ADD COLUMN salary VARCHAR(100) NULL DEFAULT NULL");
         }
+        
+        // Automatically calculate & sync blue tick for alumni with salary >= 8 LPA
+        if (function_exists('sync_auto_blue_ticks')) {
+            sync_auto_blue_ticks($pdo);
+        }
     }
 
     // Enterprise Alumni Import History table

@@ -79,6 +79,23 @@ $marquee_items = [];
 if (!$is_admin_portal) {
     $sub_prefix_nav = (basename(dirname($_SERVER['PHP_SELF'])) === 'user') ? '' : 'user/';
 
+    // 0. Placement Spotlights (Highest Priority)
+    try {
+        $spotStmt = $pdo->query("SELECT title, message, link FROM notifications WHERE type = 'placement_spotlight' ORDER BY created_at DESC LIMIT 3");
+        while ($spot = $spotStmt->fetch(PDO::FETCH_ASSOC)) {
+            $dest_url = !empty($spot['link']) ? $spot['link'] : ($sub_prefix_nav . 'dashboard.php');
+            if (basename(dirname($_SERVER['PHP_SELF'])) === 'user' && strpos($dest_url, 'user/') === 0) {
+                $dest_url = substr($dest_url, 5);
+            }
+            $marquee_items[] = [
+                'badge' => '🎉 CONGRATULATIONS ALUMNI',
+                'badge_color' => '#a855f7',
+                'title' => $spot['message'],
+                'url' => $dest_url
+            ];
+        }
+    } catch (Exception $e) {}
+
     // 1. Admin Announcements
     try {
         $annStmt = $pdo->query("SELECT id, title FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 4");

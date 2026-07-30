@@ -74,26 +74,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
-// Handle Blue Tick Badge Toggle Action
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_blue_tick') {
-    $alumni_id = intval($_POST['alumni_user_id'] ?? 0);
-    if ($alumni_id > 0) {
+// Handle Broadcast Alumni Placement Spotlight Notification Action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'publish_placement_spotlight') {
+    $alumni_user_id = intval($_POST['alumni_user_id'] ?? 0);
+    $company_name = trim($_POST['company_name'] ?? '');
+    $package_offer = trim($_POST['package_offer'] ?? '');
+    $custom_msg = trim($_POST['custom_msg'] ?? '');
+
+    if ($alumni_user_id > 0) {
         try {
-            $stmtCurr = $pdo->prepare("SELECT is_blue_tick FROM alumni_profiles WHERE user_id = ?");
-            $stmtCurr->execute([$alumni_id]);
-            $currTick = (int)$stmtCurr->fetchColumn();
-            $newTick = ($currTick === 1) ? 0 : 1;
+            $pdo->beginTransaction();
 
-            $upd = $pdo->prepare("UPDATE alumni_profiles SET is_blue_tick = ? WHERE user_id = ?");
-            $upd->execute([$newTick, $alumni_id]);
+            // Fetch Alumni details
+            $stmtA = $pdo->prepare("SELECT u.id, u.name, u.email, ap.company, ap.position, ap.salary, ap.reg_no, ap.passing_year, ap.graduation_year 
+                                    FROM users u 
+                                    JOIN alumni_profiles ap ON u.id = ap.user_id 
+                                    WHERE u.id = ?");
+            $stmtA->execute([$alumni_user_id]);
+            $alm_info = $stmtA->fetch();
 
-            $tickStatusMsg = ($newTick === 1) ? "Verified Blue Tick Badge granted to Alumni!" : "Verified Blue Tick Badge removed.";
-            set_flash('success', $tickStatusMsg);
+            if ($alm_info) {
+                $alumni_name = $alm_info['name'];
+                $pass_yr = !empty($alm_info['passing_year']) ? $alm_info['passing_year'] : ($alm_info['graduation_year'] ?? '2024');
+                $alumni_id_str = !empty($alm_info['reg_no']) ? $alm_info['reg_no'] : ('ALU-' . $pass_yr . '-' . str_pad($alumni_user_id, 4, '0', STR_PAD_LEFT));
+                
+                $final_comp = !empty($company_name) ? $company_name : (!empty($alm_info['company']) ? $alm_info['company'] : 'Top Industry Recruiter');
+                $final_pkg = !empty($package_offer) ? $package_offer : (!empty($alm_info['salary']) ? $alm_info['salary'] : 'High Package');
+
+                $notif_title = "🎉 Congratulations Alumni! Placement Spotlight";
+                $notif_body = !empty($custom_msg) ? $custom_msg : ("Hearty Congratulations to " . $alumni_name . " (ID: " . $alumni_id_str . ") for securing a placement at " . $final_comp . " with " . $final_pkg . " package! Click to view profile.");
+                $target_link = "user/view_profile.php?id=" . $alumni_user_id;
+
+                // Broadcast Notification to ALL Students and Regular Users
+                $users = $pdo->query("SELECT id FROM users WHERE role = 'student' OR role = 'alumni'")->fetchAll(PDO::FETCH_COLUMN);
+                
+                if (count($users) > 0) {
+                    $stmtIns = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, priority, link, sender_id, created_at) VALUES (?, ?, ?, 'placement_spotlight', 'high', ?, ?, NOW())");
+                    foreach ($users as $u_target_id) {
+                        $stmtIns->execute([$u_target_id, $notif_title, $notif_body, $target_link, $uid]);
+                    }
+                }
+
+                // Also publish as priority Announcement
+                $stmtAnn = $pdo->prepare("INSERT INTO announcements (title, content, priority, target_audience, status, created_by, created_at) VALUES (?, ?, 'High', 'all', 'Publish', ?, NOW())");
+                $stmtAnn->execute(["🎉 Placement Spotlight: " . $alumni_name . " (" . $alumni_id_str . ")", $notif_body, $uid]);
+
+                $pdo->commit();
+                set_flash('success', '🎉 Placement Spotlight notification successfully broadcasted to all students & users!');
+            } else {
+                $pdo->rollBack();
+                set_flash('error', 'Alumni record not found.');
+            }
         } catch (Exception $e) {
-            set_flash('error', 'Error updating Verified Blue Tick status: ' . $e->getMessage());
+            $pdo->rollBack();
+            set_flash('error', 'Error broadcasting placement spotlight: ' . $e->getMessage());
         }
     }
-    header("Location: dashboard.php?tab=alumni");
+    header("Location: dashboard.php?tab=announcements");
     exit;
 }
 
@@ -348,6 +385,13 @@ try {
                              LEFT JOIN users u ON a.created_by = u.id 
                              ORDER BY a.created_at DESC");
         $all_announcements = $stmt->fetchAll();
+
+        $stmtAlmList = $pdo->query("SELECT u.id, u.name, ap.company, ap.position, ap.salary, ap.reg_no, ap.passing_year, ap.graduation_year 
+                                    FROM users u 
+                                    JOIN alumni_profiles ap ON u.id = ap.user_id 
+                                    WHERE u.role = 'alumni' 
+                                    ORDER BY u.name ASC");
+        $all_alumni_list = $stmtAlmList->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($tab === 'notifications') {
         $stmt = $pdo->query("SELECT n.*, u.name as user_name, u.email as user_email, u.role as user_role, s.name as sender_name 
                              FROM notifications n 
@@ -554,14 +598,16 @@ require_once __DIR__ . '/../includes/header.php';
                                             <?php endif; ?>
                                         </td>
                                         <td><span class="badge badge-<?php echo $alm['status'] === 'approved' ? 'approved' : ($alm['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($alm['status']); ?></span></td>
-                                        <td style="text-align: right; display:flex; gap:0.4rem; justify-content:flex-end;">
-                                            <form action="dashboard.php" method="POST" style="display:inline;">
-                                                <input type="hidden" name="action" value="toggle_blue_tick">
-                                                <input type="hidden" name="alumni_user_id" value="<?php echo $alm['id']; ?>">
-                                                <button type="submit" class="btn" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px; background: <?php echo (!empty($alm['is_blue_tick']) ? 'rgba(56,189,248,0.2)' : 'linear-gradient(135deg, #0284c7, #38bdf8)'); ?>; border:1px solid #38bdf8; color: <?php echo (!empty($alm['is_blue_tick']) ? '#38bdf8' : '#ffffff'); ?>;" title="Toggle Verified Blue Tick Badge">
-                                                    <i class="fa-solid fa-circle-check"></i> <?php echo (!empty($alm['is_blue_tick']) ? 'Remove Tick' : 'Blue Tick'); ?>
-                                                </button>
-                                            </form>
+                                        <td style="text-align: right; display:flex; gap:0.4rem; justify-content:flex-end; align-items:center;">
+                                            <?php if (!empty($alm['is_blue_tick'])): ?>
+                                                <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 0.72rem; font-weight: 700;">
+                                                    <i class="fa-solid fa-circle-check"></i> Auto Tick (>= 8L)
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); font-size: 0.72rem;">
+                                                    <i class="fa-solid fa-building"></i> Standard
+                                                </span>
+                                            <?php endif; ?>
                                             <?php if ($alm['status'] !== 'approved'): ?>
                                                 <a href="admin_approvals.php?action=approve&id=<?php echo $alm['id']; ?>&tab=alumni" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;">Approve</a>
                                             <?php endif; ?>
@@ -952,6 +998,74 @@ require_once __DIR__ . '/../includes/header.php';
                         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Publish Announcement</button>
                     </form>
                 </div>
+
+                <!-- RECENT PLACED ALUMNI SPOTLIGHT CARD -->
+                <div class="card-glass" style="margin-bottom: 2rem; border-left: 4px solid #a855f7; background: linear-gradient(135deg, rgba(168,85,247,0.05), rgba(99,102,241,0.05));">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem; color:var(--theme-text);">
+                        <i class="fa-solid fa-crown" style="color: #eab308;"></i>
+                        <span>🎉 Broadcast Recent Alumni Placement Spotlight</span>
+                    </h3>
+                    <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.5;">
+                        Broadcast an interactive congratulations notification celebrate recently placed alumni members. All students and users will receive a direct notification with a clickable profile link.
+                    </p>
+
+                    <form method="POST" action="dashboard.php?tab=announcements">
+                        <input type="hidden" name="action" value="publish_placement_spotlight">
+                        
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:block; margin-bottom: 0.4rem; font-weight:700;">Select Placed Alumni Member</label>
+                            <select name="alumni_user_id" class="input-glass" required style="width:100%; padding:0.65rem;" onchange="autoFillSpotlight(this)">
+                                <option value="">-- Choose Alumni Member --</option>
+                                <?php if (!empty($all_alumni_list)): ?>
+                                    <?php foreach ($all_alumni_list as $alm_opt): 
+                                        $pass_yr = !empty($alm_opt['passing_year']) ? $alm_opt['passing_year'] : ($alm_opt['graduation_year'] ?? '2024');
+                                        $alm_id_str = !empty($alm_opt['reg_no']) ? $alm_opt['reg_no'] : ('ALU-' . $pass_yr . '-' . str_pad($alm_opt['id'], 4, '0', STR_PAD_LEFT));
+                                    ?>
+                                        <option value="<?php echo $alm_opt['id']; ?>" data-company="<?php echo htmlspecialchars($alm_opt['company'] ?? ''); ?>" data-salary="<?php echo htmlspecialchars($alm_opt['salary'] ?? ''); ?>" data-name="<?php echo htmlspecialchars($alm_opt['name']); ?>" data-idstr="<?php echo htmlspecialchars($alm_id_str); ?>">
+                                            <?php echo htmlspecialchars($alm_opt['name']); ?> (ID: <?php echo htmlspecialchars($alm_id_str); ?>) - <?php echo htmlspecialchars($alm_opt['company'] ?: 'Independent'); ?> (<?php echo htmlspecialchars($alm_opt['salary'] ?: 'Package N/A'); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                            <div>
+                                <label class="form-label" style="display:block; margin-bottom: 0.4rem; font-size:0.8rem; font-weight:600;">Placed Company Name</label>
+                                <input type="text" id="spotlight_company" name="company_name" class="input-glass" placeholder="e.g. Google / Microsoft / TCS">
+                            </div>
+                            <div>
+                                <label class="form-label" style="display:block; margin-bottom: 0.4rem; font-size:0.8rem; font-weight:600;">Placement Package Offer</label>
+                                <input type="text" id="spotlight_package" name="package_offer" class="input-glass" placeholder="e.g. 12 LPA / 15 Lakhs">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label class="form-label" style="display:block; margin-bottom: 0.4rem; font-size:0.8rem; font-weight:600;">Congratulations Message (Optional Customization)</label>
+                            <textarea id="spotlight_msg" name="custom_msg" class="input-glass" rows="2" placeholder="Auto-generated: Congratulations to [Alumni Name] (ID: ALU-2024-XXXX) for getting placed at [Company] with [Package] LPA! Click to view profile."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn" style="background: linear-gradient(135deg, #a855f7, #6366f1); color: #ffffff; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.3);">
+                            <i class="fa-solid fa-bullhorn"></i> Broadcast Placement Spotlight to All Students
+                        </button>
+                    </form>
+                </div>
+
+                <script>
+                function autoFillSpotlight(selectEl) {
+                    const opt = selectEl.options[selectEl.selectedIndex];
+                    if (opt && opt.value) {
+                        const comp = opt.getAttribute('data-company') || '';
+                        const sal = opt.getAttribute('data-salary') || '';
+                        const name = opt.getAttribute('data-name') || '';
+                        const idstr = opt.getAttribute('data-idstr') || '';
+                        
+                        document.getElementById('spotlight_company').value = comp;
+                        document.getElementById('spotlight_package').value = sal;
+                        document.getElementById('spotlight_msg').value = `🎉 Hearty Congratulations to ${name} (ID: ${idstr}) for securing a placement at ${comp || 'Top Recruiter'} with ${sal || 'a high package'}! Click to view profile.`;
+                    }
+                }
+                </script>
                 
                 <div class="card-glass">
                     <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--theme-accent-blue);"></i> Previous Announcements</h3>
