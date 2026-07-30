@@ -205,18 +205,38 @@ require_once __DIR__ . '/../includes/header.php';
                     </h3>
                     
                     <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <?php foreach ($my_tickets as $t): ?>
+                        <?php foreach ($my_tickets as $t): 
+                            $f_st = strtolower($t['status'] ?? 'new');
+                            $f_st_color = ($f_st === 'resolved') ? '#10b981' : (($f_st === 'pending' || $f_st === 'in progress') ? '#f59e0b' : '#38bdf8');
+                            $f_st_bg = ($f_st === 'resolved') ? 'rgba(16,185,129,0.15)' : (($f_st === 'pending' || $f_st === 'in progress') ? 'rgba(245,158,11,0.15)' : 'rgba(56,189,248,0.15)');
+                        ?>
                             <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0;"><?php echo htmlspecialchars($t['subject']); ?></h4>
+                                    <div>
+                                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text); margin: 0; display: inline-block; margin-right: 0.5rem;"><?php echo htmlspecialchars($t['subject']); ?></h4>
+                                        <span class="badge" style="background: <?php echo $f_st_bg; ?>; color: <?php echo $f_st_color; ?>; border: 1px solid <?php echo $f_st_color; ?>40; font-weight: 700; font-size: 0.72rem;">
+                                            <?php echo htmlspecialchars(ucfirst($t['status'] ?? 'Pending')); ?>
+                                        </span>
+                                    </div>
                                     <span style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y H:i', strtotime($t['created_at'])); ?></span>
                                 </div>
                                 <p style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-bottom: 0.85rem; line-height: 1.4;">
                                     <strong>Your Request:</strong> <?php echo htmlspecialchars($t['message']); ?>
                                 </p>
 
+                                <?php if (!empty($t['admin_reply'])): ?>
+                                    <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem; margin-top: 0.5rem;">
+                                        <div style="font-weight: 700; color: #10b981; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                                            <i class="fa-solid fa-comments"></i> Admin Resolution / Reply:
+                                        </div>
+                                        <div style="color: var(--theme-text); white-space: pre-line; line-height: 1.5; font-size: 0.82rem;">
+                                            <?php echo htmlspecialchars($t['admin_reply']); ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
                                 <?php if (!empty($t['ai_reply'])): ?>
-                                    <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid var(--theme-accent-purple); padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem;">
+                                    <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid var(--theme-accent-purple); padding: 0.85rem; border-radius: 0 6px 6px 0; font-size: 0.85rem; margin-top: 0.5rem;">
                                         <div style="font-weight: 700; color: var(--theme-accent-purple); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
                                             <i class="fa-solid fa-paper-plane"></i> AI Support Email Response Dispatched:
                                         </div>

@@ -307,12 +307,16 @@ try {
         }
     }
 
-    // Check & add announcements table priority & status columns
+    // Check & add announcements table priority, status, target_audience, content columns
     $checkAnnTable = $pdo->query("SHOW TABLES LIKE 'announcements'")->fetch();
     if ($checkAnnTable) {
         $annCols = [
             'priority' => "VARCHAR(50) DEFAULT 'Medium'",
-            'status' => "VARCHAR(50) DEFAULT 'Publish'"
+            'status' => "VARCHAR(50) DEFAULT 'Publish'",
+            'target_audience' => "VARCHAR(50) DEFAULT 'all'",
+            'audience' => "VARCHAR(50) DEFAULT 'all'",
+            'content' => "TEXT NULL",
+            'description' => "TEXT NULL"
         ];
         foreach ($annCols as $col => $definition) {
             $checkCol = $pdo->query("SHOW COLUMNS FROM announcements LIKE '$col'")->fetch();

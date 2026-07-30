@@ -116,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 }
 
                 // Also publish as priority Announcement
-                $stmtAnn = $pdo->prepare("INSERT INTO announcements (title, content, priority, target_audience, status, created_by, created_at) VALUES (?, ?, 'High', 'all', 'Publish', ?, NOW())");
-                $stmtAnn->execute(["🎉 Placement Spotlight: " . $alumni_name . " (" . $alumni_id_str . ")", $notif_body, $uid]);
+                $stmtAnn = $pdo->prepare("INSERT INTO announcements (title, content, description, priority, audience, target_audience, status, created_by, created_at) VALUES (?, ?, ?, 'High', 'all', 'all', 'Publish', ?, NOW())");
+                $stmtAnn->execute(["🎉 Placement Spotlight: " . $alumni_name . " (" . $alumni_id_str . ")", $notif_body, $notif_body, $uid]);
 
                 $pdo->commit();
                 set_flash('success', '🎉 Placement Spotlight notification successfully broadcasted to all students & users!');
@@ -378,7 +378,13 @@ try {
                              FROM feedback f 
                              LEFT JOIN users u ON f.user_id = u.id 
                              ORDER BY f.created_at DESC");
-        $all_feedback = $stmt->fetchAll();
+        $all_feedback = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($tab === 'support_tickets') {
+        $stmt = $pdo->query("SELECT st.*, COALESCE(u.name, 'User') as user_name, COALESCE(u.email, '') as user_email, COALESCE(u.role, 'alumni') as user_role 
+                             FROM support_tickets st 
+                             LEFT JOIN users u ON st.user_id = u.id 
+                             ORDER BY st.created_at DESC");
+        $all_support_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($tab === 'announcements') {
         $stmt = $pdo->query("SELECT a.*, u.name as admin_name 
                              FROM announcements a 
@@ -922,30 +928,51 @@ require_once __DIR__ . '/../includes/header.php';
                                         <th>User Details</th>
                                         <th>Subject</th>
                                         <th>Message Review</th>
+                                        <th>Status</th>
                                         <th>Submitted On</th>
                                         <th style="text-align: right;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($all_feedback as $fb): ?>
+                                    <?php foreach ($all_feedback as $fb): 
+                                        $f_status = strtolower($fb['status'] ?? 'new');
+                                        $status_color = ($f_status === 'resolved') ? '#10b981' : (($f_status === 'pending' || $f_status === 'in progress') ? '#f59e0b' : '#38bdf8');
+                                        $status_bg = ($f_status === 'resolved') ? 'rgba(16,185,129,0.15)' : (($f_status === 'pending' || $f_status === 'in progress') ? 'rgba(245,158,11,0.15)' : 'rgba(56,189,248,0.15)');
+                                    ?>
                                         <tr>
                                             <td>
                                                 <div style="color: #f59e0b; display: flex; gap: 0.15rem; font-size: 0.9rem;">
                                                     <?php for($i=1; $i<=5; $i++): ?>
-                                                        <i class="fa-<?php echo ($i <= $fb['rating']) ? 'solid' : 'regular'; ?> fa-star"></i>
+                                                        <i class="fa-<?php echo ($i <= ($fb['rating'] ?? 5)) ? 'solid' : 'regular'; ?> fa-star"></i>
                                                     <?php endfor; ?>
                                                 </div>
                                             </td>
                                             <td>
                                                 <strong><?php echo htmlspecialchars($fb['user_name']); ?></strong>
-                                                <div style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['user_email']); ?> | <span style="text-transform:uppercase; font-weight:700;"><?php echo $fb['user_role']; ?></span></div>
+                                                <div style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['user_email']); ?> | <span style="text-transform:uppercase; font-weight:700;"><?php echo htmlspecialchars($fb['user_role']); ?></span></div>
                                             </td>
-                                            <td><strong><?php echo htmlspecialchars($fb['subject']); ?></strong></td>
-                                            <td style="max-width: 300px; font-size: 0.85rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['message']); ?></td>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($fb['subject']); ?></strong>
+                                                <div style="font-size:0.7rem; color:var(--theme-text-secondary);"><?php echo htmlspecialchars($fb['category'] ?? 'General'); ?></div>
+                                            </td>
+                                            <td style="max-width: 250px; font-size: 0.85rem; color: var(--theme-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <?php echo htmlspecialchars($fb['message']); ?>
+                                            </td>
+                                            <td>
+                                                <span class="badge" style="background: <?php echo $status_bg; ?>; color: <?php echo $status_color; ?>; border: 1px solid <?php echo $status_color; ?>40; font-weight: 700; font-size: 0.75rem; text-transform: capitalize;">
+                                                    <?php echo htmlspecialchars(ucfirst($fb['status'] ?? 'New')); ?>
+                                                </span>
+                                            </td>
                                             <td style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y', strtotime($fb['created_at'])); ?></td>
-                                            <td style="text-align: right;">
-                                                <button type="button" onclick="document.getElementById('reply_feedback_id').value = <?php echo $fb['id']; ?>; openModal('replyFeedbackModal')" class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.35rem; border: none; cursor: pointer;"><i class="fa-solid fa-reply"></i> Reply</button>
-                                                <a href="admin_approvals.php?action=delete_feedback&id=<?php echo $fb['id']; ?>&tab=feedback" class="btn btn-danger" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px;" onclick="return confirm('Delete this feedback entry completely?')"><i class="fa-solid fa-trash-can"></i> Delete</a>
+                                            <td style="text-align: right; white-space: nowrap;">
+                                                <button type="button" class="btn btn-secondary btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem;" onclick="viewFeedback(<?php echo htmlspecialchars(json_encode($fb)); ?>)"><i class="fa-solid fa-eye"></i> View</button>
+                                                <?php if (($fb['status'] ?? '') === 'Resolved'): ?>
+                                                    <a href="admin_approvals.php?action=toggle_feedback_status&id=<?php echo $fb['id']; ?>&status=Pending&tab=feedback" class="btn btn-warning btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem; background: rgba(245,158,11,0.2); color:#f59e0b; border: 1px solid rgba(245,158,11,0.4);" title="Mark as Pending"><i class="fa-solid fa-clock"></i> Pending</a>
+                                                <?php else: ?>
+                                                    <a href="admin_approvals.php?action=toggle_feedback_status&id=<?php echo $fb['id']; ?>&status=Resolved&tab=feedback" class="btn btn-success btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem; background: rgba(16,185,129,0.2); color:#10b981; border: 1px solid rgba(16,185,129,0.4);" title="Mark as Resolved"><i class="fa-solid fa-check-double"></i> Resolve</a>
+                                                <?php endif; ?>
+                                                <button type="button" onclick="document.getElementById('reply_feedback_id').value = <?php echo $fb['id']; ?>; openModal('replyFeedbackModal')" class="btn btn-primary btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem;"><i class="fa-solid fa-reply"></i> Reply</button>
+                                                <a href="admin_approvals.php?action=delete_feedback&id=<?php echo $fb['id']; ?>&tab=feedback" class="btn btn-danger btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px;" onclick="return confirm('Delete this feedback entry completely?')"><i class="fa-solid fa-trash-can"></i> Delete</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -955,6 +982,82 @@ require_once __DIR__ . '/../includes/header.php';
                             <div style="text-align: center; padding: 3rem; color: var(--theme-text-secondary);">
                                 <i class="fa-solid fa-inbox" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
                                 <span>No feedback or reviews submitted yet.</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+            <!-- TAB: SUPPORT TICKETS -->
+            <?php elseif ($tab === 'support_tickets'): ?>
+                <div class="card-glass">
+                    <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem;"><i class="fa-solid fa-headset" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-blue);"></i> Manage Help Desk & Support Tickets</h3>
+                    <div class="table-responsive">
+                        <?php if (!empty($all_support_tickets)): ?>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket #</th>
+                                        <th>User Details</th>
+                                        <th>Category & Priority</th>
+                                        <th>Subject & Summary</th>
+                                        <th>Status</th>
+                                        <th>Submitted On</th>
+                                        <th style="text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($all_support_tickets as $st): 
+                                        $t_status = strtolower($st['status'] ?? 'new');
+                                        $st_color = ($t_status === 'resolved' || $t_status === 'closed') ? '#10b981' : (($t_status === 'pending' || $t_status === 'in review') ? '#f59e0b' : '#38bdf8');
+                                        $st_bg = ($t_status === 'resolved' || $t_status === 'closed') ? 'rgba(16,185,129,0.15)' : (($t_status === 'pending' || $t_status === 'in review') ? 'rgba(245,158,11,0.15)' : 'rgba(56,189,248,0.15)');
+                                        $prio = strtolower($st['priority'] ?? 'medium');
+                                        $prio_color = ($prio === 'high' || $prio === 'urgent') ? '#ef4444' : (($prio === 'medium') ? '#f59e0b' : '#10b981');
+                                    ?>
+                                        <tr>
+                                            <td>
+                                                <code style="background: rgba(255,255,255,0.06); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--theme-accent-blue); font-weight: 700;">
+                                                    <?php echo htmlspecialchars($st['ticket_number']); ?>
+                                                </code>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($st['user_name']); ?></strong>
+                                                <div style="font-size: 0.72rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($st['user_email']); ?> | <span style="text-transform:uppercase; font-weight:700;"><?php echo htmlspecialchars($st['user_role']); ?></span></div>
+                                            </td>
+                                            <td>
+                                                <div><strong><?php echo htmlspecialchars($st['category']); ?></strong></div>
+                                                <span style="font-size: 0.68rem; font-weight:700; color: <?php echo $prio_color; ?>; text-transform: uppercase;">
+                                                    <i class="fa-solid fa-flag"></i> <?php echo htmlspecialchars($st['priority']); ?>
+                                                </span>
+                                            </td>
+                                            <td style="max-width: 250px;">
+                                                <strong><?php echo htmlspecialchars($st['subject']); ?></strong>
+                                                <div style="font-size: 0.8rem; color: var(--theme-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    <?php echo htmlspecialchars($st['description'] ?? $st['message'] ?? ''); ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge" style="background: <?php echo $st_bg; ?>; color: <?php echo $st_color; ?>; border: 1px solid <?php echo $st_color; ?>40; font-weight: 700; font-size: 0.75rem;">
+                                                    <?php echo htmlspecialchars(ucfirst($st['status'] ?? 'New')); ?>
+                                                </span>
+                                            </td>
+                                            <td style="font-size:0.75rem; color: var(--theme-text-secondary);"><?php echo date('M d, Y H:i', strtotime($st['created_at'])); ?></td>
+                                            <td style="text-align: right; white-space: nowrap;">
+                                                <button type="button" class="btn btn-primary btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem;" onclick="replyTicket(<?php echo htmlspecialchars(json_encode($st)); ?>)"><i class="fa-solid fa-reply"></i> Reply / View</button>
+                                                <?php if (($st['status'] ?? '') === 'Resolved'): ?>
+                                                    <a href="admin_approvals.php?action=toggle_ticket_status&id=<?php echo $st['id']; ?>&status=Pending&tab=support_tickets" class="btn btn-warning btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem; background: rgba(245,158,11,0.2); color:#f59e0b; border: 1px solid rgba(245,158,11,0.4);" title="Mark as Pending"><i class="fa-solid fa-clock"></i> Pending</a>
+                                                <?php else: ?>
+                                                    <a href="admin_approvals.php?action=toggle_ticket_status&id=<?php echo $st['id']; ?>&status=Resolved&tab=support_tickets" class="btn btn-success btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px; margin-right: 0.25rem; background: rgba(16,185,129,0.2); color:#10b981; border: 1px solid rgba(16,185,129,0.4);" title="Mark as Resolved"><i class="fa-solid fa-check-double"></i> Resolve</a>
+                                                <?php endif; ?>
+                                                <a href="admin_approvals.php?action=delete_ticket&id=<?php echo $st['id']; ?>&tab=support_tickets" class="btn btn-danger btn-small" style="padding:0.35rem 0.6rem; font-size:0.75rem; border-radius:6px;" onclick="return confirm('Delete this support ticket completely?')"><i class="fa-solid fa-trash-can"></i> Delete</a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 3rem; color: var(--theme-text-secondary);">
+                                <i class="fa-solid fa-headset" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
+                                <span>No support tickets submitted yet.</span>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1451,6 +1554,117 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<!-- ==================== VIEW FEEDBACK DETAILS MODAL ==================== -->
+<div class="modal" id="viewFeedbackModal">
+    <div class="modal-content" style="max-width: 600px; padding: 2rem;">
+        <button class="modal-close" onclick="closeModal('viewFeedbackModal')">&times;</button>
+        <h3 style="margin-top:0; color:var(--theme-text); display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-comments" style="color:var(--theme-accent-purple);"></i> User Feedback Details
+        </h3>
+        
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem;">
+                <div>
+                    <strong id="vf-user-name" style="font-size: 1.05rem; display: block; color: var(--theme-text);"></strong>
+                    <span id="vf-user-email-role" style="font-size: 0.78rem; color: var(--theme-text-secondary);"></span>
+                </div>
+                <div id="vf-rating-stars" style="color: #f59e0b; font-size: 0.9rem;"></div>
+            </div>
+            <div>
+                <strong>Reference / ID:</strong> <span id="vf-ref-id" style="color: var(--theme-accent-blue); font-weight:700;"></span>
+            </div>
+            <div>
+                <strong>Subject:</strong> <span id="vf-subject" style="color: var(--theme-text);"></span>
+            </div>
+            <div>
+                <strong>Category:</strong> <span id="vf-category" style="color: var(--theme-text-secondary);"></span>
+            </div>
+            <div>
+                <strong>Status:</strong> <span id="vf-status-badge"></span>
+            </div>
+            <div>
+                <strong>Submitted On:</strong> <span id="vf-created-at" style="color: var(--theme-text-secondary);"></span>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                <strong>User Message / Review:</strong>
+                <p id="vf-message" style="background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 6px; margin-top: 0.35rem; font-size: 0.85rem; white-space: pre-line; line-height: 1.5; color: var(--theme-text);"></p>
+            </div>
+            <div id="vf-attachment-container" style="display:none;">
+                <strong>Attachment:</strong> <a id="vf-attachment-link" href="#" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-paperclip"></i> View File</a>
+            </div>
+            <div id="vf-reply-container" style="display:none; margin-top: 0.5rem;">
+                <strong>Admin Moderator Response:</strong>
+                <p id="vf-admin-reply" style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; padding: 0.85rem; border-radius: 0 6px 6px 0; margin-top: 0.35rem; font-size: 0.85rem; white-space: pre-line; line-height: 1.5; color: var(--theme-text);"></p>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('viewFeedbackModal')">Close</button>
+            <button type="button" class="btn btn-primary" id="vf-reply-btn"><i class="fa-solid fa-reply"></i> Send Reply</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== REPLY / VIEW SUPPORT TICKET MODAL ==================== -->
+<div class="modal" id="replyTicketModal">
+    <div class="modal-content" style="max-width: 600px; padding: 2rem;">
+        <button class="modal-close" onclick="closeModal('replyTicketModal')">&times;</button>
+        <h3 style="margin-top:0; color:var(--theme-text); display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-headset" style="color:var(--theme-accent-blue);"></i> Support Ticket Details & Reply
+        </h3>
+        
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--theme-border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem;">
+                <div>
+                    <strong id="st-user-name" style="font-size: 1.05rem; display: block; color: var(--theme-text);"></strong>
+                    <span id="st-user-email-role" style="font-size: 0.78rem; color: var(--theme-text-secondary);"></span>
+                </div>
+                <code id="st-ticket-number" style="background: rgba(255,255,255,0.08); padding: 0.25rem 0.6rem; border-radius: 4px; color: var(--theme-accent-blue); font-weight:700;"></code>
+            </div>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <div><strong>Category:</strong> <span id="st-category"></span></div>
+                <div><strong>Priority:</strong> <span id="st-priority"></span></div>
+                <div><strong>Status:</strong> <span id="st-status-badge"></span></div>
+            </div>
+            <div>
+                <strong>Subject:</strong> <span id="st-subject" style="color: var(--theme-text); font-weight: 600;"></span>
+            </div>
+            <div>
+                <strong>Submitted Request:</strong>
+                <p id="st-description" style="background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 6px; margin-top: 0.35rem; font-size: 0.85rem; white-space: pre-line; line-height: 1.5; color: var(--theme-text);"></p>
+            </div>
+            <div id="st-attachment-container" style="display:none;">
+                <strong>Attached Screenshot/File:</strong> <a id="st-attachment-link" href="#" target="_blank" style="color: var(--theme-accent-blue); text-decoration: underline;"><i class="fa-solid fa-paperclip"></i> Download Attachment</a>
+            </div>
+        </div>
+
+        <form method="POST" action="dashboard.php">
+            <input type="hidden" name="action" value="reply_ticket">
+            <input type="hidden" name="ticket_id" id="reply_ticket_id" value="">
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Update Ticket Status</label>
+                <select name="status" id="st-status-select" class="input-glass" style="width: 100%;" required>
+                    <option value="In Review">In Review</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Admin Support Reply Message</label>
+                <textarea name="reply_message" class="input-glass" rows="4" style="width: 100%; resize: vertical;" placeholder="Type official response to send to user email & in-app notification..." required></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('replyTicketModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Dispatch Reply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- ==================== ADD SINGLE ALUMNI MODAL ==================== -->
 <div class="modal" id="addAlumniModal">
     <div class="modal-content" style="max-width: 580px;">
@@ -1729,6 +1943,81 @@ require_once __DIR__ . '/../includes/header.php';
                 document.getElementById('m-student-name').textContent = 'Request failed.';
                 console.error(err);
             });
+    }
+
+    function viewFeedback(fb) {
+        document.getElementById('vf-user-name').textContent = fb.user_name || 'User';
+        document.getElementById('vf-user-email-role').textContent = (fb.user_email || '') + ' | ' + (fb.user_role || 'user').toUpperCase();
+        document.getElementById('vf-ref-id').textContent = fb.feedback_id || ('#FB-' + fb.id);
+        document.getElementById('vf-subject').textContent = fb.subject || '';
+        document.getElementById('vf-category').textContent = fb.category || 'General';
+        document.getElementById('vf-created-at').textContent = fb.created_at || '';
+        document.getElementById('vf-message').textContent = fb.message || '';
+        
+        let starsHtml = '';
+        const rating = parseInt(fb.rating) || 5;
+        for (let i = 1; i <= 5; i++) {
+            starsHtml += `<i class="fa-${i <= rating ? 'solid' : 'regular'} fa-star"></i>`;
+        }
+        document.getElementById('vf-rating-stars').innerHTML = starsHtml;
+        
+        const status = fb.status || 'New';
+        const statusColor = (status === 'Resolved') ? '#10b981' : ((status === 'Pending' || status === 'In Progress') ? '#f59e0b' : '#38bdf8');
+        document.getElementById('vf-status-badge').innerHTML = `<span class="badge" style="background:${statusColor}20; color:${statusColor}; border:1px solid ${statusColor}40;">${status}</span>`;
+        
+        const attCont = document.getElementById('vf-attachment-container');
+        if (fb.attachment) {
+            document.getElementById('vf-attachment-link').href = '../' + fb.attachment;
+            attCont.style.display = 'block';
+        } else {
+            attCont.style.display = 'none';
+        }
+        
+        const replyCont = document.getElementById('vf-reply-container');
+        if (fb.admin_reply) {
+            document.getElementById('vf-admin-reply').textContent = fb.admin_reply;
+            replyCont.style.display = 'block';
+        } else {
+            replyCont.style.display = 'none';
+        }
+        
+        document.getElementById('vf-reply-btn').onclick = function() {
+            closeModal('viewFeedbackModal');
+            document.getElementById('reply_feedback_id').value = fb.id;
+            openModal('replyFeedbackModal');
+        };
+        
+        openModal('viewFeedbackModal');
+    }
+
+    function replyTicket(st) {
+        document.getElementById('reply_ticket_id').value = st.id;
+        document.getElementById('st-user-name').textContent = st.user_name || 'User';
+        document.getElementById('st-user-email-role').textContent = (st.user_email || '') + ' | ' + (st.user_role || 'user').toUpperCase();
+        document.getElementById('st-ticket-number').textContent = st.ticket_number || ('#TKT-' + st.id);
+        document.getElementById('st-category').textContent = st.category || 'General';
+        document.getElementById('st-priority').textContent = st.priority || 'Medium';
+        document.getElementById('st-subject').textContent = st.subject || '';
+        document.getElementById('st-description').textContent = st.description || st.message || '';
+        
+        const statusSelect = document.getElementById('st-status-select');
+        if (statusSelect) {
+            statusSelect.value = st.status || 'In Review';
+        }
+        
+        const status = st.status || 'New';
+        const statusColor = (status === 'Resolved' || status === 'Closed') ? '#10b981' : ((status === 'Pending' || status === 'In Review') ? '#f59e0b' : '#38bdf8');
+        document.getElementById('st-status-badge').innerHTML = `<span class="badge" style="background:${statusColor}20; color:${statusColor}; border:1px solid ${statusColor}40;">${status}</span>`;
+        
+        const attCont = document.getElementById('st-attachment-container');
+        if (st.attachment) {
+            document.getElementById('st-attachment-link').href = '../' + st.attachment;
+            attCont.style.display = 'block';
+        } else {
+            attCont.style.display = 'none';
+        }
+        
+        openModal('replyTicketModal');
     }
 </script>
 
