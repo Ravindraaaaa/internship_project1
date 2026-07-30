@@ -1,4 +1,6 @@
 <?php
+$is_subfolder = true;
+
 require_once __DIR__ . '/../includes/auth_helper.php';
 require_once __DIR__ . '/../config/db.php';
 
@@ -114,6 +116,97 @@ if ($active_year) {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
+<style>
+    .alumni-header-banner {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+        border-radius: 20px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .alumni-header-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 40%);
+        pointer-events: none;
+        animation: rotateBanner 20s linear infinite;
+    }
+    @keyframes rotateBanner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .alumni-member-card {
+        background: var(--theme-surface);
+        border: 1px solid var(--theme-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+    .alumni-member-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .alumni-avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+    .alumni-avatar {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .alumni-member-card:hover .alumni-avatar {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+    }
+    .btn-archive {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.15));
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        color: #a855f7;
+        transition: all 0.3s ease;
+    }
+    .btn-archive:hover {
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        color: white;
+        box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4);
+    }
+    .btn-archive:hover i {
+        color: white !important;
+    }
+    .year-pill {
+        transition: all 0.3s ease;
+    }
+    .year-pill:hover:not(.active) {
+        background: rgba(255,255,255,0.15) !important;
+        transform: translateY(-2px);
+    }
+    .hierarchy-header {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    .hierarchy-header::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #6366f1, #a855f7);
+        border-radius: 4px;
+    }
+    .linkedin-btn {
+        background: rgba(0, 119, 181, 0.1); 
+        border: 1px solid rgba(0, 119, 181, 0.3); 
+        color: #0077b5; 
+        transition: all 0.3s ease;
+    }
+    .linkedin-btn:hover {
+        background: #0077b5;
+        color: white;
+        box-shadow: 0 5px 15px rgba(0, 119, 181, 0.4);
+    }
+</style>
+
 <div class="dashboard-wrapper">
     <?php render_sidebar($active_page); ?>
     
@@ -122,13 +215,13 @@ require_once __DIR__ . '/../includes/header.php';
         
         <main class="dashboard-workspace" style="padding: 1.5rem;">
             <!-- Header Banner -->
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-                <div>
-                    <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--theme-text-primary); margin: 0;">
+            <div class="alumni-header-banner" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+                <div style="position: relative; z-index: 1;">
+                    <h1 style="font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, #fff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; letter-spacing: -0.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                         🎓 Alumni Directory & Digital Archive
                     </h1>
-                    <p style="color: var(--theme-text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                        Browse verified alumni members organized by <strong>Passing Year → Branch → Batch</strong>.
+                    <p style="color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-top: 0.75rem; max-width: 600px; line-height: 1.6;">
+                        Browse and connect with verified alumni members organized by <strong>Passing Year → Branch → Batch</strong>. Discover their professional journeys and explore their digital archives.
                     </p>
                 </div>
             </div>
@@ -226,59 +319,61 @@ require_once __DIR__ . '/../includes/header.php';
             <?php foreach ($hierarchy as $yr => $branches): ?>
             <div style="margin-bottom: 2.5rem;">
                 <!-- Passing Year Header -->
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; border-bottom: 2px solid rgba(129, 140, 248, 0.3); padding-bottom: 0.5rem;">
-                    <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.35rem 1rem; border-radius: 20px; font-weight: 800; font-size: 1rem;">
-                        Passing Year: <?php echo $yr; ?>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 0.5rem;">
+                    <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); letter-spacing: 0.5px;">
+                        🎓 Passing Year: <?php echo $yr; ?>
                     </span>
                 </div>
 
                 <?php foreach ($branches as $br => $batches): ?>
-                <div style="margin-left: 0.5rem; margin-bottom: 1.5rem;">
+                <div class="hierarchy-header" style="margin-left: 1.5rem; margin-bottom: 2.5rem;">
                     <!-- Branch Sub-Header -->
-                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #818cf8; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-graduation-cap"></i> <?php echo htmlspecialchars($br); ?>
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: #e0e7ff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i> <?php echo htmlspecialchars($br); ?>
                     </h3>
 
                     <?php foreach ($batches as $bt => $members): ?>
-                    <div style="margin-bottom: 1.25rem;">
+                    <div style="margin-bottom: 2rem;">
                         <!-- Batch Sub-Tag -->
-                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--theme-text-muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
                             <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: <?php echo htmlspecialchars($bt); ?>
-                            <span style="padding: 0.1rem 0.5rem; background: rgba(255,255,255,0.08); border-radius: 10px; font-size: 0.75rem;"><?php echo count($members); ?> Alumni</span>
+                            <span style="padding: 0.25rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);"><?php echo count($members); ?> Alumni</span>
                         </div>
 
                         <!-- Alumni Cards Grid -->
                         <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
                             <?php foreach ($members as $alum): ?>
-                            <div class="card-glass alumni-member-card" style="padding: 1.35rem; border-radius: 16px; position: relative; transition: transform 0.25s ease, box-shadow 0.25s ease;">
-                                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                                    <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" style="width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 2.5px solid #818cf8; flex-shrink: 0;">
+                            <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                                <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
+                                    <div class="alumni-avatar-container">
+                                        <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                    </div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
                                             <?php echo htmlspecialchars($alum['name']); ?>
                                         </h4>
-                                        <div style="font-size: 0.82rem; color: #818cf8; font-weight: 700; margin-top: 0.2rem;">
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
                                             <?php echo htmlspecialchars($alum['designation'] ?: 'Alumnus'); ?>
                                         </div>
-                                        <div style="font-size: 0.82rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.1rem;">
-                                            <?php echo htmlspecialchars($alum['company'] ?: 'Independent'); ?>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['company'] ?: 'Independent'); ?>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--theme-border); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
-                                    <span style="color: var(--theme-text-secondary);"><i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
+                                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                    <span style="color: rgba(255,255,255,0.6);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
                                     <?php if ($alum['mentorship_available']): ?>
-                                    <span style="color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 0.2rem 0.6rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);"><i class="fa-solid fa-handshake"></i> Mentor</span>
+                                    <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
                                     <?php endif; ?>
                                 </div>
 
-                                <div style="margin-top: 1.1rem; display: flex; gap: 0.5rem;">
-                                    <button type="button" class="btn btn-secondary" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.82rem; font-weight: 600; padding: 0.5rem 0.6rem; border-radius: 10px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem;">
-                                        <i class="fa-solid fa-folder-open" style="color: #a855f7;"></i> Digital Archive
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
                                     </button>
                                     <?php if (!empty($alum['linkedin'])): ?>
-                                    <a href="<?php echo htmlspecialchars($alum['linkedin']); ?>" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 10px; color: #0077b5;">
+                                    <a href="<?php echo htmlspecialchars($alum['linkedin']); ?>" target="_blank" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
                                         <i class="fa-brands fa-linkedin"></i>
                                     </a>
                                     <?php endif; ?>
