@@ -76,7 +76,8 @@ try {
             'verification_status' => "VARCHAR(50) DEFAULT 'approved'",
             'skills' => "TEXT NULL DEFAULT NULL",
             'achievements' => "TEXT NULL DEFAULT NULL",
-            'mentorship_available' => "TINYINT(1) DEFAULT 1"
+            'mentorship_available' => "TINYINT(1) DEFAULT 1",
+            'is_blue_tick' => "TINYINT(1) DEFAULT 0"
         ];
         foreach ($alumniCols as $col => $definition) {
             $checkCol = $pdo->query("SHOW COLUMNS FROM alumni_profiles LIKE '$col'")->fetch();

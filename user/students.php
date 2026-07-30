@@ -227,8 +227,20 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
 
                             <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-                                <a href="portfolio.php" class="btn btn-secondary" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                                    <i class="fa-solid fa-user"></i> View Profile
+                                <a href="view_profile.php?id=<?php echo $u_id; ?>" onclick="openStudentModal(<?php echo htmlspecialchars(json_encode([
+                                    'id' => $u_id,
+                                    'name' => $std['name'],
+                                    'email' => $std['email'],
+                                    'current_year' => $std['current_year'] ?? '1',
+                                    'course' => $std['course'],
+                                    'cgpa' => $std['cgpa'] ?? '0.00',
+                                    'bio' => $std['bio'],
+                                    'avatar' => $userAvatar,
+                                    'is_online' => $isOnline,
+                                    'linkedin' => $std['s_linkedin'] ?? '',
+                                    'github' => $std['github'] ?? ''
+                                ])); ?>); return false;" class="btn btn-secondary" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; background: linear-gradient(135deg, #0284c7, #38bdf8); color:#fff; border:none;">
+                                    <i class="fa-solid fa-address-card"></i> View Profile
                                 </a>
                                 <?php if (!empty($std['s_linkedin'])): ?>
                                 <a href="<?php echo htmlspecialchars($std['s_linkedin']); ?>" target="_blank" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
@@ -248,5 +260,76 @@ require_once __DIR__ . '/../includes/header.php';
         </main>
     </div>
 </div>
+
+<!-- STUDENT QUICK VIEW MODAL -->
+<div id="studentQuickViewModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; padding:1rem;">
+    <div class="card-glass" style="max-width:520px; width:100%; padding:2rem; border-radius:24px; position:relative; background:var(--theme-card-bg); border:1px solid var(--theme-border); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <button type="button" onclick="closeStudentModal()" style="position:absolute; top:1.25rem; right:1.25rem; background:rgba(255,255,255,0.1); border:none; color:var(--theme-text); width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">&times;</button>
+        
+        <div style="text-align:center; margin-bottom:1.5rem;">
+            <img id="modalStdAvatar" src="" alt="Avatar" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:4px solid #38bdf8; margin-bottom:0.75rem;">
+            <h3 id="modalStdName" style="font-size:1.4rem; font-weight:800; color:var(--theme-text); margin:0;"></h3>
+            <div id="modalStdRole" style="font-size:0.78rem; font-weight:700; color:#38bdf8; text-transform:uppercase; margin-top:2px;">(VERIFIED STUDENT)</div>
+            <div id="modalStdStatus" style="margin-top:0.5rem;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1.25rem; background:var(--theme-bg-secondary); padding:1rem; border-radius:14px; border:1px solid var(--theme-border);">
+            <div>
+                <div style="font-size:0.75rem; color:var(--theme-text-muted);">Academic Year</div>
+                <div id="modalStdYear" style="font-weight:700; color:var(--theme-text); font-size:0.95rem;"></div>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; color:var(--theme-text-muted);">Course Stream</div>
+                <div id="modalStdCourse" style="font-weight:700; color:var(--theme-text); font-size:0.95rem;"></div>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; color:var(--theme-text-muted);">Cumulative CGPA</div>
+                <div id="modalStdCgpa" style="font-weight:700; color:#38bdf8; font-size:0.95rem;"></div>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; color:var(--theme-text-muted);">Email Address</div>
+                <div id="modalStdEmail" style="font-weight:600; color:var(--theme-text); font-size:0.82rem; word-break:break-all;"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+            <div style="font-size:0.78rem; font-weight:700; color:var(--theme-text-muted); margin-bottom:0.4rem; text-transform:uppercase;">Biography / Summary</div>
+            <p id="modalStdBio" style="font-size:0.88rem; color:var(--theme-text-secondary); line-height:1.5; margin:0; background:var(--theme-bg-secondary); padding:0.85rem; border-radius:12px; border:1px solid var(--theme-border);"></p>
+        </div>
+
+        <div style="display:flex; gap:0.75rem;">
+            <a id="modalStdFullLink" href="" class="btn btn-primary" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:0.5rem; padding:0.75rem; border-radius:12px; font-weight:700; text-decoration:none; background:linear-gradient(135deg, #3b82f6, #06b6d4); color:#fff;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Profile
+            </a>
+            <button type="button" onclick="closeStudentModal()" class="btn btn-secondary" style="padding:0.75rem 1.25rem; border-radius:12px; font-weight:700;">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openStudentModal(data) {
+    document.getElementById('modalStdAvatar').src = data.avatar;
+    document.getElementById('modalStdName').innerText = data.name;
+    document.getElementById('modalStdYear').innerText = 'Year ' + data.current_year;
+    document.getElementById('modalStdCourse').innerText = data.course;
+    document.getElementById('modalStdCgpa').innerText = (data.cgpa && data.cgpa > 0) ? data.cgpa + ' / 10.00' : 'N/A';
+    document.getElementById('modalStdEmail').innerText = data.email;
+    document.getElementById('modalStdBio').innerText = data.bio ? data.bio : 'No student bio recorded.';
+    document.getElementById('modalStdFullLink').href = 'view_profile.php?id=' + data.id;
+
+    if (data.is_online) {
+        document.getElementById('modalStdStatus').innerHTML = '<span style="color:#10b981; font-weight:700; font-size:0.85rem;"><i class="fa-solid fa-circle" style="font-size:0.55rem; margin-right:4px;"></i> Online Now</span>';
+    } else {
+        document.getElementById('modalStdStatus').innerHTML = '<span style="color:#94a3b8; font-weight:600; font-size:0.85rem;"><i class="fa-solid fa-circle" style="font-size:0.55rem; margin-right:4px;"></i> Offline</span>';
+    }
+
+    const modal = document.getElementById('studentQuickViewModal');
+    modal.style.display = 'flex';
+}
+
+function closeStudentModal() {
+    document.getElementById('studentQuickViewModal').style.display = 'none';
+}
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -60,16 +60,23 @@ if ($tab === 'alumni') {
                    COALESCE(ap.bio, 'No biography available.') as bio,
                    ap.profile_pic,
                    ap.company, ap.position as designation, ap.industry, ap.location, ap.linkedin as a_linkedin, ap.mentorship_available,
-                   ap.reg_no
+                   ap.reg_no, COALESCE(ap.is_blue_tick, 0) as is_blue_tick
             FROM users u
             JOIN alumni_profiles ap ON u.id = ap.user_id
             WHERE u.role = 'alumni'";
     
     $params = [];
     if (!empty($search)) {
-        $sql .= " AND (u.name LIKE ? OR ap.reg_no LIKE ? OR ap.company LIKE ? OR ap.position LIKE ?)";
-        $sp = "%{$search}%";
-        array_push($params, $sp, $sp, $sp, $sp);
+        $clean_search_id = preg_replace('/[^0-9]/', '', $search);
+        if (!empty($clean_search_id)) {
+            $sql .= " AND (u.name LIKE ? OR ap.reg_no LIKE ? OR ap.company LIKE ? OR ap.position LIKE ? OR u.id = ?)";
+            $sp = "%{$search}%";
+            array_push($params, $sp, $sp, $sp, $sp, intval($clean_search_id));
+        } else {
+            $sql .= " AND (u.name LIKE ? OR ap.reg_no LIKE ? OR ap.company LIKE ? OR ap.position LIKE ?)";
+            $sp = "%{$search}%";
+            array_push($params, $sp, $sp, $sp, $sp);
+        }
     }
     if (!empty($year_filter)) {
         $sql .= " AND (ap.passing_year = ? OR ap.graduation_year = ?)";
@@ -529,11 +536,17 @@ require_once __DIR__ . '/../includes/header.php';
                                         <img src="<?php echo $userAvatar; ?>" alt="<?php echo htmlspecialchars($alum['name']); ?>" class="alumni-avatar" style="width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 3px solid <?php echo ($tab === 'alumni') ? '#818cf8' : '#38bdf8'; ?>; flex-shrink: 0; background: rgba(255,255,255,0.05);">
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
-                                            <?php echo htmlspecialchars($alum['name']); ?>
-                                            <span style="font-size: 0.72rem; font-weight: 600; color: <?php echo ($tab === 'alumni') ? 'var(--theme-accent-purple)' : '#38bdf8'; ?>; display: block; margin-top: 2px; text-transform: uppercase;">(<?php echo htmlspecialchars($roleTitle); ?>)</span>
+                                        <?php $alumniIdStr = !empty($alum['reg_no']) ? $alum['reg_no'] : ('ALU-' . (!empty($alum['passing_year']) && $alum['passing_year'] !== 'N/A' ? $alum['passing_year'] : '2024') . '-' . str_pad($u_id, 4, '0', STR_PAD_LEFT)); ?>
+                                        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; display: flex; align-items: center; gap: 0.3rem;">
+                                            <span><?php echo htmlspecialchars($alum['name']); ?></span>
+                                            <?php if (!empty($alum['is_blue_tick'])): ?>
+                                                <i class="fa-solid fa-circle-check" style="color: #38bdf8; font-size: 1.05rem;" title="Top Recruiter / High Package Verified Alumni"></i>
+                                            <?php endif; ?>
                                         </h4>
-                                        <div style="font-size: 0.85rem; color: <?php echo ($tab === 'alumni') ? '#818cf8' : 'var(--theme-text-secondary)'; ?>; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                                        <div style="font-size: 0.72rem; font-weight: 700; color: var(--theme-accent-purple); margin-top: 2px;">
+                                            <i class="fa-solid fa-id-badge" style="margin-right: 2px;"></i> ID: <?php echo htmlspecialchars($alumniIdStr); ?>
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
                                             <?php echo htmlspecialchars($designationText); ?>
                                         </div>
 

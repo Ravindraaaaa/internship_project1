@@ -74,6 +74,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// Handle Blue Tick Badge Toggle Action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_blue_tick') {
+    $alumni_id = intval($_POST['alumni_user_id'] ?? 0);
+    if ($alumni_id > 0) {
+        try {
+            $stmtCurr = $pdo->prepare("SELECT is_blue_tick FROM alumni_profiles WHERE user_id = ?");
+            $stmtCurr->execute([$alumni_id]);
+            $currTick = (int)$stmtCurr->fetchColumn();
+            $newTick = ($currTick === 1) ? 0 : 1;
+
+            $upd = $pdo->prepare("UPDATE alumni_profiles SET is_blue_tick = ? WHERE user_id = ?");
+            $upd->execute([$newTick, $alumni_id]);
+
+            $tickStatusMsg = ($newTick === 1) ? "Verified Blue Tick Badge granted to Alumni!" : "Verified Blue Tick Badge removed.";
+            set_flash('success', $tickStatusMsg);
+        } catch (Exception $e) {
+            set_flash('error', 'Error updating Verified Blue Tick status: ' . $e->getMessage());
+        }
+    }
+    header("Location: dashboard.php?tab=alumni");
+    exit;
+}
+
 // Handle Add Alumni Form Action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_alumni') {
     $name = trim($_POST['name'] ?? '');
@@ -284,7 +307,7 @@ try {
     $pending_approvals = $stmtPend->fetchAll();
 
     if ($tab === 'alumni') {
-        $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.status, u.last_active, ap.graduation_year, ap.course, ap.company, ap.position 
+        $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.status, u.last_active, ap.graduation_year, ap.course, ap.company, ap.position, ap.reg_no, COALESCE(ap.is_blue_tick, 0) as is_blue_tick 
                              FROM users u 
                              LEFT JOIN alumni_profiles ap ON u.id = ap.user_id 
                              WHERE u.role = 'alumni' 
@@ -509,7 +532,12 @@ require_once __DIR__ . '/../includes/header.php';
                                     $isOnline = (!empty($alm['last_active']) && (strtotime($alm['last_active']) >= (time() - 300)));
                                 ?>
                                     <tr>
-                                        <td><strong><?php echo htmlspecialchars($alm['name']); ?></strong></td>
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($alm['name']); ?></strong>
+                                            <?php if (!empty($alm['is_blue_tick'])): ?>
+                                                <i class="fa-solid fa-circle-check" style="color: #38bdf8; font-size: 0.95rem; margin-left: 4px;" title="Top Recruiter / High Package Verified Alumni"></i>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo htmlspecialchars($alm['email']); ?></td>
                                         <td><?php echo htmlspecialchars($alm['graduation_year'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($alm['course'] ?? 'N/A'); ?></td>
@@ -527,6 +555,13 @@ require_once __DIR__ . '/../includes/header.php';
                                         </td>
                                         <td><span class="badge badge-<?php echo $alm['status'] === 'approved' ? 'approved' : ($alm['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($alm['status']); ?></span></td>
                                         <td style="text-align: right; display:flex; gap:0.4rem; justify-content:flex-end;">
+                                            <form action="dashboard.php" method="POST" style="display:inline;">
+                                                <input type="hidden" name="action" value="toggle_blue_tick">
+                                                <input type="hidden" name="alumni_user_id" value="<?php echo $alm['id']; ?>">
+                                                <button type="submit" class="btn" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px; background: <?php echo (!empty($alm['is_blue_tick']) ? 'rgba(56,189,248,0.2)' : 'linear-gradient(135deg, #0284c7, #38bdf8)'); ?>; border:1px solid #38bdf8; color: <?php echo (!empty($alm['is_blue_tick']) ? '#38bdf8' : '#ffffff'); ?>;" title="Toggle Verified Blue Tick Badge">
+                                                    <i class="fa-solid fa-circle-check"></i> <?php echo (!empty($alm['is_blue_tick']) ? 'Remove Tick' : 'Blue Tick'); ?>
+                                                </button>
+                                            </form>
                                             <?php if ($alm['status'] !== 'approved'): ?>
                                                 <a href="admin_approvals.php?action=approve&id=<?php echo $alm['id']; ?>&tab=alumni" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;">Approve</a>
                                             <?php endif; ?>
