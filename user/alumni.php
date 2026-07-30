@@ -83,6 +83,36 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Group members into Passing Year -> Branch -> Batch hierarchy
+$hierarchy = [];
+foreach ($members as $m) {
+    $yr = (!empty($m['passing_year']) && $m['passing_year'] !== 'N/A') ? $m['passing_year'] : 'Other / Unspecified';
+    $br = (!empty($m['course']) && $m['course'] !== 'Unknown') ? $m['course'] : 'General Stream';
+    $bt = !empty($m['batch']) ? $m['batch'] : ($yr !== 'Other / Unspecified' ? "Class of " . $yr : "General");
+    
+    if (!isset($hierarchy[$yr])) $hierarchy[$yr] = [];
+    if (!isset($hierarchy[$yr][$br])) $hierarchy[$yr][$br] = [];
+    if (!isset($hierarchy[$yr][$br][$bt])) $hierarchy[$yr][$br][$bt] = [];
+    
+    $hierarchy[$yr][$br][$bt][] = $m;
+}
+
+// Active year metrics
+$active_year = !empty($year_filter) ? $year_filter : null;
+$year_alumni_count = 0;
+$top_companies_year = [];
+if ($active_year) {
+    try {
+        $stmtY = $pdo->prepare("SELECT COUNT(*) FROM alumni_profiles WHERE passing_year = ? OR graduation_year = ?");
+        $stmtY->execute([$active_year, $active_year]);
+        $year_alumni_count = (int)$stmtY->fetchColumn();
+
+        $stmtC = $pdo->prepare("SELECT company, COUNT(*) as cnt FROM alumni_profiles WHERE (passing_year = ? OR graduation_year = ?) AND company IS NOT NULL AND company != '' GROUP BY company ORDER BY cnt DESC LIMIT 5");
+        $stmtC->execute([$active_year, $active_year]);
+        $top_companies_year = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -102,8 +132,8 @@ require_once __DIR__ . '/../includes/header.php';
         margin: 0;
     }
     .filter-bar {
-        background: #0f172a;
-        border: 1px solid #1e293b;
+        background: var(--theme-card-bg, #0f172a);
+        border: 1px solid var(--theme-border, #1e293b);
         border-radius: 12px;
         padding: 1.5rem;
         display: grid;
@@ -115,22 +145,22 @@ require_once __DIR__ . '/../includes/header.php';
     .filter-group label {
         display: block;
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--theme-text-secondary, #94a3b8);
         margin-bottom: 0.5rem;
         font-weight: 600;
     }
     .filter-group input, .filter-group select {
         width: 100%;
-        background: #1e293b;
-        border: 1px solid #334155;
-        color: #f8fafc;
+        background: var(--theme-bg-secondary, #1e293b);
+        border: 1px solid var(--theme-border, #334155);
+        color: var(--theme-text, #f8fafc);
         border-radius: 8px;
         padding: 0.75rem 1rem;
         font-size: 0.85rem;
         outline: none;
     }
     .filter-group input::placeholder {
-        color: #475569;
+        color: var(--theme-text-secondary, #64748b);
     }
     .btn-filter {
         background: linear-gradient(135deg, #6366f1, #a855f7);
@@ -147,8 +177,8 @@ require_once __DIR__ . '/../includes/header.php';
     }
     .btn-reset {
         background: transparent;
-        color: #cbd5e1;
-        border: 1px solid #334155;
+        color: var(--theme-text, #cbd5e1);
+        border: 1px solid var(--theme-border, #334155);
         padding: 0.75rem 1.5rem;
         border-radius: 8px;
         font-weight: 600;
@@ -159,7 +189,7 @@ require_once __DIR__ . '/../includes/header.php';
         gap: 0.5rem;
     }
     .btn-reset:hover {
-        background: #1e293b;
+        background: var(--theme-bg-secondary, #1e293b);
     }
     .members-grid {
         display: grid;
@@ -167,12 +197,12 @@ require_once __DIR__ . '/../includes/header.php';
         gap: 1.5rem;
     }
     .member-card {
-        background: #1e293b;
+        background: var(--theme-card-bg, #1e293b);
         border-radius: 16px;
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
-        border: 1px solid rgba(255,255,255,0.02);
+        border: 1px solid var(--theme-border, rgba(255,255,255,0.05));
     }
     .member-top {
         display: flex;
@@ -329,7 +359,15 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                 </div>
-                <div class="filter-group">
+                <?php endif; ?>
+                
+                <!-- Filter Bar Form -->
+                <form action="alumni.php" method="GET" class="filter-bar">
+                    <div class="filter-group">
+                        <label>Search Name / Reg No</label>
+                        <input type="text" name="search" placeholder="Name, Company, Position..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
+                    <div class="filter-group">
                     <label>Role Type</label>
                     <select name="role">
                         <option value="">All Members</option>
@@ -380,12 +418,14 @@ require_once __DIR__ . '/../includes/header.php';
                 <p style="color:#94a3b8;">Adjust your filters to find members.</p>
             </div>
             <?php else: ?>
-            <?php foreach ($hierarchy as $yr => $branches): ?>
+            <?php foreach ($hierarchy as $yr => $branches): 
+                $yr_badge_text = (is_numeric($yr) && $yr > 1900) ? "Passing Year: " . $yr : (is_numeric($yr) ? "Academic Year: Year " . $yr : (strpos($yr, 'Year') === 0 ? $yr : "Batch: " . htmlspecialchars($yr)));
+            ?>
             <div style="margin-bottom: 2.5rem;">
                 <!-- Passing Year Header -->
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 0.5rem;">
                     <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); letter-spacing: 0.5px;">
-                        🎓 Passing Year: <?php echo $yr; ?>
+                        🎓 <?php echo $yr_badge_text; ?>
                     </span>
                 </div>
 
@@ -401,39 +441,48 @@ require_once __DIR__ . '/../includes/header.php';
                         <!-- Batch Sub-Tag -->
                         <div style="font-size: 0.95rem; font-weight: 700; color: var(--theme-text-secondary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
                             <i class="fa-solid fa-layer-group" style="color: #a855f7;"></i> Batch: <?php echo htmlspecialchars($bt); ?>
-                            <span style="padding: 0.25rem 0.75rem; background: var(--theme-bg-secondary); color: var(--theme-text); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid var(--theme-border);"><?php echo count($members); ?> Alumni</span>
+                            <span style="padding: 0.25rem 0.75rem; background: var(--theme-bg-secondary); color: var(--theme-text); border-radius: 20px; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); border: 1px solid var(--theme-border);"><?php echo count($members); ?> Members</span>
                         </div>
 
                         <!-- Alumni Cards Grid -->
                         <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
-                            <?php foreach ($members as $alum): ?>
+                            <?php foreach ($members as $alum): 
+                                $userAvatar = (!empty($alum['profile_pic']) && file_exists(__DIR__ . '/../' . ltrim($alum['profile_pic'], '/'))) ? htmlspecialchars($alum['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                                $roleTitle = !empty($alum['role']) ? ucfirst($alum['role']) : 'Alumnus';
+                                $designationText = !empty($alum['position']) ? $alum['position'] : (!empty($alum['designation']) ? $alum['designation'] : $roleTitle);
+                                $companyText = !empty($alum['company']) ? $alum['company'] : 'Independent';
+                                $locationText = !empty($alum['location']) ? $alum['location'] : 'Pune, India';
+                                $hasMentorship = !empty($alum['mentorship_available']) && ($alum['mentorship_available'] == 1 || strtolower((string)$alum['mentorship_available']) === 'yes');
+                                $u_id = !empty($alum['user_id']) ? $alum['user_id'] : (!empty($alum['id']) ? $alum['id'] : 0);
+                            ?>
                             <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
                                 <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
                                     <div class="alumni-avatar-container">
-                                        <img src="<?php echo htmlspecialchars($alum['profile_pic']); ?>" alt="Profile" class="alumni-avatar" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: #fff;">
+                                        <img src="<?php echo $userAvatar; ?>" alt="<?php echo htmlspecialchars($alum['name']); ?>" class="alumni-avatar" style="width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: rgba(255,255,255,0.05);">
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
                                         <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px;">
                                             <?php echo htmlspecialchars($alum['name']); ?>
+                                            <span style="font-size: 0.72rem; font-weight: 600; color: var(--theme-accent-purple); display: block; margin-top: 2px; text-transform: uppercase;">(<?php echo htmlspecialchars($roleTitle); ?>)</span>
                                         </h4>
                                         <div style="font-size: 0.85rem; color: #818cf8; font-weight: 700; margin-top: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
-                                            <?php echo htmlspecialchars($alum['designation'] ?: 'Alumnus'); ?>
+                                            <?php echo htmlspecialchars($designationText); ?>
                                         </div>
-                                        <div style="font-size: 0.9rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
-                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['company'] ?: 'Independent'); ?>
+                                        <div style="font-size: 0.88rem; color: var(--theme-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">
+                                            <i class="fa-solid fa-building" style="opacity: 0.6; margin-right: 4px;"></i> <?php echo htmlspecialchars($companyText); ?>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--theme-border); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                                    <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($alum['location'] ?: 'Pune, India'); ?></span>
-                                    <?php if ($alum['mentorship_available']): ?>
+                                    <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($locationText); ?></span>
+                                    <?php if ($hasMentorship): ?>
                                     <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
                                     <?php endif; ?>
                                 </div>
 
                                 <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(<?php echo $alum['user_id']; ?>)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(<?php echo $u_id; ?>)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <i class="fa-solid fa-folder-open"></i> Digital Archive
                                     </button>
                                     <?php if (!empty($alum['linkedin'])): ?>
@@ -443,35 +492,14 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?php endif; ?>
                                 </div>
                             </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
-                    
-                    <div class="member-bio">
-                        <?php echo nl2br(htmlspecialchars($m['bio'])); ?>
-                    </div>
-                    
-                    <?php if ($is_alumni && !empty($m['company'])): ?>
-                    <div class="employment-card">
-                        <div class="emp-title"><?php echo htmlspecialchars($m['designation'] ?: 'Professional'); ?></div>
-                        <div class="emp-company">
-                            <i class="fa-solid fa-building"></i> 
-                            <?php echo htmlspecialchars($m['company']); ?> 
-                            <?php if(!empty($m['industry'])) echo ' | ' . htmlspecialchars($m['industry']); ?>
-                        </div>
-                        <?php if (!empty($m['bio']) && strlen($m['bio']) > 20): ?>
-                        <div class="emp-desc">
-                            <?php echo htmlspecialchars($m['designation'] ?: 'Professional') . ' at ' . htmlspecialchars($m['company']) . '. ' . htmlspecialchars($m['course']) . ' class of ' . htmlspecialchars($m['passing_year']) . '.'; ?>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <button class="btn-connect" onclick="openArchiveModal(<?php echo $m['user_id']; ?>)">
-                        <i class="fa-solid fa-user-plus"></i> Connect <?php echo $is_alumni ? 'as Mentor' : 'with Student'; ?>
-                    </button>
+                    <?php endforeach; ?>
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php endforeach; ?>
             <?php endif; ?>
         </main>
     </div>

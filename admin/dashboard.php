@@ -74,6 +74,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// Handle Add Alumni Form Action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_alumni') {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $year = intval($_POST['graduation_year'] ?? date('Y'));
+    $course = trim($_POST['course'] ?? 'General');
+    $company = trim($_POST['company'] ?? '');
+    $position = trim($_POST['position'] ?? '');
+    $raw_pass = !empty($_POST['password']) ? trim($_POST['password']) : 'Alumni#' . mt_rand(1000, 9999);
+    
+    if (!empty($name) && !empty($email)) {
+        try {
+            require_once __DIR__ . '/../includes/mailer_helper.php';
+
+            $stmtUser = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+            $stmtUser->execute([$email]);
+            $uId = $stmtUser->fetchColumn();
+            
+            $passHash = password_hash($raw_pass, PASSWORD_BCRYPT);
+
+            if (!$uId) {
+                $stmtIns = $pdo->prepare("INSERT INTO users (name, email, password, role, status, created_at) VALUES (?, ?, ?, 'alumni', 'approved', NOW())");
+                $stmtIns->execute([$name, $email, $passHash]);
+                $uId = $pdo->lastInsertId();
+            } else {
+                $stmtUpd = $pdo->prepare("UPDATE users SET password = ?, status = 'approved', role = 'alumni' WHERE id = ?");
+                $stmtUpd->execute([$passHash, $uId]);
+            }
+            
+            $stmtProf = $pdo->prepare("INSERT INTO alumni_profiles (user_id, graduation_year, passing_year, course, company, position) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE graduation_year=?, passing_year=?, course=?, company=?, position=?");
+            $stmtProf->execute([$uId, $year, $year, $course, $company, $position, $year, $year, $course, $company, $position]);
+            
+            // Dispatch Credentials Welcome Email to Alumni
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+            $login_url = $protocol . ($_SERVER['HTTP_HOST'] ?? 'localhost') . dirname($_SERVER['PHP_SELF'] ?? '') . '/../login.php';
+
+            $welcome_email_html = build_enterprise_email_template(
+                "Welcome to AlumniNet - Your Credentials",
+                "<p>Hello <strong>" . htmlspecialchars($name) . "</strong>,</p>
+                <p>An administrator has created your official Alumni Account on the AlumniNet Portal.</p>
+                <div style='background: rgba(255,255,255,0.05); padding: 18px; border-radius: 10px; margin: 18px 0; border-left: 4px solid #818cf8;'>
+                    <p style='margin: 0 0 8px 0;'><strong>Username / Email:</strong> " . htmlspecialchars($email) . "</p>
+                    <p style='margin: 0 0 8px 0;'><strong>Password:</strong> <code style='background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; color: #38bdf8; font-weight: bold; font-size: 1.05em;'>" . htmlspecialchars($raw_pass) . "</code></p>
+                    <p style='margin: 0;'><strong>Role:</strong> Alumni Member</p>
+                </div>
+                <p>You can now log in to complete your portfolio, mentor students, and share career referral opportunities.</p>",
+                $login_url,
+                "Log In to AlumniNet"
+            );
+
+            $mail_res = send_logged_email($email, "AlumniNet Credentials - Welcome {$name}", $welcome_email_html, $name, 'alumni_credentials');
+            
+            set_flash('success', "Alumni profile for {$name} created! Credentials sent to {$email} (Login Password: {$raw_pass}).");
+        } catch (Exception $e) {
+            set_flash('error', 'Error creating alumni account: ' . $e->getMessage());
+        }
+    } else {
+        set_flash('error', 'Please provide both alumni name and valid email address.');
+    }
+    header("Location: dashboard.php?tab=alumni");
+    exit;
+}
+
 require_once __DIR__ . '/../includes/mailer_helper.php';
 require_once __DIR__ . '/../includes/notification_helper.php';
 
@@ -205,14 +268,15 @@ $student_by_stream = [];
 
 try {
     $admin_stats['users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
-    $admin_stats['pending'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'alumni' AND status = 'pending'")->fetchColumn();
+    $admin_stats['pending'] = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'pending'")->fetchColumn();
     $admin_stats['jobs'] = $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'active'")->fetchColumn();
     $admin_stats['events'] = $pdo->query("SELECT COUNT(*) FROM events WHERE event_date >= NOW()")->fetchColumn();
     
-    $stmtPend = $pdo->query("SELECT u.id, u.name, u.email, ap.graduation_year, ap.course, ap.company, ap.position 
+    $stmtPend = $pdo->query("SELECT u.id, u.name, u.email, COALESCE(ap.graduation_year, 'N/A') as graduation_year, COALESCE(ap.course, sp.course, 'General') as course, ap.company, ap.position 
                              FROM users u 
-                             JOIN alumni_profiles ap ON u.id = ap.user_id 
-                             WHERE u.role = 'alumni' AND u.status = 'pending' 
+                             LEFT JOIN alumni_profiles ap ON u.id = ap.user_id 
+                             LEFT JOIN student_profiles sp ON u.id = sp.user_id 
+                             WHERE u.status = 'pending' 
                              ORDER BY u.created_at DESC");
     $pending_approvals = $stmtPend->fetchAll();
 
@@ -247,9 +311,9 @@ try {
         $alumni_by_stream = $pdo->query("SELECT course, COUNT(*) as qty FROM alumni_profiles GROUP BY course")->fetchAll();
         $student_by_stream = $pdo->query("SELECT course, COUNT(*) as qty FROM student_profiles GROUP BY course")->fetchAll();
     } elseif ($tab === 'feedback') {
-        $stmt = $pdo->query("SELECT f.*, u.name as user_name, u.email as user_email, u.role as user_role 
+        $stmt = $pdo->query("SELECT f.*, COALESCE(u.name, f.name, 'User') as user_name, COALESCE(u.email, f.email, '') as user_email, COALESCE(u.role, f.role, 'alumni') as user_role 
                              FROM feedback f 
-                             JOIN users u ON f.user_id = u.id 
+                             LEFT JOIN users u ON f.user_id = u.id 
                              ORDER BY f.created_at DESC");
         $all_feedback = $stmt->fetchAll();
     } elseif ($tab === 'announcements') {
@@ -404,7 +468,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="card-glass">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem;">
                         <h3 style="font-size: 1.3rem; margin:0;"><i data-lucide="user-check" style="vertical-align: middle; margin-right: 0.5rem; color: var(--theme-accent-purple);"></i> Manage Alumni Members</h3>
-                        <button class="btn btn-primary" onclick="openModal('importAlumniModal')"><i class="fa-solid fa-file-import"></i> Import Alumni (CSV)</button>
+                        <div style="display:flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" onclick="openModal('addAlumniModal')"><i class="fa-solid fa-user-plus"></i> Add Single Alumni</button>
+                            <button class="btn btn-secondary" onclick="openModal('importAlumniModal')"><i class="fa-solid fa-file-import"></i> Import Alumni (CSV/PDF)</button>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="custom-table">
@@ -1175,6 +1242,91 @@ require_once __DIR__ . '/../includes/header.php';
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('replyFeedbackModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Reply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== ADD SINGLE ALUMNI MODAL ==================== -->
+<div class="modal" id="addAlumniModal">
+    <div class="modal-content" style="max-width: 580px;">
+        <button class="modal-close" onclick="closeModal('addAlumniModal')">&times;</button>
+        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-user-plus" style="color: var(--theme-accent-purple);"></i> Add Single Alumni</h2>
+        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter alumni profile details to create and register member data.</p>
+        
+        <form action="dashboard.php" method="POST">
+            <input type="hidden" name="action" value="add_alumni">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Full Name</label>
+                    <input type="text" name="name" class="input-glass" placeholder="e.g. Rahul Sharma" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Email Address</label>
+                    <input type="email" name="email" class="input-glass" placeholder="rahul@example.com" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Graduation Year</label>
+                    <input type="number" name="graduation_year" class="input-glass" placeholder="<?php echo date('Y'); ?>" value="<?php echo date('Y'); ?>" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Course Stream</label>
+                    <input type="text" name="course" class="input-glass" placeholder="e.g. B.Tech Computer Engineering" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Current Company</label>
+                    <input type="text" name="company" class="input-glass" placeholder="e.g. TCS / Google">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Designation / Position</label>
+                    <input type="text" name="position" class="input-glass" placeholder="e.g. Senior Software Engineer">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; display:block;">Initial Login Password (Optional)</label>
+                <input type="text" name="password" class="input-glass" placeholder="Auto-generated if left blank (e.g. Alumni#8492)">
+                <small style="color: var(--theme-text-secondary); font-size: 0.76rem; margin-top: 0.3rem; display: block;">
+                    <i class="fa-solid fa-envelope-circle-check" style="color: #38bdf8;"></i> Credentials (Username & Password) will be emailed directly to the alumni's address upon submission.
+                </small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addAlumniModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Submit Alumni Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== IMPORT ALUMNI MODAL (CSV/PDF) ==================== -->
+<div class="modal" id="importAlumniModal">
+    <div class="modal-content" style="max-width: 580px;">
+        <button class="modal-close" onclick="closeModal('importAlumniModal')">&times;</button>
+        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-file-import" style="color: var(--theme-accent-purple);"></i> Bulk Import Alumni Data</h2>
+        <p style="color: var(--theme-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Upload CSV, Excel, or PDF document containing alumni records.</p>
+        
+        <form action="enterprise_control.php" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="upload_import">
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; display:block;">Select File (.csv, .xlsx, .pdf)</label>
+                <input type="file" name="import_file" accept=".csv,.xlsx,.pdf" class="input-glass" required>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <a href="download_alumni_template.php" class="btn btn-secondary btn-small" style="font-size: 0.8rem;"><i class="fa-solid fa-download"></i> Download CSV Template</a>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('importAlumniModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Start Import</button>
+                </div>
             </div>
         </form>
     </div>

@@ -169,10 +169,24 @@ try {
             INDEX idx_tkt_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     } else {
-        $checkTktNum = $pdo->query("SHOW COLUMNS FROM support_tickets LIKE 'ticket_number'")->fetch();
-        if (!$checkTktNum) {
-            $pdo->exec("ALTER TABLE support_tickets ADD COLUMN ticket_number VARCHAR(100) NULL AFTER id");
+        $tktCols = [
+            'ticket_number' => "VARCHAR(100) NULL AFTER id",
+            'description' => "TEXT NULL",
+            'message' => "TEXT NULL",
+            'attachment' => "VARCHAR(255) DEFAULT NULL",
+            'updated_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+        ];
+        foreach ($tktCols as $col => $definition) {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM support_tickets LIKE '$col'")->fetch();
+            if (!$checkCol) {
+                $pdo->exec("ALTER TABLE support_tickets ADD COLUMN $col $definition");
+            }
         }
+        // Ensure status column accommodates custom status strings
+        try {
+            $pdo->exec("ALTER TABLE support_tickets MODIFY COLUMN status VARCHAR(50) DEFAULT 'New'");
+            $pdo->exec("ALTER TABLE support_tickets MODIFY COLUMN priority VARCHAR(50) DEFAULT 'Medium'");
+        } catch (Exception $e) {}
     }
 
     // Ticket Replies Table

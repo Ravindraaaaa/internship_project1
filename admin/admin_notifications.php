@@ -181,11 +181,20 @@ require_once __DIR__ . '/../includes/header.php';
                     <div style="margin-bottom: 1.25rem;">
                         <label style="font-size: 0.78rem; font-weight: 700; color: var(--theme-text-secondary); text-transform: uppercase; margin-bottom: 0.4rem; display: block;">1-Click Template Fill:</label>
                         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-secondary btn-small" onclick="fillTemplate('event')"><i class="fa-solid fa-calendar-check" style="color:#60a5fa;"></i> Campus Event</button>
-                            <button type="button" class="btn btn-secondary btn-small" onclick="fillTemplate('job')"><i class="fa-solid fa-briefcase" style="color:#34d399;"></i> Job Referral</button>
-                            <button type="button" class="btn btn-secondary btn-small" onclick="fillTemplate('maint')"><i class="fa-solid fa-screwdriver-wrench" style="color:#fbbf24;"></i> Maintenance</button>
-                            <button type="button" class="btn btn-secondary btn-small" onclick="fillTemplate('urgent')"><i class="fa-solid fa-triangle-exclamation" style="color:#f87171;"></i> Urgent Alert</button>
+                            <button type="button" class="btn btn-secondary btn-small template-preset-btn" id="btn-tpl-event" onclick="fillTemplate('event')"><i class="fa-solid fa-calendar-check" style="color:#60a5fa;"></i> Campus Event</button>
+                            <button type="button" class="btn btn-secondary btn-small template-preset-btn" id="btn-tpl-job" onclick="fillTemplate('job')"><i class="fa-solid fa-briefcase" style="color:#34d399;"></i> Job Referral</button>
+                            <button type="button" class="btn btn-secondary btn-small template-preset-btn" id="btn-tpl-maint" onclick="fillTemplate('maint')"><i class="fa-solid fa-screwdriver-wrench" style="color:#fbbf24;"></i> Maintenance</button>
+                            <button type="button" class="btn btn-secondary btn-small template-preset-btn" id="btn-tpl-urgent" onclick="fillTemplate('urgent')"><i class="fa-solid fa-triangle-exclamation" style="color:#f87171;"></i> Urgent Alert</button>
                         </div>
+                    </div>
+
+                    <!-- Selected Template Banner Preview -->
+                    <div id="selected-template-preview" style="display: none; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); padding: 1rem; border-radius: 10px; margin-bottom: 1.25rem;">
+                        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #818cf8; margin-bottom: 0.3rem;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Selected Broadcast Template Preview
+                        </div>
+                        <div id="preview-tpl-title" style="font-weight: 700; color: var(--theme-text); font-size: 0.95rem;"></div>
+                        <div id="preview-tpl-msg" style="font-size: 0.85rem; color: var(--theme-text-secondary); margin-top: 0.25rem;"></div>
                     </div>
 
                     <form action="admin_notifications.php" method="POST">
@@ -372,6 +381,9 @@ function fillTemplate(type) {
     const msgInput = document.getElementById('notif_message');
     const typeSelect = document.getElementById('notif_type');
     const targetSelect = document.getElementById('notif_target');
+    const previewContainer = document.getElementById('selected-template-preview');
+    const previewTitle = document.getElementById('preview-tpl-title');
+    const previewMsg = document.getElementById('preview-tpl-msg');
 
     if (type === 'event') {
         titleInput.value = "🎓 Campus Tech Summit 2026 Registration Open!";
@@ -393,6 +405,20 @@ function fillTemplate(type) {
         msgInput.value = "Please review your profile details and verify your contact information to ensure seamless campus networking.";
         typeSelect.value = "danger";
         targetSelect.value = "all";
+    }
+
+    if (previewContainer && previewTitle && previewMsg) {
+        previewTitle.textContent = titleInput.value;
+        previewMsg.textContent = msgInput.value;
+        previewContainer.style.display = 'block';
+    }
+
+    document.querySelectorAll('.template-preset-btn').forEach(btn => {
+        btn.style.borderColor = 'var(--theme-border)';
+    });
+    const activeBtn = document.getElementById('btn-tpl-' + type);
+    if (activeBtn) {
+        activeBtn.style.borderColor = 'var(--theme-accent-purple)';
     }
 }
 </script>

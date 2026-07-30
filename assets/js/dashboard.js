@@ -1,3 +1,34 @@
+window.switchMessageLogTab = function(tabType) {
+    const mentorshipBtn = document.getElementById('btn-show-mentorship');
+    const chatsBtn = document.getElementById('btn-show-chats');
+    const mentorshipLogs = document.getElementById('mentorship-logs-container');
+    const chatsLogs = document.getElementById('chats-logs-container');
+
+    if (tabType === 'mentorship') {
+        if (mentorshipBtn) {
+            mentorshipBtn.style.background = 'var(--theme-accent-purple)';
+            mentorshipBtn.style.color = '#ffffff';
+        }
+        if (chatsBtn) {
+            chatsBtn.style.background = 'transparent';
+            chatsBtn.style.color = 'var(--theme-text-secondary)';
+        }
+        if (mentorshipLogs) mentorshipLogs.style.display = 'block';
+        if (chatsLogs) chatsLogs.style.display = 'none';
+    } else {
+        if (mentorshipBtn) {
+            mentorshipBtn.style.background = 'transparent';
+            mentorshipBtn.style.color = 'var(--theme-text-secondary)';
+        }
+        if (chatsBtn) {
+            chatsBtn.style.background = 'var(--theme-accent-purple)';
+            chatsBtn.style.color = '#ffffff';
+        }
+        if (mentorshipLogs) mentorshipLogs.style.display = 'none';
+        if (chatsLogs) chatsLogs.style.display = 'block';
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     
     // Global dashboard skeleton loader is now handled in main.js

@@ -35,18 +35,26 @@ if (isset($_GET['mark_all_read'])) {
 $unread_count = 0;
 $notifications = [];
 
-if ($user_id_nav > 0) {
+$user_ids = [];
+if (!empty($_SESSION['user_id'])) $user_ids[] = (int)$_SESSION['user_id'];
+if (!empty($_SESSION['admin_id'])) $user_ids[] = (int)$_SESSION['admin_id'];
+$user_ids = array_values(array_unique(array_filter($user_ids)));
+if (empty($user_ids)) $user_ids = [$user_id_nav];
+
+$in_clause = implode(',', array_fill(0, count($user_ids), '?'));
+
+if ($user_id_nav > 0 || !empty($user_ids)) {
     $stmt = $pdo->prepare("SELECT n.*, s.name as sender_name, s.role as sender_role 
                            FROM notifications n 
                            LEFT JOIN users s ON n.sender_id = s.id 
-                           WHERE n.user_id = ? AND n.is_read = 0 
+                           WHERE n.user_id IN ($in_clause) AND n.is_read = 0 
                            ORDER BY n.created_at DESC LIMIT 10");
-    $stmt->execute([$user_id_nav]);
+    $stmt->execute($user_ids);
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-    $stmtCount->execute([$user_id_nav]);
-    $unread_count = $stmtCount->fetchColumn();
+    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id IN ($in_clause) AND is_read = 0");
+    $stmtCount->execute($user_ids);
+    $unread_count = (int)$stmtCount->fetchColumn();
 }
 
 $profile_link = ($user_role_nav === 'admin') ? '#' : 'profile.php';

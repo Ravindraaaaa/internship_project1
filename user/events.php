@@ -230,7 +230,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                     
                                                     <div style="display:flex; gap: 0.45rem; flex-wrap:wrap; flex:1 1 auto;">
                                                         <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Going</button>
-                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" onclick="handleRsvpClick(this)" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
                                                         <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Decline</button>
                                                     </div>
                                                     <?php if (!empty($my_status)): ?>
@@ -294,7 +294,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                     
                                                     <div style="display:flex; gap: 0.45rem; flex-wrap:wrap; flex:1 1 auto;">
                                                         <button type="submit" name="rsvp_status" value="going" class="btn <?php echo $my_status === 'going' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Going</button>
-                                                        <button type="submit" name="rsvp_status" value="interested" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
+                                                        <button type="submit" name="rsvp_status" value="interested" onclick="handleRsvpClick(this)" class="btn <?php echo $my_status === 'interested' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Interested</button>
                                                         <button type="submit" name="rsvp_status" value="not_going" class="btn <?php echo $my_status === 'not_going' ? 'btn-danger' : 'btn-secondary'; ?>" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px;">Decline</button>
                                                     </div>
                                                     <?php if (!empty($my_status)): ?>
@@ -402,6 +402,24 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<script>
+function handleRsvpClick(btn) {
+    if (!btn) return;
+    const form = btn.closest('form');
+    if (form) {
+        const buttons = form.querySelectorAll('button[type="submit"]');
+        buttons.forEach(b => {
+            if (b === btn) {
+                const text = b.textContent.trim();
+                b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + text;
+            } else {
+                b.style.opacity = '0.5';
+                b.style.pointerEvents = 'none';
+            }
+        });
+    }
+}
+</script>
 <script src="../assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

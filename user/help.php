@@ -34,7 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_ticket'])) {
             $ticket_error = 'Please fill out all required ticket fields.';
         } else {
             try {
-                $user_email = $_SESSION['user_email'] ?? get_user_email() ?? 'alumni@alumninet.edu';
+                $stmtDbUser = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+                $stmtDbUser->execute([$uid]);
+                $fetchedUser = $stmtDbUser->fetch();
+
+                $user_email = !empty($fetchedUser['email']) ? $fetchedUser['email'] : ($_SESSION['user_email'] ?? get_user_email());
+                if (empty($user_email)) {
+                    $user_email = 'alumni@alumninet.edu';
+                }
+                if (!empty($fetchedUser['name'])) {
+                    $user_name = $fetchedUser['name'];
+                }
+
                 $tkt_num = 'TKT-' . date('Y') . '-' . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
 
                 // Screenshot / Attachment upload handling
@@ -53,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_ticket'])) {
                     }
                 }
 
-                $stmt = $pdo->prepare("INSERT INTO support_tickets (ticket_number, user_id, subject, category, priority, description, attachment, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'New', NOW())");
-                $stmt->execute([$tkt_num, $uid, $subject, $category, $priority, $message, $attachment_path]);
+                $stmt = $pdo->prepare("INSERT INTO support_tickets (ticket_number, user_id, subject, category, priority, description, message, attachment, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'New', NOW())");
+                $stmt->execute([$tkt_num, $uid, $subject, $category, $priority, $message, $message, $attachment_path]);
 
                 // 1. Send Email to User
                 $user_email_html = build_enterprise_email_template(
@@ -87,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_ticket'])) {
                     null,
                     null
                 );
-                send_logged_email('admin@alumninet.edu', "Admin Alert: New Ticket {$tkt_num}", $admin_email_html, 'Admin Team', 'admin_ticket_alert');
+                $admin_target_email = get_admin_email();
+                send_logged_email($admin_target_email, "Admin Alert: New Ticket {$tkt_num}", $admin_email_html, 'Admin Team', 'admin_ticket_alert');
 
                 // 3. In-App Notifications
                 NotificationEngine::send([

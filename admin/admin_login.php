@@ -156,6 +156,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <span class="switch-slider" style="position: static; display: inline-block; width: 40px; height: 20px;"></span>
                     <span style="font-size: 0.85rem; color: var(--theme-text-secondary); font-weight: 500;">Remember me</span>
                 </label>
+                <a href="../forgot_password.php" style="font-size: 0.85rem; color: var(--theme-accent-purple); font-weight: 500; text-decoration: none;">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn btn-primary" id="admin-submit-btn" style="width: 100%; padding: 0.9rem; font-size: 1rem; background: linear-gradient(135deg, #ea580c 0%, #ea580c 100%);">

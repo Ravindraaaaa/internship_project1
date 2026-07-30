@@ -29,7 +29,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash('error', 'Please fill in all required feedback form fields.');
         } else {
             try {
-                $user_email = $_SESSION['user_email'] ?? get_user_email() ?? 'alumni@alumninet.edu';
+                $stmtDbUser = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+                $stmtDbUser->execute([$uid]);
+                $fetchedUser = $stmtDbUser->fetch();
+                
+                $user_email = !empty($fetchedUser['email']) ? $fetchedUser['email'] : ($_SESSION['user_email'] ?? get_user_email());
+                if (empty($user_email)) {
+                    $user_email = 'alumni@alumninet.edu';
+                }
+                if (!empty($fetchedUser['name'])) {
+                    $user_name = $fetchedUser['name'];
+                }
+                
                 $feedback_id = 'FDB-' . date('Y') . '-' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
 
                 // File Attachment processing
@@ -81,7 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     null,
                     null
                 );
-                send_logged_email('admin@alumninet.edu', "Admin Alert: New Feedback {$feedback_id}", $admin_email_html, 'Admin Team', 'admin_feedback_alert');
+                $admin_target_email = get_admin_email();
+                send_logged_email($admin_target_email, "Admin Alert: New Feedback {$feedback_id}", $admin_email_html, 'Admin Team', 'admin_feedback_alert');
 
                 // 3. In-App Notifications
                 NotificationEngine::send([

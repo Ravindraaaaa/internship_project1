@@ -239,3 +239,35 @@ if (!function_exists('send_logged_email')) {
         return $res;
     }
 }
+
+/**
+ * Get Dynamic Admin Recipient Email for Alerts & System Notifications
+ */
+if (!function_exists('get_admin_email')) {
+    function get_admin_email() {
+        global $pdo;
+        
+        $config_file = __DIR__ . '/../config/smtp.php';
+        $config = file_exists($config_file) ? require $config_file : [];
+
+        $from_email = trim($config['from_email'] ?? $config['username'] ?? (defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : (defined('SMTP_USERNAME') ? SMTP_USERNAME : '')));
+        if (!empty($from_email) && filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+            return $from_email;
+        }
+
+        if (isset($pdo)) {
+            try {
+                $stmt = $pdo->query("SELECT email FROM admins WHERE email IS NOT NULL AND email != '' ORDER BY id ASC LIMIT 1");
+                $admin_db_email = $stmt->fetchColumn();
+                if (!empty($admin_db_email) && filter_var($admin_db_email, FILTER_VALIDATE_EMAIL)) {
+                    return $admin_db_email;
+                }
+            } catch (Exception $e) {
+                // Failover
+            }
+        }
+
+        return 'admin@internship.com';
+    }
+}
+
