@@ -39,7 +39,7 @@
                 <i class="fa-solid fa-robot"></i>
             </button>
 
-            <div class="ai-chat-window" id="ai-chat-window">
+            <div class="ai-chat-window" id="ai-chat-window" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
                 <div class="ai-chat-header">
                     <div style="display:flex; align-items:center; gap:0.5rem; color:#ffffff;">
                         <i class="fa-solid fa-robot" style="color:var(--theme-accent-blue);"></i>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
 
-                <div class="ai-chat-body" id="ai-chat-body">
+                <div class="ai-chat-body" id="ai-chat-body" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
                     <!-- Message bubbles render here -->
                 </div>
 

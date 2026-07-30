@@ -82,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     register_failed_attempt($login_input);
                     log_login($user['id'], $login_input, 'failed');
                     $login_error = 'Your account has been blocked by the administrator.';
+                } elseif ($user['role'] === 'alumni' && $user['status'] === 'pending') {
+                    register_failed_attempt($login_input);
+                    log_login($user['id'], $login_input, 'failed');
+                    $login_error = 'Your Alumni registration is currently PENDING ADMIN APPROVAL. You will be able to sign in once an administrator approves your request.';
                 } else {
                     reset_failed_attempts($login_input);
                     log_login($user['id'], $login_input, 'success');

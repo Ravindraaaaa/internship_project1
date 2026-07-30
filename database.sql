@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS admins (
 -- 4. Alumni Profiles Table
 CREATE TABLE IF NOT EXISTS alumni_profiles (
     user_id INT PRIMARY KEY,
+    enrollment_id VARCHAR(100) DEFAULT NULL,
     graduation_year INT NOT NULL,
     course VARCHAR(255) NOT NULL,
     company VARCHAR(255),
@@ -555,3 +556,18 @@ INSERT INTO skills (id, name) VALUES
 (7, 'Robotics'),
 (8, 'Kubernetes')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+CREATE TABLE IF NOT EXISTS import_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    total_rows INT DEFAULT 0,
+    imported_count INT DEFAULT 0,
+    updated_count INT DEFAULT 0,
+    skipped_count INT DEFAULT 0,
+    failed_count INT DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

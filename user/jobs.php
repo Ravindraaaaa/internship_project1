@@ -246,7 +246,6 @@ require_once __DIR__ . '/../includes/header.php';
                                             <a href="apply_job.php?id=<?php echo $job['id']; ?>" target="_blank" class="btn btn-primary btn-small" style="white-space: nowrap !important; padding: 0.65rem 1.3rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 700; min-width: 130px;"><i class="fa-solid fa-paper-plane"></i> Apply Now</a>
                                         <?php endif; ?>
                                     </div>
-
                                 </div>
                             </div>
                         <?php endforeach; ?>

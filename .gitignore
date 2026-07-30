@@ -25,3 +25,5 @@ vendor/
 # Security & Temp files
 scratch/
 config/smtp.php
+ 
+composer.phar

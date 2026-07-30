@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
 try {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = 'test@test.com'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM student_profiles");
     $stmt->execute();
-    echo "DB connection test success";
+    echo "Success: student_profiles has " . $stmt->fetchColumn() . " records.";
 } catch(Exception $e) {
-    echo $e->getMessage();
+    echo "Error: " . $e->getMessage();
 }
 ?>

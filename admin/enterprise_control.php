@@ -15,6 +15,26 @@ $sidebar_avatar = 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png';
 $page_title = "Enterprise Control Center";
 $tab = $_GET['tab'] ?? 'roles';
 
+// Handle AJAX Read Receipts Log
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'read_receipts') {
+    header('Content-Type: application/json');
+    $title = trim($_GET['title'] ?? '');
+    
+    try {
+        $stmt = $pdo->prepare("SELECT n.id, n.is_read, n.read_at, n.created_at, u.name, u.email, u.role 
+                               FROM notifications n 
+                               JOIN users u ON n.user_id = u.id 
+                               WHERE n.title = ? 
+                               ORDER BY n.is_read DESC, u.name ASC");
+        $stmt->execute([$title]);
+        $receipts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['status' => 'success', 'data' => $receipts]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
 // --- POST ACTIONS ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -188,6 +208,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: enterprise_control.php?tab=settings");
         exit;
     }
+
+    // 6. Send Broadcast & Track Read Receipts
+    elseif ($action === 'send_broadcast') {
+        $title = trim($_POST['title'] ?? '');
+        $message = trim($_POST['message'] ?? '');
+        $priority = $_POST['priority'] ?? 'medium';
+        $audience = $_POST['audience'] ?? 'all';
+        $link = trim($_POST['link'] ?? 'user/dashboard.php');
+        
+        $role_filter = ($audience === 'all') ? null : $audience;
+        
+        if (!empty($title) && !empty($message)) {
+            notify_all_users($title, $message, 'info', $priority, $role_filter, $link, $admin_id);
+            log_activity($admin_id, 'send_broadcast', "Dispatched broadcast notification: $title");
+            set_flash('success', 'Broadcast notification dispatched to all target members successfully!');
+        } else {
+            set_flash('error', 'Broadcast title and message details are required.');
+        }
+        header("Location: enterprise_control.php?tab=notifications");
+        exit;
+    }
 }
 
 // --- EXPORT OPERATIONS ---
@@ -311,7 +352,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="dashboard-wrapper">
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
         <div class="sidebar-header">
             <a href="../index.php" class="logo logo-text">
                 <i class="fa-solid fa-graduation-cap"></i> AlumniNet
@@ -329,7 +370,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <ul class="sidebar-menu">
+        <ul class="sidebar-menu" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
             <li class="sidebar-item">
                 <a href="dashboard.php?tab=overview"><i data-lucide="gauge"></i> <span class="link-text">Dashboard</span></a>
             </li>
@@ -370,8 +411,9 @@ require_once __DIR__ . '/../includes/header.php';
 
         <main class="dashboard-workspace" style="padding: 2rem;">
             <!-- Horizontal Sub-Tabs -->
-            <div style="display:flex; gap:0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem;">
+            <div style="display:flex; gap:0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--theme-border); padding-bottom: 0.75rem; flex-wrap: wrap;">
                 <a href="enterprise_control.php?tab=roles" class="btn <?php echo $tab === 'roles' ? 'btn-primary' : 'btn-secondary'; ?> btn-small"><i class="fa-solid fa-users-gear"></i> Roles & User Admin</a>
+                <a href="enterprise_control.php?tab=notifications" class="btn <?php echo $tab === 'notifications' ? 'btn-primary' : 'btn-secondary'; ?> btn-small"><i class="fa-solid fa-bell"></i> Broadcasts & Read Receipts</a>
                 <a href="enterprise_control.php?tab=charts" class="btn <?php echo $tab === 'charts' ? 'btn-primary' : 'btn-secondary'; ?> btn-small"><i class="fa-solid fa-chart-pie"></i> Visual Charts</a>
                 <a href="enterprise_control.php?tab=csv" class="btn <?php echo $tab === 'csv' ? 'btn-primary' : 'btn-secondary'; ?> btn-small"><i class="fa-solid fa-file-csv"></i> CSV Import/Export</a>
                 <a href="enterprise_control.php?tab=db" class="btn <?php echo $tab === 'db' ? 'btn-primary' : 'btn-secondary'; ?> btn-small"><i class="fa-solid fa-database"></i> DB Utilities</a>
@@ -633,6 +675,115 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
             <?php endif; ?>
 
+            <!-- TAB 6: BROADCASTS & READ RECEIPTS -->
+            <?php if ($tab === 'notifications'): ?>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+                    
+                    <!-- Form: Dispatch Broadcast Notification -->
+                    <div class="card-glass" style="padding:1.75rem; border-radius:var(--border-radius-lg); background:var(--theme-card); border:1px solid var(--theme-border);">
+                        <h3 style="font-size:1.1rem; font-weight:700; color:#ffffff; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fa-solid fa-paper-plane" style="color:var(--theme-accent-purple);"></i> Send Mass Broadcast
+                        </h3>
+                        
+                        <form action="enterprise_control.php" method="POST">
+                            <input type="hidden" name="action" value="send_broadcast">
+                            
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label for="bc-title" style="display:block; font-size:0.8rem; margin-bottom:0.4rem; color:var(--theme-text-secondary); font-weight:600;">Notification Title</label>
+                                <input type="text" id="bc-title" name="title" class="input-glass" style="width:100%;" placeholder="e.g. Placement Drive Announcement" autocomplete="off" required>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label for="bc-msg" style="display:block; font-size:0.8rem; margin-bottom:0.4rem; color:var(--theme-text-secondary); font-weight:600;">Message Content</label>
+                                <textarea id="bc-msg" name="message" class="input-glass" rows="3" style="width:100%;" placeholder="Detail your announcement text..." autocomplete="off" required></textarea>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom:1rem;">
+                                <div class="form-group">
+                                    <label for="bc-audience" style="display:block; font-size:0.8rem; margin-bottom:0.4rem; color:var(--theme-text-secondary); font-weight:600;">Target Audience</label>
+                                    <select id="bc-audience" name="audience" class="input-glass" style="width:100%;">
+                                        <option value="all">All Members</option>
+                                        <option value="student">Students Only</option>
+                                        <option value="alumni">Alumni Only</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bc-priority" style="display:block; font-size:0.8rem; margin-bottom:0.4rem; color:var(--theme-text-secondary); font-weight:600;">Priority Level</label>
+                                    <select id="bc-priority" name="priority" class="input-glass" style="width:100%;">
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High Priority</option>
+                                        <option value="low">Low Priority</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:1.25rem;">
+                                <label for="bc-link" style="display:block; font-size:0.8rem; margin-bottom:0.4rem; color:var(--theme-text-secondary); font-weight:600;">Clickable Destination Link (Optional)</label>
+                                <input type="text" id="bc-link" name="link" class="input-glass" style="width:100%;" value="user/dashboard.php" placeholder="e.g. user/jobs.php or user/events.php" autocomplete="off">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;"><i class="fa-solid fa-bullhorn"></i> Dispatch Broadcast Notice</button>
+                        </form>
+                    </div>
+
+                    <!-- History & Read Receipts Tracker -->
+                    <div class="card-glass" style="padding:1.75rem; border-radius:var(--border-radius-lg); background:var(--theme-card); border:1px solid var(--theme-border);">
+                        <h3 style="font-size:1.1rem; font-weight:700; color:#ffffff; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fa-solid fa-eye" style="color: #10b981;"></i> Broadcast Read Receipts Tracker
+                        </h3>
+                        
+                        <?php
+                            $stmtBroadcasts = $pdo->query("
+                                SELECT title, MAX(message) as message, COUNT(*) as total_sent, 
+                                       SUM(is_read) as total_read, MIN(created_at) as date_sent 
+                                FROM notifications 
+                                WHERE sender_id IS NOT NULL 
+                                GROUP BY title 
+                                ORDER BY date_sent DESC 
+                                LIMIT 20
+                            ");
+                            $broadcasts = $stmtBroadcasts->fetchAll();
+                        ?>
+
+                        <?php if ($broadcasts): ?>
+                            <div style="display:flex; flex-direction:column; gap:1rem; overflow-y:auto; max-height:500px;">
+                                <?php foreach ($broadcasts as $b): 
+                                    $sent = intval($b['total_sent']);
+                                    $read = intval($b['total_read']);
+                                    $pct = $sent > 0 ? round(($read / $sent) * 100, 1) : 0;
+                                ?>
+                                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--theme-border); padding:1rem; border-radius:8px;">
+                                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.4rem;">
+                                            <h4 style="font-size:0.95rem; font-weight:700; color:#ffffff;"><?php echo htmlspecialchars($b['title']); ?></h4>
+                                            <span style="font-size:0.75rem; color:#94a3b8;"><?php echo date('M d, Y H:i', strtotime($b['date_sent'])); ?></span>
+                                        </div>
+                                        <p style="font-size:0.8rem; color:var(--theme-text-secondary); margin-bottom:0.75rem;">
+                                            <?php echo htmlspecialchars($b['message']); ?>
+                                        </p>
+                                        
+                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                                <span class="badge" style="background:rgba(16, 185, 129, 0.15); color:#4ade80; border:1px solid rgba(74, 222, 128, 0.3); font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                                    <i class="fa-solid fa-eye"></i> <?php echo $read; ?> / <?php echo $sent; ?> Read (<?php echo $pct; ?>%)
+                                                </span>
+                                            </div>
+                                            <button type="button" class="btn btn-secondary btn-small" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="openReadReceiptsModal('<?php echo htmlspecialchars(addslashes($b['title'])); ?>')">
+                                                <i class="fa-solid fa-users-viewfinder"></i> View Read Receipts Log
+                                            </button>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="text-align:center; padding:3rem 1.5rem; color:var(--theme-text-secondary);">
+                                <i class="fa-solid fa-inbox" style="font-size:2.5rem; margin-bottom:0.75rem; display:block;"></i>
+                                <p style="font-size:0.85rem;">No broadcast notifications dispatched yet. Send your first notice!</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
         </main>
     </div>
 </div>
@@ -644,6 +795,30 @@ require_once __DIR__ . '/../includes/header.php';
     <input type="hidden" name="user_id" id="single-uid-input">
     <input type="hidden" name="operation" id="single-op-input">
 </form>
+
+<!-- READ RECEIPTS AUDIT LOG MODAL -->
+<div id="readReceiptsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:1.5rem;">
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; max-width:600px; width:100%; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); color:#f8fafc;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+            <h3 style="font-size:1.2rem; font-weight:700; color:#4ade80; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fa-solid fa-eye"></i> Read Receipts Log
+            </h3>
+            <button type="button" onclick="closeReadReceiptsModal()" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <h4 id="receipts-modal-title" style="font-size:0.95rem; font-weight:700; color:#e2e8f0; margin-bottom:1rem; border-bottom:1px solid #334155; padding-bottom:0.5rem;">
+            Notification: Loading...
+        </h4>
+
+        <div id="receipts-modal-body" style="max-height:350px; overflow-y:auto; font-size:0.85rem;">
+            <div style="text-align:center; padding:2rem; color:#94a3b8;">Loading audit records...</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+            <button type="button" onclick="closeReadReceiptsModal()" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
 
 <script>
 function toggleCheckAll(source) {
@@ -674,6 +849,56 @@ function runBulk(operation) {
         document.getElementById('bulk-op-input').value = operation;
         document.getElementById('bulk-users-form').submit();
     }
+}
+
+function openReadReceiptsModal(title) {
+    document.getElementById('receipts-modal-title').textContent = "Notification: " + title;
+    const body = document.getElementById('receipts-modal-body');
+    body.innerHTML = '<div style="text-align:center; padding:2rem; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching read status records...</div>';
+    document.getElementById('readReceiptsModal').style.display = 'flex';
+    if (typeof window.lockBackgroundScroll === 'function') window.lockBackgroundScroll();
+    else document.body.style.overflow = 'hidden';
+
+    fetch('enterprise_control.php?ajax=read_receipts&title=' + encodeURIComponent(title))
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (data.data.length === 0) {
+                body.innerHTML = '<div style="text-align:center; padding:2rem; color:#94a3b8;">No recipient records found.</div>';
+                return;
+            }
+
+            let html = '<div style="display:flex; flex-direction:column; gap:0.75rem;">';
+            data.data.forEach(r => {
+                const isRead = parseInt(r.is_read) === 1;
+                const statusBadge = isRead 
+                    ? `<span style="color:#10b981; font-weight:600;"><i class="fa-solid fa-circle-check"></i> Read: ${r.read_at ? r.read_at : 'Yes'}</span>`
+                    : `<span style="color:#f59e0b; font-weight:600;"><i class="fa-solid fa-clock"></i> Unread</span>`;
+
+                html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:0.75rem 1rem; border-radius:6px; border:1px solid #1e293b;">
+                    <div>
+                        <div style="font-weight:700; color:#f8fafc;">${r.name} <span style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase;">(${r.role})</span></div>
+                        <div style="font-size:0.78rem; color:#94a3b8;">${r.email}</div>
+                    </div>
+                    <div>${statusBadge}</div>
+                </div>`;
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        } else {
+            body.innerHTML = '<div style="color:#ef4444; padding:1rem;">Failed to fetch logs: ' + data.message + '</div>';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        body.innerHTML = '<div style="color:#ef4444; padding:1rem;">Network error loading read receipts.</div>';
+    });
+}
+
+function closeReadReceiptsModal() {
+    document.getElementById('readReceiptsModal').style.display = 'none';
+    if (typeof window.unlockBackgroundScroll === 'function') window.unlockBackgroundScroll();
+    else document.body.style.overflow = '';
 }
 </script>
 

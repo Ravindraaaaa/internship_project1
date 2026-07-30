@@ -9,13 +9,24 @@ $user_role_nav = $_SESSION['user_role'] ?? (isset($_SESSION['admin_id']) ? 'admi
 // Handle Mark as Read
 if (isset($_GET['read_notif'])) {
     $read_id = intval($_GET['read_notif']);
-    $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?")->execute([$read_id, $user_id_nav]);
+    $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?")->execute([$read_id, $user_id_nav]);
     if (!empty($_GET['redirect_to'])) {
         $target = ltrim($_GET['redirect_to'], '/');
-        header("Location: " . $path_prefix . $target);
+        // Handle subfolder pathing gracefully
+        $dest = (strpos($target, 'user/') === 0 && basename(dirname($_SERVER['PHP_SELF'])) === 'user') ? substr($target, 5) : $target;
+        header("Location: " . $path_prefix . $dest);
         exit;
     }
     $current_url = preg_replace('/([&?])read_notif=[0-9]+&?/', '$1', $_SERVER['REQUEST_URI']);
+    $current_url = rtrim($current_url, '?&');
+    header("Location: $current_url");
+    exit;
+}
+
+// Handle Mark All as Read
+if (isset($_GET['mark_all_read'])) {
+    $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0")->execute([$user_id_nav]);
+    $current_url = preg_replace('/([&?])mark_all_read=1&?/', '$1', $_SERVER['REQUEST_URI']);
     $current_url = rtrim($current_url, '?&');
     header("Location: $current_url");
     exit;
@@ -25,7 +36,11 @@ $unread_count = 0;
 $notifications = [];
 
 if ($user_id_nav > 0) {
-    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5");
+    $stmt = $pdo->prepare("SELECT n.*, s.name as sender_name, s.role as sender_role 
+                           FROM notifications n 
+                           LEFT JOIN users s ON n.sender_id = s.id 
+                           WHERE n.user_id = ? AND n.is_read = 0 
+                           ORDER BY n.created_at DESC LIMIT 10");
     $stmt->execute([$user_id_nav]);
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -35,23 +50,168 @@ if ($user_id_nav > 0) {
 }
 
 $profile_link = ($user_role_nav === 'admin') ? '#' : 'profile.php';
-$logout_link = ($user_role_nav === 'admin') ? '../logout.php' : '../logout.php';
+$change_pass_link = 'user/change_password.php';
+$logout_link = '../logout.php';
 // if we are in admin, profile_link doesn't exist, we just put #
 if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
     $profile_link = '#';
+    $change_pass_link = '../user/change_password.php';
     $logout_link = '../logout.php';
 } else if (basename(dirname($_SERVER['PHP_SELF'])) === 'user') {
     $profile_link = 'profile.php';
+    $change_pass_link = 'change_password.php';
     $logout_link = '../logout.php';
 }
 
+// Determine if user is in Admin portal or has admin role
+$is_admin_portal = ($user_role_nav === 'admin') || (basename(dirname($_SERVER['PHP_SELF'])) === 'admin');
+
+// Fetch Dynamic Live Notices (Announcements, Upcoming Events with Dates, Latest Jobs)
+$marquee_items = [];
+if (!$is_admin_portal) {
+    $sub_prefix_nav = (basename(dirname($_SERVER['PHP_SELF'])) === 'user') ? '' : 'user/';
+
+    // 1. Admin Announcements
+    try {
+        $annStmt = $pdo->query("SELECT id, title FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 4");
+        while ($ann = $annStmt->fetch(PDO::FETCH_ASSOC)) {
+            $marquee_items[] = [
+                'badge' => '📢 ANNOUNCEMENT',
+                'badge_color' => '#fbbf24',
+                'title' => $ann['title'] . ' — Check Notifications tab for details!',
+                'url' => $sub_prefix_nav . 'dashboard.php'
+            ];
+        }
+    } catch (Exception $e) {}
+
+    // 2. Upcoming Events with Dates
+    try {
+        $evtStmt = $pdo->query("SELECT id, title, event_date FROM events WHERE event_date >= NOW() ORDER BY event_date ASC LIMIT 4");
+        while ($evt = $evtStmt->fetch(PDO::FETCH_ASSOC)) {
+            $date_fmt = date('d M Y', strtotime($evt['event_date']));
+            $marquee_items[] = [
+                'badge' => '🎉 EVENT (' . $date_fmt . ')',
+                'badge_color' => '#34d399',
+                'title' => $evt['title'],
+                'url' => $sub_prefix_nav . 'events.php'
+            ];
+        }
+    } catch (Exception $e) {}
+
+    // 3. Latest Active Job & Internship Postings
+    try {
+        $jobStmt = $pdo->query("SELECT id, title, company FROM jobs WHERE status = 'active' ORDER BY created_at DESC LIMIT 4");
+        while ($job = $jobStmt->fetch(PDO::FETCH_ASSOC)) {
+            $marquee_items[] = [
+                'badge' => '💼 JOB OPENING',
+                'badge_color' => '#60a5fa',
+                'title' => $job['title'] . ' at ' . $job['company'],
+                'url' => $sub_prefix_nav . 'jobs.php'
+            ];
+        }
+    } catch (Exception $e) {}
+
+    // 4. Feedback Acknowledgement Broadcast
+    $marquee_items[] = [
+        'badge' => '✨ THANK YOU',
+        'badge_color' => '#a855f7',
+        'title' => 'Thank you for your feedback & support tickets! Our moderation team reviews every submission.',
+        'url' => $sub_prefix_nav . 'feedback.php'
+    ];
+}
+
 ?>
+
+<?php if (!$is_admin_portal): ?>
+<!-- Top Moving Announcement Marquee Banner (Student/Alumni Only) -->
+<div class="announcement-marquee-bar" id="announcementMarqueeBar">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.15); padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3); flex-shrink: 0;">
+        <i class="fa-solid fa-bullhorn fa-bounce"></i> NOTICES & LIVE BROADCAST
+    </div>
+    <div style="flex: 1; overflow: hidden; margin: 0 16px; position: relative; height: 24px;">
+        <div id="marqueeTrack" style="display: inline-block; white-space: nowrap; font-weight: 500; animation: marqueeScroll 55s linear infinite; cursor: pointer;">
+            <?php if (!empty($marquee_items)): ?>
+                <?php foreach ($marquee_items as $item): ?>
+                    <a href="<?php echo htmlspecialchars($item['url']); ?>" class="marquee-item-link" style="margin-right: 50px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; transition: opacity 0.2s ease;">
+                        <span style="font-weight: 700; color: <?php echo $item['badge_color']; ?>; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem;">
+                            <?php echo htmlspecialchars($item['badge']); ?>
+                        </span>
+                        <span style="font-weight: 500; font-size: 0.83rem;">
+                            <?php echo htmlspecialchars($item['title']); ?>
+                        </span>
+                    </a>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <a href="<?php echo $sub_prefix_nav; ?>jobs.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
+                    📢 Alumni Meet & Campus Placement Drive Registrations Open! Click to view Job Board.
+                </a>
+                <a href="<?php echo $sub_prefix_nav; ?>events.php" class="marquee-item-link" style="margin-right: 50px; color: inherit; text-decoration: none;">
+                    🎉 New Mentorship & Career Guidance Sessions Available. Click to view Events.
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+    <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 600; flex-shrink: 0;" class="marquee-live-label">
+        <span style="background: rgba(255,255,255,0.12); padding: 3px 9px; border-radius: 6px;">Live Broadcast</span>
+    </div>
+</div>
+
+<style>
+/* Notice Banner Positioning & Light Mode Contrast Overrides */
+.announcement-marquee-bar {
+    background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    color: #ffffff;
+    padding: 7px 16px 7px 60px; /* Added 60px left padding so collapsed toggle button never overlaps */
+    font-size: 0.83rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+    position: relative;
+    box-sizing: border-box;
+}
+
+html.theme-light .announcement-marquee-bar,
+body.theme-light .announcement-marquee-bar {
+    background: linear-gradient(90deg, #e0e7ff 0%, #c7d2fe 50%, #e0e7ff 100%) !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #a5b4fc !important;
+}
+
+html.theme-light .announcement-marquee-bar .marquee-item-link,
+body.theme-light .announcement-marquee-bar .marquee-item-link {
+    color: #0f172a !important;
+}
+
+html.theme-light .announcement-marquee-bar .marquee-live-label span,
+body.theme-light .announcement-marquee-bar .marquee-live-label span {
+    background: rgba(15, 23, 42, 0.08) !important;
+    color: #1e1b4b !important;
+}
+
+.marquee-item-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+@keyframes marqueeScroll {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+#marqueeTrack:hover {
+    animation-play-state: paused;
+}
+</style>
+<?php endif; ?>
+
 <nav class="top-nav">
     <div style="display: flex; align-items: center; gap: 1rem;">
         <button class="theme-toggle-btn" id="mobile-sidebar-toggle" style="display: none;"><i class="fa-solid fa-bars"></i></button>
         <div class="top-nav-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="input-glass" placeholder="Search platform..." title="Click or press Ctrl+K to search">
+            <label for="global-nav-search-input" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Search platform</label>
+            <input type="text" id="global-nav-search-input" name="global_search" class="input-glass" placeholder="Search platform..." autocomplete="off" aria-label="Search platform" title="Click or press Ctrl+K to search">
             <span class="search-kbd">⌘K</span>
         </div>
     </div>
@@ -106,6 +266,7 @@ if (basename(dirname($_SERVER['PHP_SELF'])) === 'admin') {
                 <?php if ($profile_link !== '#'): ?>
                     <a href="<?php echo $profile_link; ?>" class="dropdown-item"><i data-lucide="user" style="width:16px;height:16px;"></i> My Profile</a>
                 <?php endif; ?>
+                <a href="<?php echo $change_pass_link; ?>" class="dropdown-item"><i data-lucide="key" style="width:16px;height:16px;"></i> Change Password</a>
                 <div style="border-top: 1px solid var(--theme-border); margin: 0.25rem 0;"></div>
                 <a href="<?php echo $logout_link; ?>" class="dropdown-item" style="color: var(--accent-danger);"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign Out</a>
             </div>

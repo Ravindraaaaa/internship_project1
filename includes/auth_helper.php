@@ -309,7 +309,7 @@ if (!function_exists('render_sidebar')) {
         }
         
         ?>
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
             <div class="sidebar-header">
                 <a href="<?php echo $path_prefix; ?>index.php" class="logo logo-text">
                     <i class="fa-solid fa-graduation-cap"></i> AlumniNet
@@ -319,7 +319,7 @@ if (!function_exists('render_sidebar')) {
                 </button>
             </div>
 
-            <ul class="sidebar-menu">
+            <ul class="sidebar-menu" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
                 <?php if (is_logged_in()): ?>
                     <?php if (is_admin()): ?>
                         <li class="sidebar-item <?php echo $active_page === 'dashboard' ? 'active' : ''; ?>">
@@ -327,6 +327,9 @@ if (!function_exists('render_sidebar')) {
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'alumni' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=alumni"><i class="fa-solid fa-user-check"></i> <span class="link-text">Manage Alumni</span></a>
+                        </li>
+                        <li class="sidebar-item <?php echo $active_page === 'import_alumni' ? 'active' : ''; ?>">
+                            <a href="<?php echo $admin_prefix; ?>import_alumni.php" title="Enterprise Data Import & Archive"><i class="fa-solid fa-file-import"></i> <span class="link-text">Import & Archive Engine</span></a>
                         </li>
                         <li class="sidebar-item <?php echo $active_page === 'students' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>dashboard.php?tab=students"><i class="fa-solid fa-users"></i> <span class="link-text">Manage Students</span></a>
@@ -358,9 +361,7 @@ if (!function_exists('render_sidebar')) {
                         <li class="sidebar-item <?php echo $active_page === 'notifications' ? 'active' : ''; ?>">
                             <a href="<?php echo $admin_prefix; ?>announcement_analytics.php"><i class="fa-solid fa-chart-pie"></i> <span class="link-text">Notification Analytics</span></a>
                         </li>
-                        <li class="sidebar-item <?php echo $active_page === 'chat' ? 'active' : ''; ?>">
-                            <a href="<?php echo $admin_prefix; ?>chat.php"><i class="fa-solid fa-comment-dots"></i> <span class="link-text">Live Support Chat</span></a>
-                        </li>
+
                     <?php else: ?>
                         <li class="sidebar-item <?php echo $active_page === 'dashboard' ? 'active' : ''; ?>">
                             <a href="<?php echo $sub_prefix; ?>dashboard.php"><i class="fa-solid fa-gauge"></i> <span class="link-text">Dashboard</span></a>

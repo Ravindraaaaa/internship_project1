@@ -262,12 +262,72 @@ const NotificationApp = (function() {
         container.innerHTML = html;
     }
 
+    function getAppRootPath() {
+        let path = window.location.pathname;
+        const subfolderMatch = path.match(/\/(user|admin|api)\//i);
+        if (subfolderMatch) {
+            return path.substring(0, subfolderMatch.index + 1);
+        }
+        const lastSlash = path.lastIndexOf('/');
+        if (lastSlash !== -1) {
+            return path.substring(0, lastSlash + 1);
+        }
+        return '/';
+    }
+
     function resolveUrl(rawUrl) {
-        if (!rawUrl || rawUrl === '#' || rawUrl === 'javascript:void(0);') return 'javascript:void(0);';
+        if (!rawUrl || rawUrl === '#' || rawUrl === 'javascript:void(0);' || rawUrl === 'null' || rawUrl === 'undefined') return 'javascript:void(0);';
         if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
-        const path = window.location.pathname;
-        const base = path.includes('/internship_project1') ? '/internship_project1/' : '/';
-        return base + rawUrl.replace(/^\/+/, '');
+
+        const appRoot = getAppRootPath();
+        let cleanUrl = rawUrl.trim().replace(/^\/+/, '');
+
+        // Strip appRoot or project folder prefixes if rawUrl accidentally included them
+        const decodedAppRoot = decodeURIComponent(appRoot).replace(/^\/+/, '');
+        const cleanAppRoot = appRoot.replace(/^\/+/, '');
+
+        if (cleanUrl.toLowerCase().startsWith(cleanAppRoot.toLowerCase())) {
+            cleanUrl = cleanUrl.substring(cleanAppRoot.length);
+        } else if (cleanUrl.toLowerCase().startsWith(decodedAppRoot.toLowerCase())) {
+            cleanUrl = cleanUrl.substring(decodedAppRoot.length);
+        }
+
+        // Strip common project folder names
+        cleanUrl = cleanUrl.replace(/^(?:Internship\s+Project\/)?internship_project1\/+/i, '');
+        cleanUrl = cleanUrl.replace(/^\/+/, '');
+
+        // List of known user folder routes
+        const userScripts = [
+            'events.php', 'jobs.php', 'alumni.php', 'mentorship.php', 'help.php', 
+            'feedback.php', 'profile.php', 'view_profile.php', 'chat.php', 
+            'notifications.php', 'portfolio.php', 'notification_settings.php'
+        ];
+        
+        // List of known admin folder routes
+        const adminScripts = [
+            'enterprise_control.php', 'requirements.php', 'reports_generator.php', 
+            'announcement_analytics.php', 'admin_approvals.php', 'admin_notifications.php'
+        ];
+
+        // Normalize root relative scripts missing subfolder prefixes
+        if (!cleanUrl.startsWith('user/') && !cleanUrl.startsWith('admin/')) {
+            if (userScripts.includes(cleanUrl)) {
+                cleanUrl = 'user/' + cleanUrl;
+            } else if (adminScripts.includes(cleanUrl)) {
+                cleanUrl = 'admin/' + cleanUrl;
+            } else if (cleanUrl === 'dashboard.php') {
+                const isAdmin = window.location.pathname.includes('/admin/');
+                cleanUrl = isAdmin ? 'admin/dashboard.php' : 'user/dashboard.php';
+            }
+        }
+
+        return appRoot + cleanUrl;
+    }
+
+    function closeNotifDetailsModal() {
+        const modal = document.getElementById('notifDetailModal');
+        if (modal) modal.style.display = 'none';
+        if (typeof window.unlockBackgroundScroll === 'function') window.unlockBackgroundScroll();
     }
 
     function handleCardClick(event, id, url, title = '', message = '', timeAgo = '', priority = '', category = '', icon = '', color = '') {
@@ -301,7 +361,7 @@ const NotificationApp = (function() {
                             <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--theme-text); margin-top: 0.2rem;">${escapeHtml(title)}</h3>
                         </div>
                     </div>
-                    <button class="modal-close" onclick="document.getElementById('notifDetailModal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; color: var(--theme-text-secondary); cursor: pointer;">&times;</button>
+                    <button class="modal-close" onclick="NotificationApp.closeNotifDetailsModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--theme-text-secondary); cursor: pointer;">&times;</button>
                 </div>
 
                 <div style="background: rgba(0,0,0,0.15); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--theme-border);">
@@ -314,13 +374,14 @@ const NotificationApp = (function() {
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                    <button class="btn btn-secondary" onclick="document.getElementById('notifDetailModal').style.display='none'">Close</button>
-                    ${finalUrl && finalUrl !== 'javascript:void(0);' ? `<a href="${finalUrl}" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open Target Page</a>` : ''}
+                    <button class="btn btn-secondary" onclick="NotificationApp.closeNotifDetailsModal()">Close</button>
+                    ${finalUrl && finalUrl !== 'javascript:void(0);' ? `<a href="${finalUrl}" class="btn btn-primary" onclick="NotificationApp.closeNotifDetailsModal()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open Target Page</a>` : ''}
                 </div>
             </div>
         `;
 
         modal.style.display = 'flex';
+        if (typeof window.lockBackgroundScroll === 'function') window.lockBackgroundScroll();
     }
 
     function markSingleRead(id) {
@@ -471,7 +532,9 @@ const NotificationApp = (function() {
         markAllAsRead: markAllAsRead,
         clearAllNotifications: clearAllNotifications,
         deleteNotif: deleteNotif,
-        handleCardClick: handleCardClick
+        handleCardClick: handleCardClick,
+        openNotifDetails: openNotifDetails,
+        closeNotifDetailsModal: closeNotifDetailsModal
     };
 })();
 

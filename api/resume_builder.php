@@ -840,6 +840,40 @@ if (!empty($profile['profile_pic'])) {
         <!-- Sidebar Panel Options (Left) -->
         <aside class="customizer-sidebar">
             
+            <!-- AI RESUME SCORE & RATING WIDGET -->
+            <section class="sidebar-section" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%); border: 1px solid rgba(168, 85, 247, 0.35);">
+                <h3 class="sidebar-section-title" style="color: #c084fc; border-bottom-color: rgba(168, 85, 247, 0.3);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Resume Rating & Score
+                </h3>
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">ATS Resume Rating</div>
+                        <div id="ai-score-label" style="font-size: 1.7rem; font-weight: 800; color: #10b981; line-height: 1.2;">
+                            <span id="ai-score-val">85</span><span style="font-size: 0.95rem; color: #94a3b8;"> / 100</span>
+                        </div>
+                    </div>
+                    <div id="ai-score-badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); padding: 0.35rem 0.75rem; border-radius: 20px; font-weight: 700; font-size: 0.75rem;">
+                        Grade A+ (ATS Ready)
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
+                    <div id="ai-score-bar" style="width: 85%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%); transition: width 0.5s ease;"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button type="button" onclick="runAiAnalysis()" class="btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); border: none; padding: 0.55rem; font-size: 0.82rem;">
+                        <i class="fa-solid fa-brain"></i> Evaluate Score / 100
+                    </button>
+                    <button type="button" onclick="generateAiSummary()" class="btn btn-secondary" style="width: 100%; justify-content: center; font-size: 0.8rem; padding: 0.5rem; background: #374151;">
+                        <i class="fa-solid fa-wand-magic"></i> AI Generate Bio / Summary
+                    </button>
+                </div>
+            </section>
+
             <!-- Section 1: Template Selection -->
             <section class="sidebar-section">
                 <h3 class="sidebar-section-title"><i class="fa-solid fa-palette"></i> Design & Template</h3>
@@ -1404,6 +1438,164 @@ if (!empty($profile['profile_pic'])) {
                 alert("Failed to reach save engine. Sync error.");
             });
         }
+
+        // ==================== AI RESUME EVALUATOR & SCORE CALCULATOR ====================
+        function calculateResumeScore() {
+            let score = 0;
+            const name = document.getElementById('inp-name').value.trim();
+            const bio = document.getElementById('inp-bio').value.trim();
+            const email = document.getElementById('val-email') ? document.getElementById('val-email').textContent.trim() : '';
+            const linkedin = document.getElementById('inp-linkedin').value.trim();
+            
+            // 1. Contact & Name (15 pts)
+            if (name.length > 3) score += 10;
+            if (email.length > 5) score += 5;
+            
+            // 2. Social & Professional Links (15 pts)
+            if (linkedin.length > 5) score += 10;
+            const githubInput = document.getElementById('inp-github');
+            const websiteInput = document.getElementById('inp-website');
+            if ((githubInput && githubInput.value.trim().length > 5) || (websiteInput && websiteInput.value.trim().length > 5)) {
+                score += 5;
+            }
+            
+            // 3. Professional Bio Summary (20 pts)
+            if (bio.length > 150) score += 20;
+            else if (bio.length > 50) score += 10;
+            else if (bio.length > 0) score += 5;
+            
+            // 4. Experience & History (25 pts)
+            const expItems = document.querySelectorAll('#section-experience .timeline-item');
+            if (expItems.length >= 2) score += 25;
+            else if (expItems.length === 1) score += 15;
+            
+            // 5. Education Background (15 pts)
+            const eduItems = document.querySelectorAll('#section-education .timeline-item');
+            if (eduItems.length >= 1) score += 15;
+            
+            // 6. Technical Skills (10 pts)
+            const skillItems = document.querySelectorAll('.skill-item');
+            if (skillItems.length >= 4) score += 10;
+            else if (skillItems.length > 0) score += 5;
+            
+            return score;
+        }
+
+        function runAiAnalysis() {
+            const score = calculateResumeScore();
+            const scoreValEl = document.getElementById('ai-score-val');
+            const scoreBarEl = document.getElementById('ai-score-bar');
+            const scoreBadgeEl = document.getElementById('ai-score-badge');
+            
+            scoreValEl.textContent = score;
+            scoreBarEl.style.width = score + '%';
+            
+            let grade = 'Grade B (Average)';
+            let color = '#f59e0b';
+            let bg = 'rgba(245, 158, 11, 0.2)';
+
+            if (score >= 85) {
+                grade = 'Grade A+ (ATS Ready)';
+                color = '#10b981';
+                bg = 'rgba(16, 185, 129, 0.2)';
+            } else if (score >= 70) {
+                grade = 'Grade A (Strong)';
+                color = '#3b82f6';
+                bg = 'rgba(59, 130, 246, 0.2)';
+            } else if (score < 50) {
+                grade = 'Grade C (Needs Work)';
+                color = '#ef4444';
+                bg = 'rgba(239, 68, 68, 0.2)';
+            }
+            
+            scoreBadgeEl.textContent = grade;
+            scoreBadgeEl.style.color = color;
+            scoreBadgeEl.style.backgroundColor = bg;
+            scoreBadgeEl.style.borderColor = color;
+
+            // Render detailed modal feedback
+            document.getElementById('modal-score-num').textContent = score;
+            document.getElementById('modal-score-grade').textContent = grade;
+            document.getElementById('modal-score-grade').style.color = color;
+
+            // Generate breakdown items
+            const bio = document.getElementById('inp-bio').value.trim();
+            const linkedin = document.getElementById('inp-linkedin').value.trim();
+            const expCount = document.querySelectorAll('#section-experience .timeline-item').length;
+            const skillCount = document.querySelectorAll('.skill-item').length;
+
+            let feedbackHtml = '';
+            feedbackHtml += `<div style="margin-bottom:0.75rem;"><i class="fa-solid ${bio.length > 100 ? 'fa-circle-check' : 'fa-circle-xmark'}" style="color:${bio.length > 100 ? '#10b981' : '#ef4444'};"></i> <strong>Executive Summary:</strong> ${bio.length > 100 ? 'Well written concise profile overview (+20 Pts)' : 'Add a detailed summary of at least 100 characters (+10 Pts)'}</div>`;
+            feedbackHtml += `<div style="margin-bottom:0.75rem;"><i class="fa-solid ${linkedin ? 'fa-circle-check' : 'fa-circle-xmark'}" style="color:${linkedin ? '#10b981' : '#ef4444'};"></i> <strong>LinkedIn & Social Verification:</strong> ${linkedin ? 'LinkedIn URL attached for recruiter verification (+10 Pts)' : 'Missing LinkedIn profile link (+0 Pts)'}</div>`;
+            feedbackHtml += `<div style="margin-bottom:0.75rem;"><i class="fa-solid ${expCount >= 2 ? 'fa-circle-check' : 'fa-circle-exclamation'}" style="color:${expCount >= 2 ? '#10b981' : '#f59e0b'};"></i> <strong>Work Experience:</strong> ${expCount} entries listed (${expCount >= 2 ? 'Optimal ATS depth' : 'Add 1-2 internship/work roles for higher ATS ranking'})</div>`;
+            feedbackHtml += `<div style="margin-bottom:0.75rem;"><i class="fa-solid ${skillCount >= 4 ? 'fa-circle-check' : 'fa-circle-exclamation'}" style="color:${skillCount >= 4 ? '#10b981' : '#f59e0b'};"></i> <strong>Technical Skill Matrix:</strong> ${skillCount} skills mapped (${skillCount >= 4 ? 'Great domain coverage' : 'Add more skills in Technical Skills Tracker'})</div>`;
+
+            document.getElementById('modal-feedback-list').innerHTML = feedbackHtml;
+            document.getElementById('aiScoreModal').style.display = 'flex';
+        }
+
+        function generateAiSummary() {
+            const name = document.getElementById('inp-name').value.trim();
+            const dept = document.getElementById('val-dept') ? document.getElementById('val-dept').textContent.trim() : 'Software Engineering';
+            const role = '<?php echo $role; ?>';
+
+            let aiText = '';
+            if (role === 'alumni') {
+                aiText = `Results-driven ${dept} professional with demonstrated expertise in scalable software architecture, web application development, and technical project execution. Passionate about leveraging data-driven solutions to solve complex industry challenges and mentoring modern tech talent.`;
+            } else {
+                aiText = `Ambitious ${dept} student passionate about full-stack web development, modern cloud architectures, and algorithmic problem-solving. Proactive self-starter with hands-on capstone project experience, seeking high-impact software engineering internship opportunities.`;
+            }
+
+            document.getElementById('inp-bio').value = aiText;
+            updateLiveBio(aiText);
+            
+            const toast = document.getElementById('toast-notify');
+            toast.textContent = "✨ AI Professional Summary Generated!";
+            toast.style.backgroundColor = '#8b5cf6';
+            toast.classList.add('active');
+            setTimeout(() => { toast.classList.remove('active'); }, 3000);
+            
+            // Recalculate score
+            runAiAnalysis();
+        }
+
+        function closeAiModal() {
+            document.getElementById('aiScoreModal').style.display = 'none';
+        }
+
+        // Auto run initial score calculation on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            runAiAnalysis();
+        });
     </script>
+
+    <!-- AI SCORE EVALUATION MODAL -->
+    <div id="aiScoreModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:1.5rem;">
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; max-width:550px; width:100%; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); color:#f8fafc;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <h3 style="font-size:1.25rem; font-weight:700; color:#c084fc; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Resume Quality Audit
+                </h3>
+                <button type="button" onclick="closeAiModal()" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="background:#0f172a; padding:1.5rem; border-radius:10px; text-align:center; margin-bottom:1.5rem; border:1px solid #1e293b;">
+                <div style="font-size:0.8rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Overall ATS Score</div>
+                <div style="font-size:3.2rem; font-weight:800; color:#10b981; margin:0.25rem 0;">
+                    <span id="modal-score-num">85</span><span style="font-size:1.2rem; color:#64748b;"> / 100</span>
+                </div>
+                <div id="modal-score-grade" style="font-weight:700; font-size:0.95rem; color:#10b981;">Grade A+ (ATS Ready)</div>
+            </div>
+
+            <h4 style="font-size:0.9rem; font-weight:700; color:#e2e8f0; margin-bottom:0.75rem;">AI Optimization Checklist:</h4>
+            <div id="modal-feedback-list" style="font-size:0.85rem; color:#cbd5e1; line-height:1.6; margin-bottom:1.5rem;">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                <button type="button" onclick="closeAiModal()" class="btn" style="background:#6366f1;">Got It</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARMS - Interactive Presentation & SRS Overview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --border-color: #334155;
+            --primary: #2563eb;
+            --primary-glow: rgba(37, 99, 235, 0.35);
+            --accent-teal: #0d9488;
+            --accent-purple: #7c3aed;
+            --accent-amber: #d97706;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation Header */
+        .header-bar {
+            height: 60px;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+
+        .header-brand i {
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Main Presentation Container */
+        .stage {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            max-width: 1200px;
+            height: 90%;
+            max-height: 700px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.96) translateY(20px);
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        .slide-kicker {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+
+        .slide-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .slide-title .icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Grid Layout Utilities */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            flex: 1;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 1.25rem;
+            flex: 1;
+        }
+
+        /* Card Elements */
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header.red { color: var(--accent-red); }
+        .card-header.teal { color: var(--accent-teal); }
+        .card-header.blue { color: var(--primary); }
+        .card-header.purple { color: var(--accent-purple); }
+        .card-header.amber { color: var(--accent-amber); }
+        .card-header.green { color: var(--accent-green); }
+
+        .card-body {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .card-body ul {
+            list-style: none;
+        }
+
+        .card-body ul li {
+            position: relative;
+            padding-left: 1.25rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .card-body ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .card-body strong {
+            color: var(--text-main);
+        }
+
+        /* Table Design */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(51, 65, 85, 0.4);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* Bottom Controls Footer */
+        .footer-bar {
+            height: 65px;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.9);
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .progress-bar-container {
+            width: 300px;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 6.66%;
+            background: linear-gradient(90deg, var(--primary), var(--accent-teal));
+            transition: width 0.3s ease;
+        }
+
+        .slide-counter {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Keyboard hint badge */
+        .key-hint {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Title Slide Special Styling */
+        .slide-title-hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100%;
+        }
+
+        .title-badge {
+            background: rgba(37, 99, 235, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-sub {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .meta-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1.75rem;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .meta-item h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-item p {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Bar -->
+    <header class="header-bar">
+        <div class="header-brand">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>ARMS Presentation</span>
+        </div>
+        <div class="header-controls">
+            <a href="Alumni_Record_Management_System_Presentation.pptx" class="btn btn-primary" download>
+                <i class="fa-solid fa-file-powerpoint"></i> Download PPTX
+            </a>
+            <a href="index.php" class="btn" target="_blank">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Live App
+            </a>
+            <button class="btn" onclick="toggleFullscreen()">
+                <i class="fa-solid fa-expand"></i> Fullscreen
+            </button>
+        </div>
+    </header>
+
+    <!-- Presentation Stage -->
+    <main class="stage">
+
+        <!-- SLIDE 1: Title -->
+        <section class="slide active" id="slide-1">
+            <div class="slide-title-hero">
+                <span class="title-badge"><i class="fa-solid fa-award"></i> COLLEGE MINI-PROJECT PRESENTATION</span>
+                <h1 class="hero-h1">Alumni Record Management System</h1>
+                <p class="hero-sub">(ARMS) — Modern Web-Based Institutional Platform</p>
+
+                <div class="meta-card">
+                    <div class="meta-item">
+                        <h4>Course</h4>
+                        <p>B.Tech Computer Science & Engg.</p>
+                    </div>
+                    <div class="meta-item">
+                        <h4>Version & Stack</h4>
+                        <p>v1.0 (PHP 8.2 + MySQL)</p>
+                    </div>
+                    <div class="meta-item">
+                        <h4>Prepared By</h4>
+                        <p>Project Team Group B</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: Executive Summary & Problem -->
+        <section class="slide" id="slide-2">
+            <div class="slide-kicker">EXECUTIVE SUMMARY</div>
+            <div class="slide-title">
+                Problem Statement & Proposed Solution
+                <div class="icon-badge"><i class="fa-solid fa-lightbulb"></i></div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header red">
+                        <i class="fa-solid fa-circle-exclamation"></i> Legacy Challenges
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Manual Spreadsheets:</strong> Tracking thousands of alumni via offline Excel sheets leads to stale, duplicated data.</li>
+                            <li><strong>Lost Connections:</strong> Graduating students lose contact with their college network and career guidance.</li>
+                            <li><strong>No Placement Audit Metrics:</strong> Administrative difficulty pulling placement statistics for NBA/NAAC accreditations.</li>
+                            <li><strong>Data Security Vulnerabilities:</strong> Paper and spreadsheet records lack access controls & 2FA security.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-shield-halved"></i> The ARMS Solution
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Centralized Web Directory:</strong> Automated self-registration with institutional admin verification flow.</li>
+                            <li><strong>Dynamic Search Engine:</strong> Search alumni instantaneously by batch year, branch, company, or city.</li>
+                            <li><strong>Jobs & Mentorship Hub:</strong> Alumni post jobs; students request structured 1-on-1 mentorship.</li>
+                            <li><strong>Automated Reports:</strong> Export formatted placement & location metrics to PDF and CSV.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: Project Scope -->
+        <section class="slide" id="slide-3">
+            <div class="slide-kicker">SYSTEM CAPABILITIES</div>
+            <div class="slide-title">
+                Core Objectives & Project Scope
+                <div class="icon-badge"><i class="fa-solid fa-bullseye"></i></div>
+            </div>
+            <div class="grid-4">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-user-gear"></i> 1. Profile & Portfolio
+                    </div>
+                    <div class="card-body">
+                        Alumni & students maintain rich portfolios including CGPA, work history, projects, certifications, and skills.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-magnifying-glass"></i> 2. Peer Search Engine
+                    </div>
+                    <div class="card-body">
+                        Multi-parameter filter engine enabling fast lookups by graduation year, department, employer, and skills.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header purple">
+                        <i class="fa-solid fa-briefcase"></i> 3. Jobs & Mentorship
+                    </div>
+                    <div class="card-body">
+                        Job/internship postings by alumni with direct application tracking and mentorship connection workflows.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header amber">
+                        <i class="fa-solid fa-chart-line"></i> 4. Admin Governance
+                    </div>
+                    <div class="card-body">
+                        Security verification gate, 2FA auth, security audit logs, announcement broadcasts, and placement stats.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: User Roles -->
+        <section class="slide" id="slide-4">
+            <div class="slide-kicker">ACCESS CONTROL</div>
+            <div class="slide-title">
+                User Roles & Permissions Matrix
+                <div class="icon-badge"><i class="fa-solid fa-users-gear"></i></div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User Class</th>
+                        <th>Primary Focus</th>
+                        <th>System Privileges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>System Admin</strong></td>
+                        <td>Root Access & Institutional Governance</td>
+                        <td>Approve/reject accounts, post campus events, generate audit logs & placement analytics.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alumni</strong></td>
+                        <td>Professional Networking & Mentoring</td>
+                        <td>Update workplace/location, post jobs, accept mentorship requests, send direct messages.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Students</strong></td>
+                        <td>Career Guidance & Peer Discovery</td>
+                        <td>Search alumni profiles, apply for jobs/internships, request 1-on-1 mentoring.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SLIDE 5: Architecture -->
+        <section class="slide" id="slide-5">
+            <div class="slide-kicker">SYSTEM DESIGN</div>
+            <div class="slide-title">
+                3-Tier System Architecture
+                <div class="icon-badge"><i class="fa-solid fa-layer-group"></i></div>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-desktop"></i> Presentation Tier
+                    </div>
+                    <div class="card-body">
+                        <strong>HTML5 / CSS3 / Vanilla JS</strong><br><br>
+                        Responsive web interface featuring glassmorphic dashboards, dynamic search tables, and client-side form validations.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-gears"></i> Application Logic Tier
+                    </div>
+                    <div class="card-body">
+                        <strong>PHP 8.2 Engine</strong><br><br>
+                        Processes session authentication, 2FA/OTP validation, password hashing (bcrypt), and SQL query execution.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header purple">
+                        <i class="fa-solid fa-database"></i> Data Storage Tier
+                    </div>
+                    <div class="card-body">
+                        <strong>MySQL 8.0 RDBMS</strong><br><br>
+                        Normalized (3NF) relational database persisting users, profiles, events, jobs, messages, and audit logs.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: DFD Diagrams -->
+        <section class="slide" id="slide-6">
+            <div class="slide-kicker">SYSTEM FLOW</div>
+            <div class="slide-title">
+                Data Flow Diagrams (DFD Level 0 & Level 1)
+                <div class="icon-badge"><i class="fa-solid fa-diagram-project"></i></div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-sitemap"></i> DFD Level 0 (Context)
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Alumni Entity:</strong> Sends reg info & profile updates &rarr; Receives directory results.</li>
+                            <li><strong>Student Entity:</strong> Sends search queries & mentorship requests &rarr; Receives matches.</li>
+                            <li><strong>Admin Entity:</strong> Sends approval decisions & event posts &rarr; Receives audit reports.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-network-wired"></i> DFD Level 1 (Process Breakdown)
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>1.0 Authentication:</strong> Validates credentials & OTP against <code>Users</code> table.</li>
+                            <li><strong>2.0 Profile Management:</strong> Updates personal/career fields in <code>Alumni_Profile</code>.</li>
+                            <li><strong>3.0 Search Engine:</strong> Queries indexed database columns.</li>
+                            <li><strong>4.0 Event Board:</strong> Manages campus event creation & RSVPs.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: Database ERD -->
+        <section class="slide" id="slide-7">
+            <div class="slide-kicker">DATABASE DESIGN</div>
+            <div class="slide-title">
+                Entity Relationship Diagram (ERD & 3NF)
+                <div class="icon-badge"><i class="fa-solid fa-table-cells"></i></div>
+            </div>
+            <div class="grid-4">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-key"></i> USERS Table
+                    </div>
+                    <div class="card-body">
+                        <code>PK user_id</code><br>
+                        • email, password_hash<br>
+                        • role (admin/alumni/student)<br>
+                        • status (pending/active)
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-address-card"></i> ALUMNI_PROFILE
+                    </div>
+                    <div class="card-body">
+                        <code>PK profile_id, FK user_id</code><br>
+                        • batch_year, department<br>
+                        • company, location, cgpa<br>
+                        • phone, skills
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header purple">
+                        <i class="fa-solid fa-calendar-check"></i> EVENTS & JOBS
+                    </div>
+                    <div class="card-body">
+                        <code>PK event_id, FK created_by</code><br>
+                        • title, description<br>
+                        • company, event_date<br>
+                        • created_at
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header amber">
+                        <i class="fa-solid fa-comments"></i> MESSAGES & LOGS
+                    </div>
+                    <div class="card-body">
+                        <code>PK msg_id, FK sender_id</code><br>
+                        • receiver_id, message_text<br>
+                        • audit_logs: action, ip<br>
+                        • timestamp
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: Security -->
+        <section class="slide" id="slide-8">
+            <div class="slide-kicker">SECURITY & AUTH</div>
+            <div class="slide-title">
+                Security Architecture & 2FA Flow
+                <div class="icon-badge"><i class="fa-solid fa-lock"></i></div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-key"></i> Passwords & 2FA OTP
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>bcrypt Hashing:</strong> Passwords encrypted before storing in MySQL. Plaintext passwords are never saved.</li>
+                            <li><strong>Time-based OTP:</strong> Secondary email/SMS 6-digit OTP verification for login and password resets.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header red">
+                        <i class="fa-solid fa-shield-virus"></i> Threat Defense & Auditing
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Admin Gate:</strong> New signups require student ID verification by college admin before account activation.</li>
+                            <li><strong>Input Sanitation:</strong> Server-side sanitization blocks SQL Injection and Cross-Site Scripting (XSS).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: Directory Search -->
+        <section class="slide" id="slide-9">
+            <div class="slide-kicker">CORE FEATURE</div>
+            <div class="slide-title">
+                Alumni Directory & Search Engine
+                <div class="icon-badge"><i class="fa-solid fa-filter"></i></div>
+            </div>
+            <div class="card" style="flex:1;">
+                <div class="card-header blue">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> Dynamic Multi-Parameter Filter
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Graduation Batch:</strong> Filter alumni by exact year (e.g. 2020, 2022, 2024).</li>
+                        <li><strong>Department / Branch:</strong> Filter by CSE, IT, Electronics, Mechanical, Civil.</li>
+                        <li><strong>Employer Company:</strong> Instant search for alumni working at target companies (Google, TCS, Infosys, Microsoft).</li>
+                        <li><strong>Location & Skills:</strong> Filter by city (Bangalore, Pune, NY) or technical skills (Python, React, AWS).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10: Portfolio & Jobs -->
+        <section class="slide" id="slide-10">
+            <div class="slide-kicker">CAREER HUB</div>
+            <div class="slide-title">
+                Portfolios, Job Board & Mentorship
+                <div class="icon-badge"><i class="fa-solid fa-briefcase"></i></div>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-id-card"></i> Student Portfolio
+                    </div>
+                    <div class="card-body">
+                        Showcase CGPA, projects, certifications, skills, resume uploads, and social links.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-building"></i> Job Portal
+                    </div>
+                    <div class="card-body">
+                        Alumni post hiring openings and internship referrals with direct application tracking.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header purple">
+                        <i class="fa-solid fa-handshake"></i> Mentorship Bridge
+                    </div>
+                    <div class="card-body">
+                        Students initiate 1-on-1 career guidance requests with industry alumni.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 11: Real-Time Chat -->
+        <section class="slide" id="slide-11">
+            <div class="slide-kicker">COMMUNICATION</div>
+            <div class="slide-title">
+                Real-Time Messaging & Campus Events
+                <div class="icon-badge"><i class="fa-solid fa-comments"></i></div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-message"></i> Direct & Group Messaging
+                    </div>
+                    <div class="card-body">
+                        Instant private 1-on-1 chat between students and alumni, plus departmental discussion channels and unread alerts.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header teal">
+                        <i class="fa-solid fa-calendar-days"></i> Event Broadcasting
+                    </div>
+                    <div class="card-body">
+                        Post notice bulletins for reunions, webinars, and workshops with interactive RSVP buttons and engagement stats.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 12: Admin Dashboard -->
+        <section class="slide" id="slide-12">
+            <div class="slide-kicker">ADMINISTRATION</div>
+            <div class="slide-title">
+                Admin Control Panel & Analytics
+                <div class="icon-badge"><i class="fa-solid fa-chart-pie"></i></div>
+            </div>
+            <div class="card" style="flex:1;">
+                <div class="card-header purple">
+                    <i class="fa-solid fa-sliders"></i> Institutional Auditing & Report Generator
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Account Verification Queue:</strong> Review pending registrations against official student lists.</li>
+                        <li><strong>Audit Logs & Security:</strong> Live monitoring of system logins, IP addresses, and data changes.</li>
+                        <li><strong>Report Generator (FR-5):</strong> Formatted metrics for employment distributions and geographical locations.</li>
+                        <li><strong>Multi-Format Export:</strong> Export placement statistics to PDF and CSV for NBA/NAAC accreditation.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 13: Non-Functional Specs -->
+        <section class="slide" id="slide-13">
+            <div class="slide-kicker">SPECS & PERFORMANCE</div>
+            <div class="slide-title">
+                Non-Functional Requirements & Infrastructure
+                <div class="icon-badge"><i class="fa-solid fa-server"></i></div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Target Specification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Performance</strong></td>
+                        <td>Search response &lt; 2s under 50 concurrent users. 99% availability during campus hours.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security</strong></td>
+                        <td>bcrypt password hashing, server-side string sanitization (SQLi/XSS defense), 2FA OTP verification.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hardware Specs</strong></td>
+                        <td>Dual-Core 2.0 GHz CPU, 4 GB RAM, 20 GB SSD storage minimum requirement.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Software Stack</strong></td>
+                        <td>PHP 8.2 Engine, MySQL 8.0 RDBMS, Apache 2.4 (XAMPP environment).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SLIDE 14: QA & Testing -->
+        <section class="slide" id="slide-14">
+            <div class="slide-kicker">QUALITY ASSURANCE</div>
+            <div class="slide-title">
+                Verification, Testing & Test Cases
+                <div class="icon-badge"><i class="fa-solid fa-vial-circle-check"></i></div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test ID</th>
+                        <th>Description</th>
+                        <th>Input</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>TC-01</strong></td>
+                        <td>Account Registration Gate</td>
+                        <td>Valid student ID & formatted email</td>
+                        <td><span class="badge-success">PASSED</span> (Flagged as Pending)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-02</strong></td>
+                        <td>SQL Injection Defense</td>
+                        <td><code>' OR '1'='1</code> in login input</td>
+                        <td><span class="badge-success">PASSED</span> (Sanitized & Access Denied)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-03</strong></td>
+                        <td>2FA / OTP Verification</td>
+                        <td>Valid 6-digit OTP vs expired code</td>
+                        <td><span class="badge-success">PASSED</span> (Validates correctly)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-04</strong></td>
+                        <td>Directory Multi-Filter Search</td>
+                        <td>Dept='CSE', Company='Google'</td>
+                        <td><span class="badge-success">PASSED</span> (Loads matching cards &lt; 1s)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SLIDE 15: Roadmap & Conclusion -->
+        <section class="slide" id="slide-15">
+            <div class="slide-kicker">SUMMARY</div>
+            <div class="slide-title">
+                Future Roadmap & Conclusion
+                <div class="icon-badge"><i class="fa-solid fa-flag-checkered"></i></div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header blue">
+                        <i class="fa-solid fa-rocket"></i> Future Enhancements
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Automated LinkedIn Integration:</strong> Auto-sync employment updates via LinkedIn OAuth API.</li>
+                            <li><strong>Payment Gateway Module:</strong> Embedded Stripe/PayPal for alumni donations & dues.</li>
+                            <li><strong>AI Mentor Recommendation:</strong> Skill-matching algorithm for student guidance.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header green">
+                        <i class="fa-solid fa-circle-check"></i> Conclusion
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Modernized Infrastructure:</strong> Transitions college networking to a secure, modern web directory.</li>
+                            <li><strong>Role-Based Security:</strong> 3-tier design with 2FA, bcrypt hashing, and admin approval gates.</li>
+                            <li><strong>Production Tested:</strong> Fully operational on PHP 8.2 + MySQL environment.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="footer-bar">
+        <div class="slide-counter">
+            Slide <span id="current-slide-num">1</span> of 15
+        </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+
+        <div class="nav-controls">
+            <span class="key-hint"><i class="fa-solid fa-keyboard"></i> Use ← / → Keys</span>
+            <button class="btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+            <button class="btn btn-primary" onclick="nextSlide()">Next <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 15;
+
+        function showSlide(num) {
+            if (num < 1) num = 1;
+            if (num > totalSlides) num = totalSlides;
+
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.getElementById(`slide-${num}`).classList.add('active');
+
+            currentSlide = num;
+            document.getElementById('current-slide-num').innerText = currentSlide;
+            document.getElementById('progress-fill').style.width = `${(currentSlide / totalSlides) * 100}%`;
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>

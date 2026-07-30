@@ -143,6 +143,30 @@ try {
         }
     }
 
+    // 4. Moving Announcement Ticker Data
+    $stmtBanner = $pdo->query("SELECT id, title, priority, created_at FROM announcements WHERE status = 'Publish' ORDER BY created_at DESC LIMIT 5");
+    $response['announcement_ticker'] = $stmtBanner->fetchAll(PDO::FETCH_ASSOC);
+
+    // 5. Support Ticket & Feedback Counts Summary
+    if (is_admin()) {
+        $response['ticket_summary'] = [
+            'total' => (int)$pdo->query("SELECT COUNT(*) FROM support_tickets")->fetchColumn(),
+            'new' => (int)$pdo->query("SELECT COUNT(*) FROM support_tickets WHERE status = 'New'")->fetchColumn(),
+            'pending' => (int)$pdo->query("SELECT COUNT(*) FROM support_tickets WHERE status IN ('Pending', 'In Review')")->fetchColumn(),
+            'resolved' => (int)$pdo->query("SELECT COUNT(*) FROM support_tickets WHERE status = 'Resolved'")->fetchColumn()
+        ];
+        $response['feedback_summary'] = [
+            'total' => (int)$pdo->query("SELECT COUNT(*) FROM feedback")->fetchColumn(),
+            'new' => (int)$pdo->query("SELECT COUNT(*) FROM feedback WHERE status = 'New'")->fetchColumn()
+        ];
+    } else {
+        $stmtUserTkt = $pdo->prepare("SELECT COUNT(*) FROM support_tickets WHERE user_id = ? AND status = 'New'");
+        $stmtUserTkt->execute([$user_id]);
+        $response['ticket_summary'] = [
+            'user_open' => (int)$stmtUserTkt->fetchColumn()
+        ];
+    }
+
     echo json_encode($response);
 } catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);

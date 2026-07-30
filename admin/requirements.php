@@ -131,7 +131,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="dashboard-wrapper">
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
         <div class="sidebar-header">
             <a href="../index.php" class="logo logo-text">
                 <i class="fa-solid fa-graduation-cap"></i> AlumniNet
@@ -149,7 +149,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <ul class="sidebar-menu">
+        <ul class="sidebar-menu" data-lenis-prevent="true" data-lenis-prevent-wheel="true">
             <li class="sidebar-item">
                 <a href="dashboard.php?tab=overview"><i data-lucide="gauge"></i> <span class="link-text">Dashboard</span></a>
             </li>

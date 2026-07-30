@@ -129,12 +129,12 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- USER DASHBOARD DEFAULT PANELS -->
             <div class="stats-cards-grid">
-                <div class="stat-card-view card-glass">
-                    <div>
+                <div class="stat-card-view card-glass" title="<?php echo htmlspecialchars($user_name); ?>">
+                    <div style="flex: 1 1 auto; min-width: 0;">
                         <span class="stat-card-lbl">Welcome Back</span>
-                        <div class="stat-card-val" style="font-size: 1.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;"><?php echo htmlspecialchars($user_name); ?></div>
+                        <div class="stat-card-val stat-card-username" title="<?php echo htmlspecialchars($user_name); ?>"><?php echo htmlspecialchars($user_name); ?></div>
                     </div>
-                    <div class="stat-card-icon" style="color: var(--theme-accent-purple);"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="stat-card-icon" style="color: var(--theme-accent-purple); flex-shrink: 0;"><i class="fa-solid fa-graduation-cap"></i></div>
                 </div>
                 
                 <?php if ($role === 'alumni'): ?>
@@ -341,7 +341,11 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <h4 style="font-size: 0.9rem; font-weight: 600;"><?php echo htmlspecialchars($job['title']); ?></h4>
                                                 <p style="font-size: 0.75rem; color: var(--theme-text-secondary);"><?php echo htmlspecialchars($job['company']); ?> | <?php echo htmlspecialchars($job['location']); ?></p>
                                             </div>
-                                            <span class="badge badge-student"><?php echo htmlspecialchars($job['status']); ?></span>
+                                            <?php if ($job['status'] === 'active'): ?>
+                                                <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.72rem; padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; color: #22c55e;"></i> Active</span>
+                                            <?php else: ?>
+                                                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); font-size: 0.72rem; padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-circle-xmark" style="font-size: 0.6rem; color: #ef4444;"></i> Expired</span>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
