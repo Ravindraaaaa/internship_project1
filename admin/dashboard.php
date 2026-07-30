@@ -431,50 +431,50 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- TAB A: DEFAULT OVERVIEW -->
             <?php if ($tab === 'overview'): ?>
                 
-                <!-- Metrics row (Clickable Real-Time Stats) -->
-                <div class="stats-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
-                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=alumni'" title="Click to View Alumni Directory">
+                <!-- Metrics row (Native HTML Clickable Real-Time Stats) -->
+                <div class="stats-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+                    <a href="dashboard.php?tab=alumni" class="stat-card-view card-glass" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Click to View & Manage Alumni Directory">
                         <div>
                             <span class="stat-card-lbl">Total Alumni</span>
-                            <div class="stat-card-val" style="color: #818cf8;"><?php echo number_format($admin_stats['total_alumni']); ?></div>
+                            <div class="stat-card-val" style="color: #818cf8; font-weight: 800; font-size: 1.8rem; margin-top: 0.25rem;"><?php echo number_format($admin_stats['total_alumni']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: #818cf8;"><i class="fa-solid fa-user-graduate"></i></div>
-                    </div>
+                        <div class="stat-card-icon" style="color: #818cf8; font-size: 1.8rem; opacity: 0.85;"><i class="fa-solid fa-user-graduate"></i></div>
+                    </a>
 
-                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=students'" title="Click to View Student Directory">
+                    <a href="dashboard.php?tab=students" class="stat-card-view card-glass" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Click to View & Manage Student Directory">
                         <div>
                             <span class="stat-card-lbl">Total Students</span>
-                            <div class="stat-card-val" style="color: #38bdf8;"><?php echo number_format($admin_stats['total_students']); ?></div>
+                            <div class="stat-card-val" style="color: #38bdf8; font-weight: 800; font-size: 1.8rem; margin-top: 0.25rem;"><?php echo number_format($admin_stats['total_students']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: #38bdf8;"><i class="fa-solid fa-graduation-cap"></i></div>
-                    </div>
+                        <div class="stat-card-icon" style="color: #38bdf8; font-size: 1.8rem; opacity: 0.85;"><i class="fa-solid fa-graduation-cap"></i></div>
+                    </a>
 
-                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=overview'" title="Click to Review Pending Verifications">
+                    <a href="dashboard.php?tab=overview#pending-registrations-review" class="stat-card-view card-glass" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Click to Review Pending Verifications">
                         <div>
                             <span class="stat-card-lbl">Pending Approvals</span>
-                            <div class="stat-card-val" style="<?php echo $admin_stats['pending'] > 0 ? 'color: #f59e0b;' : 'color: #10b981;'; ?>"><?php echo number_format($admin_stats['pending']); ?></div>
+                            <div class="stat-card-val" style="<?php echo $admin_stats['pending'] > 0 ? 'color: #f59e0b;' : 'color: #10b981;'; ?> font-weight: 800; font-size: 1.8rem; margin-top: 0.25rem;"><?php echo number_format($admin_stats['pending']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: #f59e0b;"><i class="fa-solid fa-user-clock"></i></div>
-                    </div>
+                        <div class="stat-card-icon" style="color: #f59e0b; font-size: 1.8rem; opacity: 0.85;"><i class="fa-solid fa-user-clock"></i></div>
+                    </a>
 
-                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=overview'" title="Click to View Online Users">
+                    <a href="dashboard.php?tab=overview#active-activity-timeline" class="stat-card-view card-glass" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Click to View Active Users & Live Logs">
                         <div>
                             <span class="stat-card-lbl">Online Active Now</span>
-                            <div class="stat-card-val" style="color: #10b981; font-weight:800; display:flex; align-items:center; gap:0.4rem;">
-                                <i class="fa-solid fa-circle" style="font-size:0.75rem; color:#10b981; animation: pulse 1.5s infinite;"></i>
+                            <div class="stat-card-val" style="color: #10b981; font-weight: 800; font-size: 1.8rem; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fa-solid fa-circle" style="font-size: 0.75rem; color: #10b981; animation: pulse 1.5s infinite;"></i>
                                 <?php echo number_format($admin_stats['online_users']); ?>
                             </div>
                         </div>
-                        <div class="stat-card-icon" style="color: #10b981;"><i class="fa-solid fa-signal"></i></div>
-                    </div>
+                        <div class="stat-card-icon" style="color: #10b981; font-size: 1.8rem; opacity: 0.85;"><i class="fa-solid fa-signal"></i></div>
+                    </a>
 
-                    <div class="stat-card-view card-glass" style="cursor: pointer; transition: transform 0.2s;" onclick="location.href='dashboard.php?tab=jobs'" title="Click to View Job Board">
+                    <a href="dashboard.php?tab=jobs" class="stat-card-view card-glass" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Click to View Job Board & Referrals">
                         <div>
                             <span class="stat-card-lbl">Active Referrals</span>
-                            <div class="stat-card-val"><?php echo number_format($admin_stats['jobs']); ?></div>
+                            <div class="stat-card-val" style="color: #a855f7; font-weight: 800; font-size: 1.8rem; margin-top: 0.25rem;"><?php echo number_format($admin_stats['jobs']); ?></div>
                         </div>
-                        <div class="stat-card-icon" style="color: var(--theme-accent-purple);"><i class="fa-solid fa-briefcase"></i></div>
-                    </div>
+                        <div class="stat-card-icon" style="color: #a855f7; font-size: 1.8rem; opacity: 0.85;"><i class="fa-solid fa-briefcase"></i></div>
+                    </a>
                 </div>
 
                 <!-- Admin panels grids -->
@@ -599,15 +599,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         </td>
                                         <td><span class="badge badge-<?php echo $alm['status'] === 'approved' ? 'approved' : ($alm['status'] === 'pending' ? 'pending' : 'rejected'); ?>"><?php echo htmlspecialchars($alm['status']); ?></span></td>
                                         <td style="text-align: right; display:flex; gap:0.4rem; justify-content:flex-end; align-items:center;">
-                                            <?php if (!empty($alm['is_blue_tick'])): ?>
-                                                <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 0.72rem; font-weight: 700;">
-                                                    <i class="fa-solid fa-circle-check"></i> Auto Tick (>= 8L)
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); font-size: 0.72rem;">
-                                                    <i class="fa-solid fa-building"></i> Standard
-                                                </span>
-                                            <?php endif; ?>
+                                            <a href="../user/view_profile.php?id=<?php echo $alm['id']; ?>" target="_blank" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px; background: linear-gradient(135deg, #6366f1, #a855f7); color:#ffffff; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;" title="View Complete Alumni Member Profile">
+                                                <i class="fa-solid fa-address-card"></i> View Profile
+                                            </a>
                                             <?php if ($alm['status'] !== 'approved'): ?>
                                                 <a href="admin_approvals.php?action=approve&id=<?php echo $alm['id']; ?>&tab=alumni" class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.72rem; border-radius:6px;">Approve</a>
                                             <?php endif; ?>
