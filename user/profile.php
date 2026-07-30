@@ -501,12 +501,21 @@ require_once __DIR__ . '/../includes/header.php';
                                         <div class="bento-label">Graduation Year</div>
                                         <div class="bento-value">Class of <?php echo htmlspecialchars($profile['graduation_year'] ?? 'Not set'); ?></div>
                                     </div>
-                                    <?php if (!empty($profile['company'])): ?>
-                                        <div class="bento-item">
-                                            <div class="bento-label">Current Role</div>
-                                            <div class="bento-value"><?php echo htmlspecialchars($profile['position']); ?> at <?php echo htmlspecialchars($profile['company']); ?></div>
-                                        </div>
-                                    <?php endif; ?>
+                                     <?php if (!empty($profile['company'])): ?>
+                                         <?php 
+                                         require_once __DIR__ . '/../includes/functions.php';
+                                         $c_logo = get_company_logo_url($profile['company']); 
+                                         ?>
+                                         <div class="bento-item">
+                                             <div class="bento-label">Current Role & Organization</div>
+                                             <div class="bento-value" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                                                 <?php if ($c_logo): ?>
+                                                     <img src="<?php echo htmlspecialchars($c_logo); ?>" alt="Company Logo" style="width: 24px; height: 24px; border-radius: 5px; object-fit: contain; background: #ffffff; padding: 2px; border: 1px solid var(--theme-border);" onerror="this.style.display='none';">
+                                                 <?php endif; ?>
+                                                 <span><strong><?php echo htmlspecialchars($profile['position'] ?? 'Member'); ?></strong> at <strong><?php echo htmlspecialchars($profile['company']); ?></strong></span>
+                                             </div>
+                                         </div>
+                                     <?php endif; ?>
                                 <?php else: ?>
                                     <div class="bento-item">
                                         <div class="bento-label">Academic Year</div>
