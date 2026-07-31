@@ -3197,3 +3197,116 @@ body.modal-open {
         right: 0 !important;
     }
 }
+
+/* ------------------- Mobile Public Header & Global Responsiveness Fixes ------------------- */
+@media (max-width: 768px) {
+    /* Public Header Toggle */
+    .header-public {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 1rem !important;
+        gap: 0 !important;
+        height: auto !important;
+    }
+    #mobile-public-toggle {
+        display: inline-flex !important;
+    }
+    .nav-public-links {
+        display: none !important; /* hidden by default */
+        flex-direction: column !important;
+        width: 100% !important;
+        padding: 1rem 0 0 0 !important;
+        gap: 0.75rem !important;
+    }
+    .nav-public-links.show {
+        display: flex !important;
+    }
+    .nav-public-links li {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    .nav-public-links a.btn, .nav-public-links a.nav-public-link {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+        padding: 0.75rem !important;
+    }
+    
+    /* Fix Sidebar text and overlay on Mobile */
+    .sidebar.show, .sidebar.active {
+        left: 0 !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8) !important;
+        width: 280px !important; /* Ensure it's wide enough */
+    }
+    /* Override collapsed state hiding text on mobile */
+    .sidebar .sidebar-item .link-text,
+    .sidebar .sidebar-header .logo-text {
+        opacity: 1 !important;
+        width: auto !important;
+        visibility: visible !important;
+        display: inline-block !important;
+    }
+    .sidebar .sidebar-toggle-btn {
+        display: none !important; /* hide collapse button inside sidebar on mobile */
+    }
+    .sidebar .sidebar-close-btn {
+        display: inline-flex !important;
+        background: none !important;
+        border: none !important;
+        color: var(--theme-text) !important;
+        font-size: 1.5rem !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        margin-left: auto !important;
+    }
+
+    /* Dashboard fixes for small screen */
+    .announcement-marquee-bar {
+        padding: 8px 10px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+    .announcement-marquee-bar > div:first-child {
+        align-self: flex-start !important;
+        font-size: 0.7rem !important;
+        padding: 2px 8px !important;
+        margin-bottom: 2px !important;
+    }
+    .marquee-live-label {
+        display: none !important; /* hide the 'Live Broadcast' label to save space */
+    }
+    .stat-card-view, .card-glass {
+        padding: 1rem !important; /* Make boxes smaller */
+    }
+    .dashboard-title-row h1, .dashboard-title-row h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Table responsiveness fix */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+    }
+    .custom-table th, .custom-table td {
+        white-space: nowrap !important;
+    }
+    
+    /* Global boxes / text responsiveness */
+    .hero-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .hero-actions .btn {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

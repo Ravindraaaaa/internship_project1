@@ -132,8 +132,8 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
 
             <!-- Filter Bar Form -->
-            <form action="students.php" method="GET" class="filter-bar" style="background: var(--theme-card-bg); border: 1px solid var(--theme-border); border-radius: 12px; padding: 1.25rem; display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 1rem; align-items: end; margin-bottom: 2rem;">
-                <div class="filter-group">
+            <form action="students.php" method="GET" class="filter-bar" style="background: var(--theme-card-bg); border: 1px solid var(--theme-border); border-radius: 12px; padding: 1.25rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 2rem;">
+                <div class="filter-group" style="flex: 1 1 250px;">
                     <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Search Student Name / Stream / ID</label>
                     <input type="text" name="search" placeholder="Search Student Name, Course Stream, ID..." value="<?php echo htmlspecialchars($search); ?>" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
                 </div>
@@ -147,7 +147,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group" style="flex: 1 1 200px;">
                     <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Course Stream</label>
                     <select name="course" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
                         <option value="">All Courses</option>
@@ -190,14 +190,16 @@ require_once __DIR__ . '/../includes/header.php';
                     </h3>
 
                     <!-- Student Cards Grid -->
-                    <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                    <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem;">
                         <?php foreach ($members as $std): 
                             $userAvatar = (!empty($std['profile_pic']) && file_exists(__DIR__ . '/../' . ltrim($std['profile_pic'], '/'))) ? htmlspecialchars($std['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
                             $u_id = !empty($std['user_id']) ? $std['user_id'] : 0;
                             $isOnline = (!empty($std['last_active']) && (strtotime($std['last_active']) >= (time() - 300)));
                             $studentIdStr = 'STD-' . ($std['current_year'] ?? '1') . '-' . str_pad($u_id, 4, '0', STR_PAD_LEFT);
                         ?>
-                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                        <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative; cursor: pointer; transition: transform 0.2s;" onclick="openStudentModal(<?php echo htmlspecialchars(json_encode([
+                            'id' => $u_id, 'name' => $std['name'], 'email' => $std['email'], 'current_year' => $std['current_year'] ?? '1', 'course' => $std['course'], 'cgpa' => $std['cgpa'] ?? '0.00', 'bio' => $std['bio'], 'avatar' => $userAvatar, 'is_online' => $isOnline, 'linkedin' => $std['s_linkedin'] ?? '', 'github' => $std['github'] ?? ''
+                        ])); ?>);">
                             <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
                                 <div class="alumni-avatar-container" style="position:relative;">
                                     <img src="<?php echo $userAvatar; ?>" alt="<?php echo htmlspecialchars($std['name']); ?>" class="alumni-avatar" style="width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; flex-shrink: 0; background: rgba(255,255,255,0.05);">
@@ -237,24 +239,15 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php endif; ?>
                             </div>
 
-                            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-                                <a href="view_profile.php?id=<?php echo $u_id; ?>" onclick="openStudentModal(<?php echo htmlspecialchars(json_encode([
-                                    'id' => $u_id,
-                                    'name' => $std['name'],
-                                    'email' => $std['email'],
-                                    'current_year' => $std['current_year'] ?? '1',
-                                    'course' => $std['course'],
-                                    'cgpa' => $std['cgpa'] ?? '0.00',
-                                    'bio' => $std['bio'],
-                                    'avatar' => $userAvatar,
-                                    'is_online' => $isOnline,
-                                    'linkedin' => $std['s_linkedin'] ?? '',
-                                    'github' => $std['github'] ?? ''
-                                ])); ?>); return false;" class="btn btn-secondary" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; background: linear-gradient(135deg, #0284c7, #38bdf8); color:#fff; border:none;">
-                                    <i class="fa-solid fa-address-card"></i> View Profile
+                            <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a href="view_profile.php?id=<?php echo $u_id; ?>" onclick="event.stopPropagation();" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem; font-weight: 700; padding: 0.6rem 0.5rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; background: linear-gradient(135deg, #0284c7, #38bdf8); color:#fff; border:none; min-width: 120px;">
+                                    <i class="fa-solid fa-folder-open"></i> Open Card
+                                </a>
+                                <a href="chat.php?user=<?php echo $u_id; ?>" onclick="event.stopPropagation();" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; font-weight: 700; padding: 0.6rem 0.5rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; background: linear-gradient(135deg, #10b981, #34d399); color:#fff; border:none; min-width: 100px;">
+                                    <i class="fa-solid fa-link"></i> Connect
                                 </a>
                                 <?php if (!empty($std['s_linkedin'])): ?>
-                                <a href="<?php echo htmlspecialchars($std['s_linkedin']); ?>" target="_blank" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
+                                <a href="<?php echo htmlspecialchars($std['s_linkedin']); ?>" target="_blank" onclick="event.stopPropagation();" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
                                     <i class="fa-brands fa-linkedin"></i>
                                 </a>
                                 <?php endif; ?>

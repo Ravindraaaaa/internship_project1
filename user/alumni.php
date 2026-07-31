@@ -40,7 +40,7 @@ try {
 }
 
 // Query Construction strictly for ALUMNI ONLY
-$sql = "SELECT u.id as user_id, u.name, u.role, u.email, u.phone as u_phone,
+$sql = "SELECT u.id as user_id, u.name, u.role, u.email, u.phone as u_phone, u.last_active,
                COALESCE(ap.passing_year, ap.graduation_year, 'N/A') as passing_year,
                COALESCE(ap.course, ap.branch, 'General Stream') as course,
                COALESCE(ap.bio, 'No biography available.') as bio,
@@ -186,13 +186,13 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
                 
             <!-- Filter Bar Form -->
-            <form action="alumni.php" method="GET" class="filter-bar" style="background: var(--theme-card-bg); border: 1px solid var(--theme-border); border-radius: 12px; padding: 1.25rem; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 1rem; align-items: end; margin-bottom: 2rem;">
-                <div class="filter-group">
+            <form action="alumni.php" method="GET" class="filter-bar" style="background: var(--theme-card-bg); border: 1px solid var(--theme-border); border-radius: 12px; padding: 1.25rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 2rem;">
+                <div class="filter-group" style="flex: 1 1 250px;">
                     <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Search Alumni Name / ID / Company</label>
                     <input type="text" name="search" placeholder="Search Name, Alumni ID, Company..." value="<?php echo htmlspecialchars($search); ?>" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
                 </div>
 
-                <div class="filter-group">
+                <div class="filter-group" style="flex: 1 1 200px;">
                     <label style="display:block; font-size:0.75rem; color:var(--theme-text-secondary); margin-bottom:0.4rem;">Passout Year</label>
                     <select name="year" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--theme-border); background:var(--theme-bg-secondary); color:var(--theme-text);">
                         <option value="">All Passout Years</option>
@@ -262,10 +262,11 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
 
                         <!-- Cards Grid -->
-                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                        <div class="cards-catalog" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem;">
                             <?php foreach ($members as $alum): 
                                 $userAvatar = (!empty($alum['profile_pic']) && file_exists(__DIR__ . '/../' . ltrim($alum['profile_pic'], '/'))) ? htmlspecialchars($alum['profile_pic']) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
                                 $u_id = !empty($alum['user_id']) ? $alum['user_id'] : (!empty($alum['id']) ? $alum['id'] : 0);
+                                $isOnline = (!empty($alum['last_active']) && (strtotime($alum['last_active']) >= (time() - 300)));
                                 $designationText = !empty($alum['position']) ? $alum['position'] : (!empty($alum['designation']) ? $alum['designation'] : 'Alumnus');
                                 $companyText = !empty($alum['company']) ? $alum['company'] : 'Independent';
                                 $locationText = !empty($alum['location']) ? $alum['location'] : 'Pune, India';
@@ -273,10 +274,13 @@ require_once __DIR__ . '/../includes/header.php';
                                 $companyLogo = get_company_logo_url($companyText);
                                 $alumniIdStr = !empty($alum['reg_no']) ? $alum['reg_no'] : ('ALU-' . (!empty($alum['passing_year']) && $alum['passing_year'] !== 'N/A' ? $alum['passing_year'] : '2024') . '-' . str_pad($u_id, 4, '0', STR_PAD_LEFT));
                             ?>
-                            <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative;">
+                            <div class="card-glass alumni-member-card" style="padding: 1.5rem; border-radius: 20px; position: relative; cursor: pointer; transition: transform 0.2s;" onclick="openArchiveModal(<?php echo $u_id; ?>);">
                                 <div style="display: flex; gap: 1.2rem; align-items: flex-start;">
-                                    <div class="alumni-avatar-container">
+                                    <div class="alumni-avatar-container" style="position:relative;">
                                         <img src="<?php echo $userAvatar; ?>" alt="<?php echo htmlspecialchars($alum['name']); ?>" class="alumni-avatar" style="width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 3px solid #818cf8; flex-shrink: 0; background: rgba(255,255,255,0.05);">
+                                        <?php if ($isOnline): ?>
+                                            <span style="position:absolute; bottom:2px; right:2px; width:14px; height:14px; background:#10b981; border:2px solid #0f172a; border-radius:50%;" title="Online now"></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
                                         <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--theme-text); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; display: flex; align-items: center; gap: 0.3rem;">
@@ -306,18 +310,30 @@ require_once __DIR__ . '/../includes/header.php';
                                 </div>
 
                                 <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--theme-border); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                                    <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($locationText); ?></span>
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <span style="color: var(--theme-text-muted);"><i class="fa-solid fa-location-dot" style="color: #38bdf8; margin-right: 4px;"></i> <?php echo htmlspecialchars($locationText); ?></span>
+                                        <span style="color: var(--theme-text-muted);">
+                                            <?php if ($isOnline): ?>
+                                                <span style="color:#10b981; font-weight:700;"><i class="fa-solid fa-circle" style="font-size:0.55rem; margin-right:4px;"></i> Online</span>
+                                            <?php else: ?>
+                                                <span style="color:#94a3b8;"><i class="fa-solid fa-circle" style="font-size:0.55rem; margin-right:4px;"></i> Offline</span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
                                     <?php if ($hasMentorship): ?>
                                     <span style="color: #10b981; font-weight: 800; background: rgba(16, 185, 129, 0.15); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;"><i class="fa-solid fa-handshake" style="margin-right: 4px;"></i> Mentor</span>
                                     <?php endif; ?>
                                 </div>
 
-                                <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-                                    <button type="button" class="btn btn-archive" onclick="openArchiveModal(<?php echo $u_id; ?>)" style="flex: 1; font-size: 0.85rem; font-weight: 700; padding: 0.6rem 0.8rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                        <i class="fa-solid fa-folder-open"></i> Digital Archive
+                                <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-archive" onclick="event.stopPropagation(); openArchiveModal(<?php echo $u_id; ?>)" style="flex: 1; font-size: 0.8rem; font-weight: 700; padding: 0.6rem 0.5rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: linear-gradient(135deg, #4f46e5, #9333ea); color:#fff; border:none; min-width: 120px;">
+                                        <i class="fa-solid fa-folder-open"></i> Open Card
                                     </button>
+                                    <a href="chat.php?user=<?php echo $u_id; ?>" onclick="event.stopPropagation();" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; font-weight: 700; padding: 0.6rem 0.5rem; border-radius: 12px; justify-content: center; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; background: linear-gradient(135deg, #10b981, #34d399); color:#fff; border:none; min-width: 100px;">
+                                        <i class="fa-solid fa-link"></i> Connect
+                                    </a>
                                     <?php if (!empty($alum['a_linkedin'])): ?>
-                                    <a href="<?php echo htmlspecialchars($alum['a_linkedin']); ?>" target="_blank" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
+                                    <a href="<?php echo htmlspecialchars($alum['a_linkedin']); ?>" target="_blank" onclick="event.stopPropagation();" class="btn linkedin-btn" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; border-radius: 12px;">
                                         <i class="fa-brands fa-linkedin"></i>
                                     </a>
                                     <?php endif; ?>
@@ -418,11 +434,14 @@ function openArchiveModal(userId) {
             <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-contract" style="color: #818cf8;"></i> Archived Registration Documents</h4>
             ${docsHtml}
 
-            <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center;">
                 <div style="font-size: 0.75rem; color: var(--theme-text-muted);">
-                    <i class="fa-solid fa-lock" style="color: #10b981;"></i> Students have read-only access to archive records.
+                    <i class="fa-solid fa-lock" style="color: #10b981;"></i> Read-only access.
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Close Archive</button>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <a href="view_profile.php?id=${userId}" class="btn btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff;">View Full Profile</a>
+                    <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Close</button>
+                </div>
             </div>
         `;
     });

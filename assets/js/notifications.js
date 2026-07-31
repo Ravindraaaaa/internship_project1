@@ -8,7 +8,7 @@ const NotificationApp = (function() {
     let searchQuery = '';
     let pollingInterval = null;
     let lastUnreadCount = -1;
-    const POLL_TIME = 6000; // 6 seconds
+    const POLL_TIME = 1000; // 1 second (fastest updates)
 
     function init() {
         createUIElements();

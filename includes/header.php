@@ -81,10 +81,13 @@ if (is_logged_in()) {
     if ($current_script === 'index.php' || !is_logged_in()): 
     ?>
     <header class="header-public">
-        <a href="<?php echo $path_prefix; ?>index.php" class="logo">
-            <i class="fa-solid fa-graduation-cap"></i> AlumniNet
-        </a>
-        <ul class="nav-public-links">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;" class="header-public-top">
+            <a href="<?php echo $path_prefix; ?>index.php" class="logo">
+                <i class="fa-solid fa-graduation-cap"></i> AlumniNet
+            </a>
+            <button id="mobile-public-toggle" class="btn btn-secondary" onclick="document.getElementById('public-nav-links').classList.toggle('show');" style="display:none; padding: 0.5rem 0.75rem;"><i class="fa-solid fa-bars"></i></button>
+        </div>
+        <ul class="nav-public-links" id="public-nav-links">
             <li><a href="<?php echo $path_prefix; ?>index.php" class="nav-public-link <?php echo $current_script === 'index.php' ? 'active' : ''; ?>"><i class="fa-solid fa-house" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Home</a></li>
             <li><a href="<?php echo $path_prefix; ?>user/alumni.php" class="nav-public-link <?php echo $current_script === 'alumni.php' ? 'active' : ''; ?>"><i class="fa-solid fa-users" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Alumni</a></li>
             <li><a href="<?php echo $path_prefix; ?>user/jobs.php" class="nav-public-link <?php echo $current_script === 'jobs.php' ? 'active' : ''; ?>"><i class="fa-solid fa-briefcase" style="font-size: 0.85rem; margin-right: 0.35rem;"></i> Jobs</a></li>

@@ -914,6 +914,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start Live Update Polling
     pollLiveUpdates();
-    setInterval(pollLiveUpdates, 10000); // refresh every 10 seconds
+    setInterval(pollLiveUpdates, 2000); // refresh every 2 seconds
 });
 

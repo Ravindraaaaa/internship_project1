@@ -326,6 +326,9 @@ if (!function_exists('render_sidebar')) {
                 <button class="sidebar-toggle-btn" id="sidebar-toggle">
                     <i class="fa-solid fa-chevron-left"></i>
                 </button>
+                <button class="sidebar-close-btn" id="sidebar-close-mobile" onclick="document.getElementById('sidebar').classList.remove('show'); document.getElementById('sidebar').classList.remove('active');">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
             <ul class="sidebar-menu" data-lenis-prevent="true" data-lenis-prevent-wheel="true">

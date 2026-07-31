@@ -220,9 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     track.innerHTML = itemHtml + itemHtml;
 
     // Calculate dynamic animation duration based on content length
-    // Average 100px per second scroll speed
+    // Increase speed: Average 250px per second scroll speed
     const estimatedWidth = unreadItems.length * 400; // rough estimate
-    const duration = Math.max(15, estimatedWidth / 100);
+    const duration = Math.max(8, estimatedWidth / 250);
     track.style.animation = `marqueeScroll ${duration}s linear infinite`;
 });
 
